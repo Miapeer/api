@@ -1,0 +1,15 @@
+# App
+README.md
+
+# Docker
+Dockerfile
+
+# Python
+__pycache__
+.python-version
+
+# VS Code
+.vscode
+
+# Git
+.gitignore
