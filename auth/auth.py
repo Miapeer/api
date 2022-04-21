@@ -3,7 +3,7 @@ from functools import wraps
 from os import environ as env
 
 import requests
-from flask import _request_ctx_stack, jsonify, request
+from flask import _request_ctx_stack, request
 from jose import jwt
 
 AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
@@ -18,10 +18,9 @@ class AuthError(Exception):
 
 
 # Format error response and append status code
-def get_token_auth_header():
+def get_token_auth_header() -> str:
     """Obtains the Access Token from the Authorization Header"""
     auth = request.headers.get("Authorization", None)
-    print(f"{auth=}")
     if not auth:
         raise AuthError(
             {
@@ -63,13 +62,9 @@ def requires_auth(f):
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        print("requires_auth decorator")
-
         token = get_token_auth_header()
 
-        print(f"get_token_auth_header={token}")
-
-        jsonurl = requests.get("https://" + AUTH0_DOMAIN + "/.well-known/jwks.json")
+        jsonurl = requests.get(f"https://{AUTH0_DOMAIN}/.well-known/jwks.json")
         jwks = jsonurl.json()
         unverified_header = jwt.get_unverified_header(token)
         rsa_key = {}
@@ -89,7 +84,7 @@ def requires_auth(f):
                     rsa_key,
                     algorithms=ALGORITHMS,
                     audience=API_AUDIENCE,
-                    issuer="https://" + AUTH0_DOMAIN + "/",
+                    issuer=f"https://{AUTH0_DOMAIN}/",
                 )
             except jwt.ExpiredSignatureError:
                 raise AuthError(
@@ -123,15 +118,13 @@ def requires_auth(f):
     return decorated
 
 
-def requires_scope(required_scope):
+def requires_scope(required_scope: str) -> bool:
     """Determines if the required scope is present in the Access Token
     Args:
         required_scope (str): The scope required to access the resource
     """
     token = get_token_auth_header()
-    print(f"{token=}")
     unverified_claims = jwt.get_unverified_claims(token)
-    print(f"{unverified_claims=}")
     if unverified_claims.get("permissions"):
         token_scopes = unverified_claims["permissions"]
         for token_scope in token_scopes:

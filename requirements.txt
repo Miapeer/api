@@ -42,10 +42,7 @@ flask==2.0.3
     # via
     #   -r requirements.in
     #   flask-cors
-    #   flask-sqlalchemy
 flask-cors==3.0.10
-    # via -r requirements.in
-flask-sqlalchemy==2.5.1
     # via -r requirements.in
 graphql-core==3.1.7
     # via ariadne
@@ -126,9 +123,7 @@ six==1.16.0
 sniffio==1.2.0
     # via anyio
 sqlalchemy==1.4.31
-    # via
-    #   -r requirements.in
-    #   flask-sqlalchemy
+    # via -r requirements.in
 starlette==0.17.1
     # via ariadne
 toml==0.10.2

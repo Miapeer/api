@@ -1,17 +1,18 @@
+from sqlalchemy import Column, String
 from sqlalchemy.dialects.mssql import BIT, UNIQUEIDENTIFIER
 
-from app import db
+from database import Base
 
 
-class Applications(db.Model):
+class Applications(Base):
     __tablename__ = "Applications"
 
-    id = db.Column(UNIQUEIDENTIFIER, primary_key=True)
-    name = db.Column(db.String)
-    url = db.Column(db.String)
-    description = db.Column(db.String)
-    icon = db.Column(db.String)
-    display = db.Column(BIT)
+    id = Column(UNIQUEIDENTIFIER, primary_key=True)
+    name = Column(String)
+    url = Column(String)
+    description = Column(String)
+    icon = Column(String)
+    display = Column(BIT)
 
     def to_dict(self):
         return {

@@ -1,52 +1,53 @@
-import os
+from os import environ as env
 
 from ariadne import (
     QueryType,
-    graphql_sync,
     load_schema_from_path,
     make_executable_schema,
     snake_case_fallback_resolvers,
 )
-from ariadne.constants import PLAYGROUND_HTML
-from flask import _request_ctx_stack, jsonify, request
+from authlib.integrations.flask_client import OAuth
+from dotenv import find_dotenv, load_dotenv
+from flask import Flask, _app_ctx_stack
+from flask_cors import CORS
+from sqlalchemy.orm import scoped_session
 
-from auth import AuthError, requires_auth
-from miapeer.api import app, db
-from miapeer.api.queries import getApplications_resolver
+from database import SessionLocal
+from miapeer.api.queries import init_resolvers as init_miapeer_resolvers
+from miapeer.routes import init_routes as init_miapeer_routes
 
-query = QueryType()
+ENV_FILE = find_dotenv()
+if ENV_FILE:
+    load_dotenv(ENV_FILE)
 
 
-@app.errorhandler(AuthError)
-def handle_auth_error(ex):
-    response = jsonify(ex.error)
-    response.status_code = ex.status_code
-    return response
+app = Flask(__name__)
+app.secret_key = env.get("APP_SECRET_KEY")
+CORS(app)
 
+
+oauth = OAuth(app)
+oauth.register(
+    "auth0",
+    client_id=env.get("AUTH0_CLIENT_ID"),
+    client_secret=env.get("AUTH0_CLIENT_SECRET"),
+    client_kwargs={
+        "scope": "openid profile email",
+    },
+    server_metadata_url=f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration',
+)
+
+
+db_session = scoped_session(SessionLocal, scopefunc=_app_ctx_stack.__ident_func__)
 
 type_defs = load_schema_from_path("./miapeer/api/schema.graphql")
-query.set_field("getApplications", getApplications_resolver)
+query = QueryType()
+init_miapeer_resolvers(query)
 schema = make_executable_schema(type_defs, query, snake_case_fallback_resolvers)
 
-
-@app.route("/graphql", methods=["GET"])
-def graphql_playground():
-    return PLAYGROUND_HTML, 200
-
-
-@app.route("/graphql", methods=["POST"])
-@requires_auth
-def graphql_server():
-    data = request.get_json()
-
-    print(f"graphql_server: {data}")
-
-    success, result = graphql_sync(schema, data, context_value=request, debug=app.debug)
-    status_code = 200 if success else 400
-
-    return jsonify(result), status_code
+init_miapeer_routes(app, oauth, schema)
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(env.get("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)
