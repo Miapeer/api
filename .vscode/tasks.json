@@ -4,31 +4,31 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Development: Build miapeer-api image",
+            "label": "Development: Build miapeer image",
             "type": "shell",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
             // "dependsOn": ["Development: Stop miapeer-api container"],
-            "command": "docker image build --file ./Dockerfile-dev --tag miapeer.azurecr.io/miapeer-api-dev .",
+            "command": "docker image build --file ./Dockerfile-dev --tag miapeer.azurecr.io/miapeer-dev .",
             "problemMatcher": []
         },
         {
-            "label": "Development: Start miapeer-api container",
+            "label": "Development: Start miapeer container",
             "type": "shell",
-            "command": "docker container run -p 80:5000 -d --mount type=bind,source=${workspaceFolder},target=/miapeer-api miapeer.azurecr.io/miapeer-api-dev",
+            "command": "docker container run -p 80:5000 -d --mount type=bind,source=${workspaceFolder},target=/miapeer miapeer.azurecr.io/miapeer-dev",
             "problemMatcher": []
         },
         {
-            "label": "Development: Shell into miapeer-api container",
+            "label": "Development: Shell into miapeer container",
             "type": "shell",
-            "command": "docker container run -p 80:5000 -it --mount type=bind,source=${workspaceFolder},target=/miapeer-api miapeer.azurecr.io/miapeer-api-dev sh",
+            "command": "docker container run -p 80:5000 -it --mount type=bind,source=${workspaceFolder},target=/miapeer miapeer.azurecr.io/miapeer-dev sh",
             "problemMatcher": []
         },
         {
-            "label": "Development: Stop miapeer-api container",
+            "label": "Development: Stop miapeer container",
             "type": "shell",
-            "command": "docker container stop $(docker ps -a -q  --filter ancestor=miapeer.azurecr.io/miapeer-api-dev)",
+            "command": "docker container stop $(docker ps -a -q  --filter ancestor=miapeer.azurecr.io/miapeer-dev)",
             "problemMatcher": []
         },
         {
@@ -38,21 +38,21 @@
             "problemMatcher": []
         },
         {
-            "label": "PRODUCTION: Build miapeer-api image",
+            "label": "PRODUCTION: Build miapeer image",
             "type": "shell",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "command": "docker image build --file ./Dockerfile-prod --tag miapeer.azurecr.io/miapeer-api .",
+            "command": "docker image build --file ./Dockerfile-prod --tag miapeer.azurecr.io/miapeer .",
             "problemMatcher": []
         },
         {
-            "label": "PRODUCTION: Deploy miapeer-api image",
+            "label": "PRODUCTION: Deploy miapeer image",
             "type": "shell",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "command": "docker push miapeer.azurecr.io/miapeer-api",
+            "command": "docker push miapeer.azurecr.io/miapeer",
             "problemMatcher": []
         },
     ]

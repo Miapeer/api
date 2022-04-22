@@ -4,9 +4,9 @@ FROM python:3.10-slim-bullseye
 
 # LABEL Jeff Navarra "youremail@domain.tld"
 
-COPY ./requirements.txt /miapeer-api/requirements.txt
+COPY ./requirements.txt /miapeer/requirements.txt
 
-WORKDIR /miapeer-api
+WORKDIR /miapeer
 
 # Install stuff
 RUN apt-get update \

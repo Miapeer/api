@@ -2,9 +2,9 @@
 
 FROM python:3.10-slim-bullseye
 
-COPY ./requirements.txt /miapeer-api/requirements.txt
+COPY ./requirements.txt /miapeer/requirements.txt
 
-WORKDIR /miapeer-api
+WORKDIR /miapeer
 
 # Install stuff
 RUN apt-get update \
@@ -22,7 +22,7 @@ RUN apt-get update \
     # Clean up
     && rm -rf /var/lib/apt/lists/*
 
-COPY . /miapeer-api
+COPY . /miapeer
 
 # Environment vars
 
