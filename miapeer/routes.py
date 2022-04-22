@@ -41,11 +41,9 @@ def init_routes(app, oauth, schema):
     @app.route("/signin-auth0")
     def callback():
         token = oauth.auth0.authorize_access_token()
-        print(f"{token=}")
         session["user"] = token
 
         token_permissions = token.get("permissions")
-        print(f"{token_permissions=}")
 
         return redirect("/")
 

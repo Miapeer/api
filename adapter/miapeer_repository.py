@@ -1,5 +1,7 @@
-from abc import ABC
+from abc import ABC, abstractclassmethod
 
 
 class MiapeerRepository(ABC):
-    pass
+    @abstractclassmethod
+    def get_all_applications(self):
+        pass

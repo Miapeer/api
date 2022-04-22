@@ -1,3 +1,5 @@
+from functools import partial
+
 from ariadne import (
     ObjectType,
     graphql_sync,
@@ -8,26 +10,21 @@ from ariadne import (
 from rich import print
 
 import app
+from adapter.miapeer_repository import MiapeerRepository
 from auth import requires_scope
 
-from .models import Applications
+
+def init_resolvers(query, repository: MiapeerRepository):
+    query.set_field(
+        "getApplications", partial(applications_resolver, repository=repository)
+    )
 
 
-def init_resolvers(query):
-    query.set_field("getApplications", getApplications_resolver)
-
-
-# query = ObjectType("Query")
-
-# @query.field("getApplications")
-def getApplications_resolver(obj, info):
-    print("getApplications_resolver")
+def applications_resolver(obj, info, repository: MiapeerRepository):
     try:
-        apps = app.db_session.query(Applications)
-        print(apps)
-        applications = [application.to_dict() for application in apps]
-        print(applications)
-        payload = {"success": True, "applications": applications}
+        apps = repository.get_all_applications()
+
+        payload = {"success": True, "applications": apps}
     except Exception as error:
         print(error)
         payload = {"success": False, "errors": [str(error)]}
