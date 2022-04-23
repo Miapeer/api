@@ -1,12 +1,19 @@
 # App
+.env
 README.md
 
 # Docker
-Dockerfile
+Dockerfile*
+.dockerignore
 
 # Python
 __pycache__
+.mypy_cache
+.mypy.ini
 .python-version
+.pre-commit-config.yaml
+black.toml
+requirements.in
 
 # VS Code
 .vscode
