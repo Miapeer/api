@@ -76,7 +76,7 @@ class AuthError(Exception):
 
 
 # Format error response and append status code
-def get_token_auth_header() -> str:
+def get_token_auth_header(request) -> str:
     """Obtains the Access Token from the Authorization Header"""
     auth = request.headers.get("Authorization", None)
     if not auth:
@@ -115,73 +115,71 @@ def get_token_auth_header() -> str:
     return token
 
 
-def requires_auth(f):
+def requires_auth(request):
     """Determines if the Access Token is valid"""
 
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = get_token_auth_header()
+    token = get_token_auth_header(request)
 
-        jsonurl = requests.get(f"https://{AUTH0_DOMAIN}/.well-known/jwks.json")
-        jwks = jsonurl.json()
-        unverified_header = jwt.get_unverified_header(token)
-        rsa_key = {}
-        for key in jwks["keys"]:
-            if key["kid"] == unverified_header["kid"]:
-                rsa_key = {
-                    "kty": key["kty"],
-                    "kid": key["kid"],
-                    "use": key["use"],
-                    "n": key["n"],
-                    "e": key["e"],
-                }
-        if rsa_key:
-            try:
-                payload = jwt.decode(
-                    token,
-                    rsa_key,
-                    algorithms=ALGORITHMS,
-                    audience=API_AUDIENCE,
-                    issuer=f"https://{AUTH0_DOMAIN}/",
-                )
-            except jwt.ExpiredSignatureError:
-                raise AuthError(
-                    {"code": "token_expired", "description": "token is expired"}, 401
-                )
-            except jwt.JWTClaimsError:
-                raise AuthError(
-                    {
-                        "code": "invalid_claims",
-                        "description": "incorrect claims,"
-                        "please check the audience and issuer",
-                    },
-                    401,
-                )
-            except Exception:
-                raise AuthError(
-                    {
-                        "code": "invalid_header",
-                        "description": "Unable to parse authentication" " token.",
-                    },
-                    401,
-                )
+    jsonurl = requests.get(f"https://{AUTH0_DOMAIN}/.well-known/jwks.json")
+    jwks = jsonurl.json()
+    unverified_header = jwt.get_unverified_header(token)
+    rsa_key = {}
+    for key in jwks["keys"]:
+        if key["kid"] == unverified_header["kid"]:
+            rsa_key = {
+                "kty": key["kty"],
+                "kid": key["kid"],
+                "use": key["use"],
+                "n": key["n"],
+                "e": key["e"],
+            }
+    if rsa_key:
+        try:
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=ALGORITHMS,
+                audience=API_AUDIENCE,
+                issuer=f"https://{AUTH0_DOMAIN}/",
+            )
+        except jwt.ExpiredSignatureError:
+            raise AuthError(
+                {"code": "token_expired", "description": "token is expired"}, 401
+            )
+        except jwt.JWTClaimsError:
+            raise AuthError(
+                {
+                    "code": "invalid_claims",
+                    "description": "incorrect claims,"
+                    "please check the audience and issuer",
+                },
+                401,
+            )
+        except Exception:
+            raise AuthError(
+                {
+                    "code": "invalid_header",
+                    "description": "Unable to parse authentication" " token.",
+                },
+                401,
+            )
 
-            _request_ctx_stack.top.current_user = payload
-            return f(*args, **kwargs)
-        raise AuthError(
-            {"code": "invalid_header", "description": "Unable to find appropriate key"},
-            401,
-        )
+        # _request_ctx_stack.top.current_user = payload
+        # return f(*args, **kwargs)
+        return True
 
-    return decorated
+    raise AuthError(
+        {"code": "invalid_header", "description": "Unable to find appropriate key"},
+        401,
+    )
 
 
-def requires_scope(required_scope: str) -> bool:
+def requires_scope(request, required_scope: str) -> bool:
     """Determines if the required scope is present in the Access Token
     Args:
         required_scope (str): The scope required to access the resource
     """
-    token = get_token_auth_header()
+    token = get_token_auth_header(request)
     unverified_claims = jwt.get_unverified_claims(token)
     if unverified_claims.get("permissions"):
         token_scopes = unverified_claims["permissions"]
@@ -191,36 +189,36 @@ def requires_scope(required_scope: str) -> bool:
     return False
 
 
-class VerifyToken:
-    """Does all the token verification using PyJWT"""
+# class VerifyToken:
+#     """Does all the token verification using PyJWT"""
 
-    def __init__(self, token):
-        self.token = token
-        # self.config = set_up()
+#     def __init__(self, token):
+#         self.token = token
+#         # self.config = set_up()
 
-        # This gets the JWKS from a given URL and does processing so you can
-        # use any of the keys available
-        jwks_url = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
-        self.jwks_client = jwt.PyJWKClient(jwks_url)
+#         # This gets the JWKS from a given URL and does processing so you can
+#         # use any of the keys available
+#         jwks_url = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
+#         self.jwks_client = jwt.PyJWKClient(jwks_url)
 
-    def verify(self):
-        # This gets the 'kid' from the passed token
-        try:
-            self.signing_key = self.jwks_client.get_signing_key_from_jwt(self.token).key
-        except jwt.exceptions.PyJWKClientError as error:
-            return {"status": "error", "msg": error.__str__()}
-        except jwt.exceptions.DecodeError as error:
-            return {"status": "error", "msg": error.__str__()}
+#     def verify(self):
+#         # This gets the 'kid' from the passed token
+#         try:
+#             self.signing_key = self.jwks_client.get_signing_key_from_jwt(self.token).key
+#         except jwt.exceptions.PyJWKClientError as error:
+#             return {"status": "error", "msg": error.__str__()}
+#         except jwt.exceptions.DecodeError as error:
+#             return {"status": "error", "msg": error.__str__()}
 
-        try:
-            payload = jwt.decode(
-                self.token,
-                self.signing_key,
-                algorithms=self.config["ALGORITHMS"],
-                audience=self.config["API_AUDIENCE"],
-                issuer=self.config["ISSUER"],
-            )
-        except Exception as e:
-            return {"status": "error", "message": str(e)}
+#         try:
+#             payload = jwt.decode(
+#                 self.token,
+#                 self.signing_key,
+#                 algorithms=self.config["ALGORITHMS"],
+#                 audience=self.config["API_AUDIENCE"],
+#                 issuer=self.config["ISSUER"],
+#             )
+#         except Exception as e:
+#             return {"status": "error", "message": str(e)}
 
-        return payload
+#         return payload

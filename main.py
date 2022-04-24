@@ -13,7 +13,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 
 from auth import auth0
-from auth.auth0 import AuthError, VerifyToken
+from miapeer.api.queries import graphql_app
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -25,6 +25,7 @@ if ENV_FILE:
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=env.get("APP_SECRET_KEY"))
 app.include_router(auth0.router)
+app.include_router(graphql_app, prefix="/graphql")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -42,6 +43,7 @@ def home(request: Request):
   <body>
     <h1>Welcome {access_token.get('userinfo').get('email') if access_token else 'Guest'}</h1>
     <p>{'<a href="/logout">Logout</a>' if access_token else '<a href="/login">Login</a>'}</p>
+    <p>{access_token}</p>
   </body>
 </html>
     """

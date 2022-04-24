@@ -1,31 +1,51 @@
-from functools import partial
+import typing
 
-from ariadne import (
-    ObjectType,
-    graphql_sync,
-    load_schema_from_path,
-    make_executable_schema,
-    snake_case_fallback_resolvers,
-)
-from rich import print
+import strawberry
+from fastapi import FastAPI
+from strawberry.fastapi import GraphQLRouter
+from strawberry.permission import BasePermission
+from strawberry.types import Info
 
-import app
-from adapter.miapeer_repository import MiapeerRepository
-from auth import requires_scope
+from auth.auth0 import requires_auth, requires_scope
 
 
-def init_resolvers(query, repository: MiapeerRepository):
-    query.set_field(
-        "getApplications", partial(applications_resolver, repository=repository)
-    )
+class IsAuthenticated(BasePermission):
+    message = "User is not authenticated"
+
+    async def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+        return requires_auth(info.context["request"])
 
 
-def applications_resolver(obj, info, repository: MiapeerRepository):
-    try:
-        apps = repository.get_all_applications()
+class IsTest(BasePermission):
+    message = "User is not TEST"
 
-        payload = {"success": True, "applications": apps}
-    except Exception as error:
-        print(error)
-        payload = {"success": False, "errors": [str(error)]}
-    return payload
+    async def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+        return requires_scope(info.context["request"], "zzz")
+
+
+class IsZomething(BasePermission):
+    message = "User is not Zomething"
+
+    async def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+        return requires_scope(info.context["request"], "write:zomething")
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello World"
+
+    @strawberry.field(permission_classes=[IsAuthenticated, IsZomething])
+    def hello_p(self) -> str:
+        return "PROTECTED: Hello World"
+
+
+schema = strawberry.Schema(Query)
+
+
+graphql_app = GraphQLRouter(schema)
+
+
+# app = FastAPI()
+# app.include_router(graphql_app, prefix="/graphql")
