@@ -26,6 +26,13 @@
             "module": "gunicorn",
             "args": [ "-w", "4", "-b", ":5000", "app:app" ],
             "jinja": true
+        },
+        {
+            "name": "Python: Uvicorn",
+            "type": "python",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": ["main:app", "--reload"]
         }
     ]
 }

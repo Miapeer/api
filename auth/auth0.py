@@ -3,12 +3,70 @@ from functools import wraps
 from os import environ as env
 
 import requests
+from authlib.integrations.starlette_client import OAuth
+from fastapi import APIRouter
+from fastapi.responses import HTMLResponse, RedirectResponse
 from flask import _request_ctx_stack, request
 from jose import jwt
+from starlette.requests import Request
 
 AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
 API_AUDIENCE = env.get("AUTH0_AUDIENCE")
 ALGORITHMS = ["RS256"]
+
+router = APIRouter()
+
+oauth = OAuth()
+oauth.register(
+    "auth0",
+    client_id=env.get("AUTH0_CLIENT_ID"),
+    client_secret=env.get("AUTH0_CLIENT_SECRET"),
+    client_kwargs={
+        "scope": "openid profile email",
+    },
+    server_metadata_url=f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration',
+)
+
+
+@router.get("/login")
+async def login(request: Request):
+    auth0 = oauth.create_client("auth0")
+
+    redir_uri = request.url_for("callback")
+    print(redir_uri)
+
+    return await auth0.authorize_redirect(
+        redirect_uri=redir_uri,
+        audience=env.get("AUTH0_AUDIENCE"),
+        request=request,
+    )
+
+
+@router.get("/signin-auth0")
+async def callback(request: Request):
+    print("callback")
+    auth0 = oauth.create_client("auth0")
+    token = await auth0.authorize_access_token(request)
+
+    # token_permissions = token.get("permissions")
+
+    response = RedirectResponse(url="/")
+    response.set_cookie("user", json.dumps(token), httponly=True)
+
+    return response
+
+
+@router.get("/logout")
+def logout(request: Request):
+    print("logout: ")
+
+    redir = f'https://miapeer.auth0.com/v2/logout?returnTo={request.url_for("home")}&client_id={env.get("AUTH0_CLIENT_ID")}'
+    response = RedirectResponse(url=redir)
+
+    request.session.clear()
+    response.delete_cookie("user")
+
+    return response
 
 
 class AuthError(Exception):
@@ -131,3 +189,38 @@ def requires_scope(required_scope: str) -> bool:
             if token_scope == required_scope:
                 return True
     return False
+
+
+class VerifyToken:
+    """Does all the token verification using PyJWT"""
+
+    def __init__(self, token):
+        self.token = token
+        # self.config = set_up()
+
+        # This gets the JWKS from a given URL and does processing so you can
+        # use any of the keys available
+        jwks_url = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
+        self.jwks_client = jwt.PyJWKClient(jwks_url)
+
+    def verify(self):
+        # This gets the 'kid' from the passed token
+        try:
+            self.signing_key = self.jwks_client.get_signing_key_from_jwt(self.token).key
+        except jwt.exceptions.PyJWKClientError as error:
+            return {"status": "error", "msg": error.__str__()}
+        except jwt.exceptions.DecodeError as error:
+            return {"status": "error", "msg": error.__str__()}
+
+        try:
+            payload = jwt.decode(
+                self.token,
+                self.signing_key,
+                algorithms=self.config["ALGORITHMS"],
+                audience=self.config["API_AUDIENCE"],
+                issuer=self.config["ISSUER"],
+            )
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+        return payload
