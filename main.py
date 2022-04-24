@@ -1,38 +1,29 @@
 import json
-from os import access
 from os import environ as env
 
 from dotenv import find_dotenv, load_dotenv
-from fastapi import Depends, FastAPI, Response, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.security import HTTPBearer, OpenIdConnect
+from fastapi import Depends, FastAPI
+from fastapi.responses import HTMLResponse
 from rich import print
-from starlette.config import Config
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 
-from auth import auth0
+import auth
 from miapeer.api.queries import graphql_app
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     load_dotenv(ENV_FILE)
 
-# Scheme for the Authorization header
-# token_auth_scheme = HTTPBearer()
-
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=env.get("APP_SECRET_KEY"))
-app.include_router(auth0.router)
+app.include_router(auth.router)
 app.include_router(graphql_app, prefix="/graphql")
 
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    print("home: ")
     access_token = json.loads(request.cookies.get("user", "{}"))
-    # print(access_token)
 
     return f"""
 <html>

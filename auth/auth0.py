@@ -1,18 +1,12 @@
 import json
-from functools import wraps
 from os import environ as env
 
 import requests
 from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter
-from fastapi.responses import HTMLResponse, RedirectResponse
-from flask import _request_ctx_stack, request
+from fastapi.responses import RedirectResponse
 from jose import jwt
 from starlette.requests import Request
-
-AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
-API_AUDIENCE = env.get("AUTH0_AUDIENCE")
-ALGORITHMS = ["RS256"]
 
 router = APIRouter()
 
@@ -33,7 +27,6 @@ async def login(request: Request):
     auth0 = oauth.create_client("auth0")
 
     redir_uri = request.url_for("callback")
-    print(redir_uri)
 
     return await auth0.authorize_redirect(
         redirect_uri=redir_uri,
@@ -44,27 +37,21 @@ async def login(request: Request):
 
 @router.get("/signin-auth0")
 async def callback(request: Request):
-    print("callback")
     auth0 = oauth.create_client("auth0")
     token = await auth0.authorize_access_token(request)
 
-    # token_permissions = token.get("permissions")
-
     response = RedirectResponse(url="/")
-    response.set_cookie("user", json.dumps(token), httponly=True)
+    save_access_token(response, token)
 
     return response
 
 
 @router.get("/logout")
 def logout(request: Request):
-    print("logout: ")
-
     redir = f'https://miapeer.auth0.com/v2/logout?returnTo={request.url_for("home")}&client_id={env.get("AUTH0_CLIENT_ID")}'
     response = RedirectResponse(url=redir)
 
-    request.session.clear()
-    response.delete_cookie("user")
+    delete_access_token(response)
 
     return response
 
@@ -75,7 +62,18 @@ class AuthError(Exception):
         self.status_code = status_code
 
 
-# Format error response and append status code
+def save_access_token(response, token):
+    response.set_cookie("user", json.dumps(token), httponly=True)
+
+
+def load_access_token(request):
+    return json.loads(request.cookies.get("user", "{}"))
+
+
+def delete_access_token(response):
+    response.delete_cookie("user")
+
+
 def get_token_auth_header(request) -> str:
     """Obtains the Access Token from the Authorization Header"""
     auth = request.headers.get("Authorization", None)
@@ -120,7 +118,7 @@ def requires_auth(request):
 
     token = get_token_auth_header(request)
 
-    jsonurl = requests.get(f"https://{AUTH0_DOMAIN}/.well-known/jwks.json")
+    jsonurl = requests.get(f"https://{env.get('AUTH0_DOMAIN')}/.well-known/jwks.json")
     jwks = jsonurl.json()
     unverified_header = jwt.get_unverified_header(token)
     rsa_key = {}
@@ -138,9 +136,9 @@ def requires_auth(request):
             payload = jwt.decode(
                 token,
                 rsa_key,
-                algorithms=ALGORITHMS,
-                audience=API_AUDIENCE,
-                issuer=f"https://{AUTH0_DOMAIN}/",
+                algorithms=["RS256"],
+                audience=env.get("AUTH0_AUDIENCE"),
+                issuer=f"https://{env.get('AUTH0_DOMAIN')}/",
             )
         except jwt.ExpiredSignatureError:
             raise AuthError(
@@ -165,7 +163,6 @@ def requires_auth(request):
             )
 
         # _request_ctx_stack.top.current_user = payload
-        # return f(*args, **kwargs)
         return True
 
     raise AuthError(
@@ -187,38 +184,3 @@ def requires_scope(request, required_scope: str) -> bool:
             if token_scope == required_scope:
                 return True
     return False
-
-
-# class VerifyToken:
-#     """Does all the token verification using PyJWT"""
-
-#     def __init__(self, token):
-#         self.token = token
-#         # self.config = set_up()
-
-#         # This gets the JWKS from a given URL and does processing so you can
-#         # use any of the keys available
-#         jwks_url = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
-#         self.jwks_client = jwt.PyJWKClient(jwks_url)
-
-#     def verify(self):
-#         # This gets the 'kid' from the passed token
-#         try:
-#             self.signing_key = self.jwks_client.get_signing_key_from_jwt(self.token).key
-#         except jwt.exceptions.PyJWKClientError as error:
-#             return {"status": "error", "msg": error.__str__()}
-#         except jwt.exceptions.DecodeError as error:
-#             return {"status": "error", "msg": error.__str__()}
-
-#         try:
-#             payload = jwt.decode(
-#                 self.token,
-#                 self.signing_key,
-#                 algorithms=self.config["ALGORITHMS"],
-#                 audience=self.config["API_AUDIENCE"],
-#                 issuer=self.config["ISSUER"],
-#             )
-#         except Exception as e:
-#             return {"status": "error", "message": str(e)}
-
-#         return payload

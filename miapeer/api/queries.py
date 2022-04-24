@@ -6,7 +6,7 @@ from strawberry.fastapi import GraphQLRouter
 from strawberry.permission import BasePermission
 from strawberry.types import Info
 
-from auth.auth0 import requires_auth, requires_scope
+from auth import requires_auth, requires_scope
 
 
 class IsAuthenticated(BasePermission):
