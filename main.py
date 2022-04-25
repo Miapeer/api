@@ -2,8 +2,9 @@ import json
 from os import environ as env
 
 from dotenv import find_dotenv, load_dotenv
-from fastapi import Depends, FastAPI
+from fastapi import Cookie, Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
+from requests import JSONDecodeError
 from rich import print
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
@@ -59,14 +60,46 @@ def home(request: Request):
 #     return result
 
 
-# @app.get("/api/private")
+async def get_access_token(user: str):
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    try:
+        token = json.loads(user).get("access_token")
+    except JSONDecodeError:
+        raise HTTPException(status_code=401, detail="Invalid access token")
+
+    return token
+
+
+async def is_authorized(user: str = Cookie(None)):
+    token = await get_access_token(user)
+
+    try:
+        auth.verify_token(token)
+    except auth.AuthError as ex:
+        raise HTTPException(status_code=401, detail=ex.error)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Error decoding access token")
+
+
+async def is_zomething(user: str = Cookie(None)):
+    token = await get_access_token(user)
+
+    if not auth.has_scope(token, "write:zomething"):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+
+@app.get("/api/private", dependencies=[Depends(is_authorized), Depends(is_zomething)])
 # def private(response: Response, token: str = Depends(token_auth_scheme)):
-#     """A valid access token is required to access this route"""
+def private():
+    # """A valid access token is required to access this route"""
 
-#     result = VerifyToken(token.credentials).verify()
+    # result = VerifyToken(token.credentials).verify()
 
-#     if result.get("status"):
-#        response.status_code = status.HTTP_400_BAD_REQUEST
-#        return result
+    # if result.get("status"):
+    #    response.status_code = status.HTTP_400_BAD_REQUEST
+    #    return result
 
-#     return result
+    # return result
+    return "PRIVATE"

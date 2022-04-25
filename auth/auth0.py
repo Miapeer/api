@@ -113,11 +113,7 @@ def get_token_auth_header(request) -> str:
     return token
 
 
-def requires_auth(request):
-    """Determines if the Access Token is valid"""
-
-    token = get_token_auth_header(request)
-
+def verify_token(token):
     jsonurl = requests.get(f"https://{env.get('AUTH0_DOMAIN')}/.well-known/jwks.json")
     jwks = jsonurl.json()
     unverified_header = jwt.get_unverified_header(token)
@@ -171,12 +167,15 @@ def requires_auth(request):
     )
 
 
-def requires_scope(request, required_scope: str) -> bool:
-    """Determines if the required scope is present in the Access Token
-    Args:
-        required_scope (str): The scope required to access the resource
-    """
+def requires_auth(request):
+    """Determines if the Access Token is valid"""
+
     token = get_token_auth_header(request)
+
+    return verify_token(token)
+
+
+def has_scope(token, required_scope: str) -> bool:
     unverified_claims = jwt.get_unverified_claims(token)
     if unverified_claims.get("permissions"):
         token_scopes = unverified_claims["permissions"]
@@ -184,3 +183,13 @@ def requires_scope(request, required_scope: str) -> bool:
             if token_scope == required_scope:
                 return True
     return False
+
+
+def requires_scope(request, required_scope: str) -> bool:
+    """Determines if the required scope is present in the Access Token
+    Args:
+        required_scope (str): The scope required to access the resource
+    """
+    token = get_token_auth_header(request)
+
+    return has_scope(token, required_scope)
