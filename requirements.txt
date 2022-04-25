@@ -43,11 +43,15 @@ cryptography==36.0.2
     # via authlib
 distlib==0.3.4
     # via virtualenv
+dnspython==2.2.1
+    # via email-validator
 docopt==0.6.2
     # via pytest-watch
 ecdsa==0.17.0
     # via python-jose
-fastapi==0.75.2
+email-validator==1.2.0
+    # via fastapi
+fastapi[all]==0.75.2
     # via
     #   -r requirements.in
     #   strawberry-graphql
@@ -72,10 +76,17 @@ identify==2.4.12
 idna==3.3
     # via
     #   anyio
+    #   email-validator
     #   requests
     #   rfc3986
 iniconfig==1.1.1
     # via pytest
+itsdangerous==2.1.2
+    # via fastapi
+jinja2==3.1.1
+    # via fastapi
+markupsafe==2.1.1
+    # via jinja2
 mypy==0.942
     # via
     #   -r requirements.in
@@ -84,6 +95,8 @@ mypy-extensions==0.4.3
     # via mypy
 nodeenv==1.6.0
     # via pre-commit
+orjson==3.6.8
+    # via fastapi
 packaging==21.3
     # via pytest
 pep517==0.12.0
@@ -129,13 +142,16 @@ python-dotenv==0.19.2
 python-jose==3.3.0
     # via -r requirements.in
 python-multipart==0.0.5
-    # via strawberry-graphql
+    # via
+    #   fastapi
+    #   strawberry-graphql
 pyyaml==6.0
     # via
+    #   fastapi
     #   pre-commit
     #   uvicorn
 requests==2.27.1
-    # via -r requirements.in
+    # via fastapi
 rfc3986[idna2008]==1.5.0
     # via httpx
 rich==12.2.0
@@ -175,10 +191,12 @@ typing-extensions==4.1.1
     #   pydantic
     #   sqlalchemy-stubs
     #   strawberry-graphql
+ujson==5.2.0
+    # via fastapi
 urllib3==1.26.9
     # via requests
 uvicorn[standard]==0.17.6
-    # via -r requirements.in
+    # via fastapi
 uvloop==0.16.0
     # via uvicorn
 virtualenv==20.14.1

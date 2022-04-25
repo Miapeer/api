@@ -16,13 +16,14 @@
         {
             "label": "Development: Start miapeer container",
             "type": "shell",
-            "command": "docker container run -p 80:5000 -d --mount type=bind,source=${workspaceFolder},target=/miapeer miapeer.azurecr.io/miapeer-dev",
+            "command": "docker container run -p 80:80 -d --mount type=bind,source=${workspaceFolder},target=/miapeer miapeer.azurecr.io/miapeer-dev",
+            // docker container run -p 80:80 -d --mount type=bind,source=/Users/jep/Workspace/Miapeer/miapeer,target=/miapeer miapeer.azurecr.io/miapeer-dev
             "problemMatcher": []
         },
         {
             "label": "Development: Shell into miapeer container",
             "type": "shell",
-            "command": "docker container run -p 80:5000 -it --mount type=bind,source=${workspaceFolder},target=/miapeer miapeer.azurecr.io/miapeer-dev sh",
+            "command": "docker container run -p 80:80 -it --mount type=bind,source=${workspaceFolder},target=/miapeer miapeer.azurecr.io/miapeer-dev sh",
             "problemMatcher": []
         },
         {

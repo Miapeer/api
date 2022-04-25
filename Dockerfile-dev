@@ -2,11 +2,7 @@
 
 FROM python:3.10-slim-bullseye
 
-# LABEL Jeff Navarra "youremail@domain.tld"
-
-COPY ./requirements.txt /miapeer/requirements.txt
-
-WORKDIR /miapeer
+# LABEL Jeff Navarra "jeff.navarra@miapeer.com"
 
 # Install stuff
 RUN apt-get update \
@@ -15,34 +11,17 @@ RUN apt-get update \
     && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
     && apt-get install -y gcc g++ unixodbc-dev \
-    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 \
-    && pip install --no-cache-dir -r requirements.txt \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql17
 
-    # Clean up
-    && rm -rf /var/lib/apt/lists/*
-
-# Uninstall stuff
+# Clean up
+RUN rm -rf /var/lib/apt/lists/*
 # RUN apk del py-pip
 # RUN apk del gcc g++ unixodbc-dev
 
-# RUN mkdir /api
+COPY ./requirements.txt /miapeer/requirements.txt
 
-# Environment vars
-# ENV PATH "$PATH:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ENV FLASK_APP app.py
-ENV FLASK_ENV=development
-ENV FLASK_RUN_HOST 0.0.0.0
+WORKDIR /miapeer
 
-EXPOSE 5000
-# EXPOSE 8000
+RUN pip install --no-cache-dir -r requirements.txt
 
-# CMD [ "sh" ]
-
-# ENTRYPOINT [ "python" ]
-# CMD [ "app.py" ]
-
-# CMD [ "python", "app.py" ]
-
-CMD [ "python", "-m", "flask", "run" ]
-
-# CMD [ "gunicorn", "-w", "4", "-b", ":8000", "app:app" ]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80", "--reload"]

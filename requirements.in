@@ -1,5 +1,5 @@
 authlib>=1.0
-fastapi==0.75.2
+fastapi[all]==0.75.2
 httpx==0.22.0
 mypy
 pip-tools
@@ -9,10 +9,8 @@ pytest
 pytest_watch
 python-dotenv==0.19.2
 python-jose==3.3.0
-requests>=2.27.1
 rich
 six==1.16.0
 strawberry-graphql[fastapi]==0.109.0
 SQLAlchemy==1.4.31
 sqlalchemy-stubs==0.4
-uvicorn[standard]==0.17.6
