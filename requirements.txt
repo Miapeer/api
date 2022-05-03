@@ -88,9 +88,7 @@ jinja2==3.1.1
 markupsafe==2.1.1
     # via jinja2
 mypy==0.942
-    # via
-    #   -r requirements.in
-    #   sqlalchemy-stubs
+    # via -r requirements.in
 mypy-extensions==0.4.3
     # via mypy
 nodeenv==1.6.0
@@ -118,7 +116,9 @@ pyasn1==0.4.8
 pycparser==2.21
     # via cffi
 pydantic==1.9.0
-    # via fastapi
+    # via
+    #   fastapi
+    #   sqlmodel
 pygments==2.11.2
     # via
     #   rich
@@ -170,9 +170,11 @@ sniffio==1.2.0
     #   anyio
     #   httpcore
     #   httpx
-sqlalchemy==1.4.31
-    # via -r requirements.in
-sqlalchemy-stubs==0.4
+sqlalchemy==1.4.36
+    # via sqlmodel
+sqlalchemy2-stubs==0.0.2a22
+    # via sqlmodel
+sqlmodel==0.0.6
     # via -r requirements.in
 starlette==0.17.1
     # via fastapi
@@ -189,7 +191,7 @@ typing-extensions==4.1.1
     # via
     #   mypy
     #   pydantic
-    #   sqlalchemy-stubs
+    #   sqlalchemy2-stubs
     #   strawberry-graphql
 ujson==5.2.0
     # via fastapi

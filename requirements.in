@@ -12,5 +12,4 @@ python-jose==3.3.0
 rich
 six==1.16.0
 strawberry-graphql[fastapi]==0.109.0
-SQLAlchemy==1.4.31
-sqlalchemy-stubs==0.4
+sqlmodel==0.0.6
