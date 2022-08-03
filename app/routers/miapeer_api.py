@@ -4,14 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from ..database import engine
+from ..dependencies import is_authorized, is_zomething
 from ..models import Application
-
-# from ..dependencies import get_token_header
 
 router = APIRouter(
     prefix="/api/miapeer",
     tags=["miapeer"],
-    # dependencies=[Depends(get_token_header)],
+    # dependencies=[Depends(is_authorized)],
     responses={404: {"description": "Not found"}},
 )
 
@@ -30,6 +29,13 @@ async def get_application(application_id: int):
         if not application:
             raise HTTPException(status_code=404, detail="Hero not found")
         return application
+
+
+@router.get("/private", response_model=list[Application])
+async def get_test(commons: dict = Depends(is_zomething)):
+    with Session(engine) as session:
+        applications = session.exec(select(Application)).all()
+        return applications
 
 
 # @router.put(
