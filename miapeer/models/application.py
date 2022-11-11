@@ -1,20 +1,23 @@
 from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+# from miapeer.models.permission import Permission
 
 
 class ApplicationBase(SQLModel):
-    name: str = Field(index=True)
+    name: str
     url: str
     description: str
     icon: str
-    display: bool = Field(default=False)
-    # team_id: Optional[int] = Field(default=None, foreign_key="team.id")
+    display: bool
+    # permission_id: Optional[int] = Field(default=None, primary_key=True)
 
 
 class Application(ApplicationBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    # team: Optional[Team] = Relationship(back_populates="heroes")
+    application_id: Optional[int] = Field(default=None, primary_key=True)
+    # permissions: list[Permission] = Relationship(back_populates="application")
+    ...
 
 
 class ApplicationCreate(ApplicationBase):
@@ -22,7 +25,7 @@ class ApplicationCreate(ApplicationBase):
 
 
 class ApplicationRead(ApplicationBase):
-    id: int
+    application_id: int
 
 
 class ApplicationUpdate(SQLModel):

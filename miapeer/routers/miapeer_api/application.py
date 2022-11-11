@@ -1,11 +1,9 @@
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from miapeer.adapter.database import engine
 from miapeer.dependencies import get_session, is_authorized, is_zomething
-from miapeer.models.application import (  # type: ignore
+from miapeer.models.application import (
     Application,
     ApplicationCreate,
     ApplicationRead,
@@ -13,14 +11,14 @@ from miapeer.models.application import (  # type: ignore
 )
 
 router = APIRouter(
-    prefix="/miapeer/v1",
+    prefix="/miapeer/v1/applications",
     tags=["miapeer"],
     # dependencies=[Depends(is_authorized)],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.get("/applications", response_model=list[ApplicationRead])
+@router.get("/", response_model=list[ApplicationRead])
 async def get_all_applications(
     session: Session = Depends(get_session),
     offset: int = 0,
@@ -33,7 +31,7 @@ async def get_all_applications(
 
 
 # TODO: Should this even be exposed?
-@router.post("/applications", response_model=ApplicationRead)
+@router.post("/", response_model=ApplicationRead)
 async def create_application(
     application: ApplicationCreate,
     session: Session = Depends(get_session),
@@ -46,7 +44,7 @@ async def create_application(
     return db_application
 
 
-@router.get("/applications/{application_id}", response_model=Application)
+@router.get("/{application_id}", response_model=Application)
 async def get_application(
     application_id: int, session: Session = Depends(get_session)
 ) -> Application:
@@ -57,7 +55,7 @@ async def get_application(
 
 
 # TODO: Should this even be exposed?
-@router.delete("/applications/{application_id}")
+@router.delete("/{application_id}")
 def delete_application(
     application_id: int, session: Session = Depends(get_session)
 ) -> dict[str, bool]:
@@ -69,7 +67,7 @@ def delete_application(
     return {"ok": True}
 
 
-@router.patch("/applications/{application_id}", response_model=ApplicationRead)
+@router.patch("/{application_id}", response_model=ApplicationRead)
 def update_application(
     application_id: int,
     application: ApplicationUpdate,

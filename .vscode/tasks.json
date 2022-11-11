@@ -16,14 +16,20 @@
         {
             "label": "Development: Start miapeer container",
             "type": "shell",
-            "command": "docker container run --rm -p 80:80 -d --env-file ${workspaceFolder}/.env --mount type=bind,source=${workspaceFolder},target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev",
-            // LOCAL: docker container run --rm -p 80:80 -d --env-file --mount type=bind,source=/Users/jep/Workspace/Miapeer/miapeer,target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev
+            "command": "docker container run --rm -d -p 80:80 --env-file ${workspaceFolder}/.env --mount type=bind,source=${workspaceFolder},target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev",
+            // LOCAL: docker container run --rm -p 80:80 -d --env-file /Users/jep/Workspace/Miapeer/miapeer/.env --mount type=bind,source=/Users/jep/Workspace/Miapeer/miapeer,target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev
+            "problemMatcher": []
+        },
+        {
+            "label": "Development: Shell into miapeer container",
+            "type": "shell",
+            "command": "docker container run --rm -it -p 80:80 --env-file ${workspaceFolder}/.env --mount type=bind,source=${workspaceFolder},target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev bash",
             "problemMatcher": []
         },
         {
             "label": "Development: Stop miapeer container",
             "type": "shell",
-            "command": "docker container stop $(docker ps -a -q  --filter ancestor=miapeer.azurecr.io/miapeer-dev)",
+            "command": "docker container stop miapeer-api",
             "problemMatcher": []
         },
         {
