@@ -13,7 +13,7 @@ from miapeer.models.application import (  # type: ignore
 )
 
 router = APIRouter(
-    prefix="/api/miapeer",
+    prefix="/miapeer/v1",
     tags=["miapeer"],
     # dependencies=[Depends(is_authorized)],
     responses={404: {"description": "Not found"}},
