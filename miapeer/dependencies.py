@@ -1,12 +1,20 @@
 import json
+from typing import Any, Iterator
 
 from fastapi import Cookie, HTTPException
 from requests import JSONDecodeError
+from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from app.auth import auth0
+from miapeer.adapter.database import engine
+from miapeer.auth import auth0
 
 
-async def get_access_token(user: str):
+def get_session() -> Iterator[Session]:
+    with Session(engine) as session:
+        yield session
+
+
+async def get_access_token(user: str) -> Any:
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -18,7 +26,7 @@ async def get_access_token(user: str):
     return token
 
 
-async def is_authorized(user: str = Cookie(None)):
+async def is_authorized(user: str = Cookie(None)) -> None:
     token = await get_access_token(user)
 
     try:
@@ -29,7 +37,7 @@ async def is_authorized(user: str = Cookie(None)):
         raise HTTPException(status_code=401, detail="Error decoding access token")
 
 
-async def is_zomething(user: str = Cookie(None)):
+async def is_zomething(user: str = Cookie(None)) -> None:
     token = await get_access_token(user)
 
     if not auth0.has_scope(token, "write:zomething"):

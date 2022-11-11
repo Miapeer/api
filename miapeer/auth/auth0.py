@@ -1,5 +1,6 @@
 import json
 from os import environ as env
+from typing import Any
 
 import requests
 from authlib.integrations.starlette_client import OAuth
@@ -7,6 +8,7 @@ from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 from jose import jwt
 from starlette.requests import Request
+from starlette.responses import Response
 
 router = APIRouter()
 
@@ -23,7 +25,7 @@ oauth.register(
 
 
 @router.get("/login")
-async def login(request: Request):
+async def login(request: Request):  # type: ignore
     auth0 = oauth.create_client("auth0")
 
     redir_uri = request.url_for("callback")
@@ -36,7 +38,7 @@ async def login(request: Request):
 
 
 @router.get("/signin-auth0")
-async def callback(request: Request):
+async def callback(request: Request):  # type: ignore
     auth0 = oauth.create_client("auth0")
     token = await auth0.authorize_access_token(request)
 
@@ -47,7 +49,7 @@ async def callback(request: Request):
 
 
 @router.get("/logout")
-def logout(request: Request):
+def logout(request: Request):  # type: ignore
     redir = f'https://miapeer.auth0.com/v2/logout?returnTo={request.url_for("home")}&client_id={env.get("AUTH0_CLIENT_ID")}'
     response = RedirectResponse(url=redir)
 
@@ -57,24 +59,24 @@ def logout(request: Request):
 
 
 class AuthError(Exception):
-    def __init__(self, error, status_code):
+    def __init__(self, error: dict[str, str], status_code: int) -> None:
         self.error = error
         self.status_code = status_code
 
 
-def save_access_token(response, token):
+def save_access_token(response: Response, token: Any) -> None:
     response.set_cookie("user", json.dumps(token), httponly=True)
 
 
-def load_access_token(request):
+def load_access_token(request: Request) -> Any:
     return json.loads(request.cookies.get("user", "{}"))
 
 
-def delete_access_token(response):
+def delete_access_token(response: Response) -> None:
     response.delete_cookie("user")
 
 
-def get_token_auth_header(request) -> str:
+def get_token_auth_header(request: Request) -> str:
     """Obtains the Access Token from the Authorization Header"""
     auth = request.headers.get("Authorization", None)
     if not auth:
@@ -86,7 +88,7 @@ def get_token_auth_header(request) -> str:
             401,
         )
 
-    parts = auth.split()
+    parts: list[str] = auth.split()
 
     if parts[0].lower() != "bearer":
         raise AuthError(
@@ -113,7 +115,7 @@ def get_token_auth_header(request) -> str:
     return token
 
 
-def verify_token(token):
+def verify_token(token: str) -> bool:
     jsonurl = requests.get(f"https://{env.get('AUTH0_DOMAIN')}/.well-known/jwks.json")
     jwks = jsonurl.json()
     unverified_header = jwt.get_unverified_header(token)
@@ -167,7 +169,7 @@ def verify_token(token):
     )
 
 
-def requires_auth(request):
+def requires_auth(request: Request) -> bool:
     """Determines if the Access Token is valid"""
 
     token = get_token_auth_header(request)
@@ -175,7 +177,7 @@ def requires_auth(request):
     return verify_token(token)
 
 
-def has_scope(token, required_scope: str) -> bool:
+def has_scope(token: Any, required_scope: str) -> bool:
     unverified_claims = jwt.get_unverified_claims(token)
     if unverified_claims.get("permissions"):
         token_scopes = unverified_claims["permissions"]
@@ -185,7 +187,7 @@ def has_scope(token, required_scope: str) -> bool:
     return False
 
 
-def requires_scope(request, required_scope: str) -> bool:
+def requires_scope(request: Request, required_scope: str) -> bool:
     """Determines if the required scope is present in the Access Token
     Args:
         required_scope (str): The scope required to access the resource

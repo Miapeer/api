@@ -6,9 +6,8 @@ from fastapi.responses import HTMLResponse
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 from starlette.requests import Request
 
-from ..database import engine
-from ..dependencies import is_authorized, is_zomething
-from ..models import Application
+from miapeer.adapter.database import engine
+from miapeer.dependencies import is_authorized, is_zomething
 
 router = APIRouter(
     tags=["miapeer"],
@@ -18,7 +17,7 @@ router = APIRouter(
 
 
 @router.get("/", response_class=HTMLResponse)
-def home(request: Request):
+def home(request: Request) -> str:
     access_token = json.loads(request.cookies.get("user", "{}"))
 
     return f"""
@@ -38,7 +37,7 @@ def home(request: Request):
 
 @router.get("/private", dependencies=[Depends(is_authorized), Depends(is_zomething)])
 # def private(response: Response, token: str = Depends(token_auth_scheme)):
-def private():
+def private() -> str:
     # """A valid access token is required to access this route"""
 
     # result = VerifyToken(token.credentials).verify()

@@ -3,13 +3,42 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 
 
-class Application(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
+class ApplicationBase(SQLModel):
+    name: str = Field(index=True)
     url: str
     description: str
     icon: str
-    display: bool = False
+    display: bool = Field(default=False)
+    # team_id: Optional[int] = Field(default=None, foreign_key="team.id")
+
+
+class Application(ApplicationBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    # team: Optional[Team] = Relationship(back_populates="heroes")
+
+
+class ApplicationCreate(ApplicationBase):
+    pass
+
+
+class ApplicationRead(ApplicationBase):
+    id: int
+
+
+class ApplicationUpdate(SQLModel):
+    name: Optional[str] = None
+    url: Optional[str] = None
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    display: Optional[bool] = None
+
+
+# class HeroReadWithTeam(HeroRead):
+#     team: Optional[TeamRead] = None
+
+
+# class TeamReadWithHeroes(TeamRead):
+#     heroes: List[HeroRead] = []
 
 
 # class Hero(SQLModel, table=True):
