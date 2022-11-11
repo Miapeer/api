@@ -16,8 +16,8 @@
         {
             "label": "Development: Start miapeer container",
             "type": "shell",
-            "command": "docker container run -p 80:80 -d --mount type=bind,source=${workspaceFolder},target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev",
-            // LOCAL: docker container run -p 80:80 -d --mount type=bind,source=/Users/jep/Workspace/Miapeer/miapeer,target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev
+            "command": "docker container run --rm -p 80:80 -d --env-file ${workspaceFolder}/.env --mount type=bind,source=${workspaceFolder},target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev",
+            // LOCAL: docker container run --rm -p 80:80 -d --env-file --mount type=bind,source=/Users/jep/Workspace/Miapeer/miapeer,target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev
             "problemMatcher": []
         },
         {
