@@ -125,9 +125,7 @@ pytest==7.1.1
 pytest-watch==4.2.0
     # via -r requirements.in
 python-dotenv==0.19.2
-    # via
-    #   -r requirements.in
-    #   uvicorn
+    # via uvicorn
 python-jose==3.3.0
     # via -r requirements.in
 python-multipart==0.0.5
