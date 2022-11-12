@@ -12,7 +12,7 @@ class User(UserBase, table=True):
 
 
 class UserCreate(UserBase):
-    pass
+    ...
 
 
 class UserRead(UserBase):

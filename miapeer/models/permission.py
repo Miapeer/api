@@ -4,9 +4,8 @@ from sqlmodel import Field, Relationship, SQLModel
 
 
 class PermissionBase(SQLModel):
-    application_id: int = Field(foreign_key="application.application_id")
     user_id: int = Field(foreign_key="user.user_id")
-    role_id: int = Field(foreign_key="role.role_id")
+    application_role_id: int = Field(foreign_key="application_role.application_role_id")
 
 
 class Permission(PermissionBase, table=True):
@@ -14,7 +13,7 @@ class Permission(PermissionBase, table=True):
 
 
 class PermissionCreate(PermissionBase):
-    pass
+    ...
 
 
 class PermissionRead(PermissionBase):

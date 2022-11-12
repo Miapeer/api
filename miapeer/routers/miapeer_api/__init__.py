@@ -1,1 +1,7 @@
-from miapeer.routers.miapeer_api import application, permission, role, user
+from miapeer.routers.miapeer_api import (
+    application,
+    application_role,
+    permission,
+    role,
+    user,
+)

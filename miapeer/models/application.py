@@ -16,7 +16,7 @@ class Application(ApplicationBase, table=True):
 
 
 class ApplicationCreate(ApplicationBase):
-    pass
+    ...
 
 
 class ApplicationRead(ApplicationBase):

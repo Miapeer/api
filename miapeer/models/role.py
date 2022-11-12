@@ -12,7 +12,7 @@ class Role(RoleBase, table=True):
 
 
 class RoleCreate(RoleBase):
-    pass
+    ...
 
 
 class RoleRead(RoleBase):
