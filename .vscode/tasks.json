@@ -9,7 +9,6 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            // "dependsOn": ["Development: Stop miapeer-api container"],
             "command": "docker image build --file ./Dockerfile-dev --tag miapeer.azurecr.io/miapeer-dev .",
             "problemMatcher": []
         },
@@ -30,6 +29,12 @@
             "label": "Development: Stop miapeer container",
             "type": "shell",
             "command": "docker container stop miapeer-api",
+            "problemMatcher": []
+        },
+        {
+            "label": "Development: Restart miapeer container",
+            "type": "shell",
+            "dependsOn": ["Development: Stop miapeer container", "Development: Start miapeer container"],
             "problemMatcher": []
         },
         {
