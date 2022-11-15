@@ -4,8 +4,8 @@ from sqlmodel import Field, Relationship, SQLModel
 
 
 class ApplicationRoleBase(SQLModel):
-    application_id: int
-    role_id: int
+    application_id: int = Field(foreign_key="application.application_id")
+    role_id: int = Field(foreign_key="role.role_id")
 
 
 class ApplicationRole(ApplicationRoleBase, table=True):
