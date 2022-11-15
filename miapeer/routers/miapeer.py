@@ -7,7 +7,7 @@ from sqlmodel import Field, Session, SQLModel, create_engine, select
 from starlette.requests import Request
 
 from miapeer.adapter.database import engine
-from miapeer.dependencies import is_authorized, is_zomething
+from miapeer.dependencies import is_authorized, is_miapeer_user
 
 router = APIRouter(
     tags=["miapeer"],
@@ -35,7 +35,7 @@ def home(request: Request) -> str:
     """
 
 
-@router.get("/private", dependencies=[Depends(is_authorized), Depends(is_zomething)])
+@router.get("/private", dependencies=[Depends(is_authorized), Depends(is_miapeer_user)])
 # def private(response: Response, token: str = Depends(token_auth_scheme)):
 def private() -> str:
     # """A valid access token is required to access this route"""
@@ -47,4 +47,6 @@ def private() -> str:
     #    return result
 
     # return result
-    return "PRIVATE"
+    from miapeer.dependencies import zzz
+
+    return f"PRIVATE: {zzz}"

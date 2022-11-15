@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from miapeer.adapter.database import engine
-from miapeer.dependencies import get_session, is_authorized, is_zomething
+from miapeer.dependencies import get_session, is_authorized
 from miapeer.models.user import User, UserCreate, UserRead, UserUpdate
 
 router = APIRouter(

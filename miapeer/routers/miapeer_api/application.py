@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from miapeer.adapter.database import engine
-from miapeer.dependencies import get_session, is_authorized, is_zomething
+from miapeer.dependencies import get_session, is_authorized, is_miapeer_user
 from miapeer.models.application import (
     Application,
     ApplicationCreate,
@@ -20,6 +20,7 @@ router = APIRouter(
 @router.get("/", response_model=list[ApplicationRead])
 async def get_all_applications(
     session: Session = Depends(get_session),
+    # commons: dict = Depends(is_authorized),
     offset: int = 0,
     limit: int = Query(default=100, lte=100),
 ) -> list[Application]:
@@ -38,6 +39,7 @@ async def create_application(
 ) -> Application:
     db_application = Application.from_orm(application)
     session.add(db_application)
+    # TODO: Add application roles
     session.commit()
     session.refresh(db_application)
     return db_application
