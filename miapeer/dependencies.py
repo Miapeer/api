@@ -1,12 +1,17 @@
 import json
 from typing import Any, Iterator
 
-from fastapi import Cookie, HTTPException
+from fastapi import Cookie, Depends, HTTPException, status
+from fastapi.security import (
+    HTTPBearer,
+    OAuth2PasswordBearer,
+    OAuth2PasswordRequestForm,
+)
 from requests import JSONDecodeError
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from miapeer.adapter.database import engine
-from miapeer.auth import auth0
+from miapeer.auth import auth0, fastapi
 from miapeer.models.application import Application
 from miapeer.models.application_role import ApplicationRole
 from miapeer.models.permission import Permission
@@ -14,6 +19,17 @@ from miapeer.models.role import Role
 from miapeer.models.user import User
 
 zzz = set()
+
+
+oauth2_scheme = fastapi.oath2_bearer_scheme
+
+
+async def get_current_active_user(
+    current_user: User = Depends(fastapi.get_current_user),
+) -> User:
+    if current_user.disabled:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
 
 
 def get_session() -> Iterator[Session]:

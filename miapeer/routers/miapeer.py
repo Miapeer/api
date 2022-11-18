@@ -7,10 +7,15 @@ from sqlmodel import Field, Session, SQLModel, create_engine, select
 from starlette.requests import Request
 
 from miapeer.adapter.database import engine
-from miapeer.dependencies import is_authorized, is_miapeer_user
+from miapeer.dependencies import (
+    get_current_active_user,
+    is_authorized,
+    is_miapeer_user,
+)
+from miapeer.models.user import User
 
 router = APIRouter(
-    tags=["miapeer"],
+    tags=["Miapeer"],
     # dependencies=[Depends(get_token_header)],
     responses={404: {"description": "Not found"}},
 )
@@ -18,6 +23,18 @@ router = APIRouter(
 
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request) -> str:
+    """
+    Create an item with all the information:
+
+    - **name**: each item must have a name
+    - **description**: a long description
+    - **price**: required
+    - **tax**: if the item doesn't have tax, you can omit this
+    - **tags**: a set of unique tag strings for this item
+    \f
+    :param item: User input.
+    """
+
     access_token = json.loads(request.cookies.get("user", "{}"))
 
     return f"""
@@ -35,9 +52,9 @@ def home(request: Request) -> str:
     """
 
 
-@router.get("/private", dependencies=[Depends(is_authorized), Depends(is_miapeer_user)])
+@router.get("/private", include_in_schema=True, dependencies=[Depends(is_miapeer_user)])
 # def private(response: Response, token: str = Depends(token_auth_scheme)):
-def private() -> str:
+def private(current_user: User = Depends(get_current_active_user)) -> str:
     # """A valid access token is required to access this route"""
 
     # result = VerifyToken(token.credentials).verify()
@@ -49,4 +66,4 @@ def private() -> str:
     # return result
     from miapeer.dependencies import zzz
 
-    return f"PRIVATE: {zzz}"
+    return f"PRIVATE: {current_user}"

@@ -2,7 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from miapeer.adapter.database import engine
-from miapeer.dependencies import get_session, is_authorized, is_miapeer_user
+from miapeer.dependencies import (
+    get_session,
+    is_authorized,
+    is_miapeer_user,
+    oauth2_scheme,
+)
 from miapeer.models.application import (
     Application,
     ApplicationCreate,
@@ -12,7 +17,7 @@ from miapeer.models.application import (
 
 router = APIRouter(
     prefix="/miapeer/v1/applications",
-    tags=["miapeer"],
+    tags=["Miapeer API"],
     responses={404: {"description": "Not found"}},
 )
 
@@ -21,9 +26,11 @@ router = APIRouter(
 async def get_all_applications(
     session: Session = Depends(get_session),
     # commons: dict = Depends(is_authorized),
+    token: str = Depends(oauth2_scheme),
     offset: int = 0,
     limit: int = Query(default=100, lte=100),
 ) -> list[Application]:
+    print(f"\n{token = }\n")  # TODO: Remove this!!!
     applications = session.exec(
         select(Application)  # .order_by(text("name")).offset(offset).limit(limit)
     ).all()

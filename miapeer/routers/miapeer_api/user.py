@@ -2,15 +2,24 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from miapeer.adapter.database import engine
-from miapeer.dependencies import get_session, is_authorized
+from miapeer.dependencies import (
+    get_current_active_user,
+    get_session,
+    is_authorized,
+)
 from miapeer.models.user import User, UserCreate, UserRead, UserUpdate
 
 router = APIRouter(
     prefix="/miapeer/v1/users",
-    tags=["miapeer"],
+    tags=["Miapeer API"],
     # dependencies=[Depends(is_authorized)],
     responses={404: {"description": "Not found"}},
 )
+
+
+@router.get("/me")
+async def read_users_me(current_user: User = Depends(get_current_active_user)) -> User:
+    return current_user
 
 
 @router.get("/", response_model=list[UserRead])

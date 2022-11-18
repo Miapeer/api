@@ -21,3 +21,8 @@ class UserRead(UserBase):
 
 class UserUpdate(SQLModel):
     email: Optional[str] = None
+
+
+class UserInDb(UserBase):
+    password: str
+    disabled: bool
