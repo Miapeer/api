@@ -1,11 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
-from miapeer.dependencies import (
-    get_session,
-    is_miapeer_super_user,
-    is_miapeer_user,
-)
+from miapeer.dependencies import get_session, is_miapeer_super_user
 from miapeer.models.application import (
     Application,
     ApplicationCreate,

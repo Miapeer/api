@@ -1,24 +1,20 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select
 
-router = APIRouter(
-    prefix="/permissions",
-    tags=["Miapeer API"],
-    # dependencies=[Depends(is_authorized)],
-    responses={404: {"description": "Not found"}},
-)
-
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
-
-from miapeer.adapter.database import engine
-from miapeer.dependencies import get_session
+from miapeer.dependencies import get_session, is_miapeer_admin
 from miapeer.models.permission import (
     Permission,
     PermissionCreate,
     PermissionRead,
     PermissionUpdate,
 )
-from miapeer.routers.miapeer_api.permission import router
+
+router = APIRouter(
+    prefix="/permissions",
+    tags=["Miapeer API"],
+    dependencies=[Depends(is_miapeer_admin)],
+    responses={404: {"description": "Not found"}},
+)
 
 
 @router.get("/", response_model=list[PermissionRead])
@@ -29,6 +25,7 @@ async def get_all_permissions(
     return permissions
 
 
+# TODO: Should only be able to modify permissions lower than your level
 @router.post("/", response_model=PermissionRead)
 async def create_permission(
     permission: PermissionCreate,

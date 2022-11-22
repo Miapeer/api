@@ -1,23 +1,20 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select
 
-router = APIRouter(
-    prefix="/application_roles",
-    tags=["Miapeer API"],
-    responses={404: {"description": "Not found"}},
-)
-
-from fastapi import Depends, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
-
-from miapeer.adapter.database import engine
-from miapeer.dependencies import get_session
+from miapeer.dependencies import get_session, is_miapeer_super_user
 from miapeer.models.application_role import (
     ApplicationRole,
     ApplicationRoleCreate,
     ApplicationRoleRead,
     ApplicationRoleUpdate,
 )
-from miapeer.routers.miapeer_api.application_role import router
+
+router = APIRouter(
+    prefix="/application_roles",
+    tags=["Miapeer API: Application-Roles"],
+    dependencies=[Depends(is_miapeer_super_user)],
+    responses={404: {"description": "Not found"}},
+)
 
 
 @router.get("/", response_model=list[ApplicationRoleRead])

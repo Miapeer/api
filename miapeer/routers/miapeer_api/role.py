@@ -1,21 +1,21 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select
+
+from miapeer.dependencies import (
+    get_session,
+    is_miapeer_admin,
+    is_miapeer_super_user,
+)
+from miapeer.models.role import Role, RoleCreate, RoleRead, RoleUpdate
 
 router = APIRouter(
     prefix="/roles",
-    tags=["Miapeer API"],
-    # dependencies=[Depends(is_authorized)],
+    tags=["Miapeer API: Roles"],
     responses={404: {"description": "Not found"}},
 )
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
-
-from miapeer.adapter.database import engine
-from miapeer.dependencies import get_session
-from miapeer.models.role import Role, RoleCreate, RoleRead, RoleUpdate
-from miapeer.routers.miapeer_api.role import router
 
 
-@router.get("/", response_model=list[RoleRead])
+@router.get("/", dependencies=[Depends(is_miapeer_admin)], response_model=list[RoleRead])
 async def get_all_roles(
     session: Session = Depends(get_session),
 ) -> list[Role]:
@@ -23,7 +23,7 @@ async def get_all_roles(
     return roles
 
 
-@router.post("/", response_model=RoleRead)
+@router.post("/", dependencies=[Depends(is_miapeer_super_user)], response_model=RoleRead)
 async def create_role(
     role: RoleCreate,
     session: Session = Depends(get_session),
@@ -35,7 +35,7 @@ async def create_role(
     return db_role
 
 
-@router.get("/{role_id}", response_model=Role)
+@router.get("/{role_id}", dependencies=[Depends(is_miapeer_admin)], response_model=Role)
 async def get_role(role_id: int, session: Session = Depends(get_session)) -> Role:
     role = session.get(Role, role_id)
     if not role:
@@ -43,7 +43,7 @@ async def get_role(role_id: int, session: Session = Depends(get_session)) -> Rol
     return role
 
 
-@router.delete("/{role_id}")
+@router.delete("/{role_id}", dependencies=[Depends(is_miapeer_super_user)])
 def delete_role(role_id: int, session: Session = Depends(get_session)) -> dict[str, bool]:
     role = session.get(Role, role_id)
     if not role:
@@ -53,7 +53,7 @@ def delete_role(role_id: int, session: Session = Depends(get_session)) -> dict[s
     return {"ok": True}
 
 
-@router.patch("/{role_id}", response_model=RoleRead)
+@router.patch("/{role_id}", dependencies=[Depends(is_miapeer_super_user)], response_model=RoleRead)
 def update_role(
     role_id: int,
     role: RoleUpdate,
