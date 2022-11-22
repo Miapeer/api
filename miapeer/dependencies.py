@@ -1,40 +1,88 @@
 import json
+from os import environ as env
 from typing import Any, Iterator
 
 from fastapi import Cookie, Depends, HTTPException, status
-from fastapi.security import (
-    HTTPBearer,
-    OAuth2PasswordBearer,
-    OAuth2PasswordRequestForm,
-)
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 from requests import JSONDecodeError
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field, Session, select
 
 from miapeer.adapter.database import engine
-from miapeer.auth import auth0, fastapi
 from miapeer.models.application import Application
 from miapeer.models.application_role import ApplicationRole
+from miapeer.models.auth import Token, TokenData
 from miapeer.models.permission import Permission
 from miapeer.models.role import Role
 from miapeer.models.user import User
 
+fake_users_db = {
+    "johndoe@example.com": {
+        "username": "johndoe@example.com",
+        "full_name": "John Doe",
+        "email": "johndoe@example.com",
+        "password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
+        "disabled": False,
+    }
+}
+
+# TODO: to get a string like this run:
+# openssl rand -hex 32
+DEFAULT_JWT_ALGORITHM = "HS256"
+DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 zzz = set()
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/miapeer/v1/auth/token")
 
-oauth2_scheme = fastapi.oath2_bearer_scheme
+# TODO: Make async? ...or already async?
+def get_session() -> Iterator[Session]:
+    with Session(engine) as session:
+        yield session
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Depends(get_session)) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(
+            token, env.get("JWT_SECRET_KEY"), algorithms=[env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)]
+        )
+        username: str = payload.get("sub")
+
+        if username is None:
+            raise credentials_exception
+
+        token_data = TokenData(username=username)
+    except JWTError:
+        raise credentials_exception
+
+    # def get_user(username: str) -> Optional[User]:
+    #     if username in db:
+    #         user_dict = db[username]
+    #         return User(**user_dict)
+
+    #     return None
+
+    #     user = get_user(fake_users_db, username=token_data.username)
+    user = session.exec(select(User).where(User.email == token_data.username)).first()
+    if user is None:
+        raise credentials_exception
+
+    return user
 
 
 async def get_current_active_user(
-    current_user: User = Depends(fastapi.get_current_user),
+    current_user: User = Depends(get_current_user),
 ) -> User:
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
-
-
-def get_session() -> Iterator[Session]:
-    with Session(engine) as session:
-        yield session
 
 
 def get_access_token(user: str) -> Any:
@@ -67,16 +115,16 @@ def get_user_roles(user: str) -> Any:
     return []
 
 
-async def is_authorized(user: str = Cookie(None)) -> None:
-    print(f"\n{user = }\n")  # TODO: Remove this!!!
-    token = get_access_token(user)
+# async def is_authorized(user: str = Cookie(None)) -> None:
+#     print(f"\n{user = }\n")  # TODO: Remove this!!!
+#     token = get_access_token(user)
 
-    try:
-        auth0.verify_token(token)
-    except auth0.AuthError as ex:
-        raise HTTPException(status_code=401, detail=ex.error)
-    except Exception:
-        raise HTTPException(status_code=401, detail="Error decoding access token")
+#     try:
+#         auth0.verify_token(token)
+#     except auth0.AuthError as ex:
+#         raise HTTPException(status_code=401, detail=ex.error)
+#     except Exception:
+#         raise HTTPException(status_code=401, detail="Error decoding access token")
 
 
 async def has_permission(email: str, application: str, role: str) -> bool:

@@ -1,25 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
-
-from miapeer.adapter.database import engine
-from miapeer.dependencies import (
-    get_session,
-    is_authorized,
-    is_miapeer_user,
-    oauth2_scheme,
-)
-from miapeer.models.application import (
-    Application,
-    ApplicationCreate,
-    ApplicationRead,
-    ApplicationUpdate,
-)
+from fastapi import APIRouter
 
 router = APIRouter(
     prefix="/miapeer/v1/applications",
     tags=["Miapeer API"],
     responses={404: {"description": "Not found"}},
 )
+
+from fastapi import Depends, HTTPException, Query
+from sqlmodel import Session, select
+
+from miapeer.dependencies import get_session, oauth2_scheme
+from miapeer.models.application import (
+    Application,
+    ApplicationCreate,
+    ApplicationRead,
+    ApplicationUpdate,
+)
+from miapeer.routers.miapeer_api.application import router
 
 
 @router.get("/", response_model=list[ApplicationRead])
@@ -31,9 +28,7 @@ async def get_all_applications(
     limit: int = Query(default=100, lte=100),
 ) -> list[Application]:
     print(f"\n{token = }\n")  # TODO: Remove this!!!
-    applications = session.exec(
-        select(Application)  # .order_by(text("name")).offset(offset).limit(limit)
-    ).all()
+    applications = session.exec(select(Application)).all()  # .order_by(text("name")).offset(offset).limit(limit)
     return applications
 
 
@@ -53,9 +48,7 @@ async def create_application(
 
 
 @router.get("/{application_id}", response_model=Application)
-async def get_application(
-    application_id: int, session: Session = Depends(get_session)
-) -> Application:
+async def get_application(application_id: int, session: Session = Depends(get_session)) -> Application:
     application = session.get(Application, application_id)
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")
@@ -64,9 +57,7 @@ async def get_application(
 
 # TODO: Should this even be exposed?
 @router.delete("/{application_id}")
-def delete_application(
-    application_id: int, session: Session = Depends(get_session)
-) -> dict[str, bool]:
+def delete_application(application_id: int, session: Session = Depends(get_session)) -> dict[str, bool]:
     application = session.get(Application, application_id)
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")

@@ -1,9 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
-
-from miapeer.adapter.database import engine
-from miapeer.dependencies import get_session, is_authorized
-from miapeer.models.role import Role, RoleCreate, RoleRead, RoleUpdate
+from fastapi import APIRouter
 
 router = APIRouter(
     prefix="/miapeer/v1/roles",
@@ -11,6 +6,13 @@ router = APIRouter(
     # dependencies=[Depends(is_authorized)],
     responses={404: {"description": "Not found"}},
 )
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+
+from miapeer.adapter.database import engine
+from miapeer.dependencies import get_session
+from miapeer.models.role import Role, RoleCreate, RoleRead, RoleUpdate
+from miapeer.routers.miapeer_api.role import router
 
 
 @router.get("/", response_model=list[RoleRead])
@@ -42,9 +44,7 @@ async def get_role(role_id: int, session: Session = Depends(get_session)) -> Rol
 
 
 @router.delete("/{role_id}")
-def delete_role(
-    role_id: int, session: Session = Depends(get_session)
-) -> dict[str, bool]:
+def delete_role(role_id: int, session: Session = Depends(get_session)) -> dict[str, bool]:
     role = session.get(Role, role_id)
     if not role:
         raise HTTPException(status_code=404, detail="Role not found")

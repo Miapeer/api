@@ -1,13 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
-
-from miapeer.adapter.database import engine
-from miapeer.dependencies import (
-    get_current_active_user,
-    get_session,
-    is_authorized,
-)
-from miapeer.models.user import User, UserCreate, UserRead, UserUpdate
+from fastapi import APIRouter
 
 router = APIRouter(
     prefix="/miapeer/v1/users",
@@ -15,6 +6,14 @@ router = APIRouter(
     # dependencies=[Depends(is_authorized)],
     responses={404: {"description": "Not found"}},
 )
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+
+from miapeer.adapter.database import engine
+from miapeer.dependencies import get_current_active_user, get_session
+from miapeer.models.user import User, UserCreate, UserRead, UserUpdate
+from miapeer.routers.miapeer_api.user import router
 
 
 @router.get("/me")
@@ -51,9 +50,7 @@ async def get_user(user_id: int, session: Session = Depends(get_session)) -> Use
 
 
 @router.delete("/{user_id}")
-def delete_user(
-    user_id: int, session: Session = Depends(get_session)
-) -> dict[str, bool]:
+def delete_user(user_id: int, session: Session = Depends(get_session)) -> dict[str, bool]:
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

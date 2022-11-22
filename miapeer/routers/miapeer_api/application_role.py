@@ -1,20 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
-
-from miapeer.adapter.database import engine
-from miapeer.dependencies import get_session, is_authorized
-from miapeer.models.application_role import (
-    ApplicationRole,
-    ApplicationRoleCreate,
-    ApplicationRoleRead,
-    ApplicationRoleUpdate,
-)
+from fastapi import APIRouter
 
 router = APIRouter(
     prefix="/miapeer/v1/application_roles",
     tags=["Miapeer API"],
     responses={404: {"description": "Not found"}},
 )
+
+from fastapi import Depends, HTTPException, Query
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+
+from miapeer.adapter.database import engine
+from miapeer.dependencies import get_session
+from miapeer.models.application_role import (
+    ApplicationRole,
+    ApplicationRoleCreate,
+    ApplicationRoleRead,
+    ApplicationRoleUpdate,
+)
+from miapeer.routers.miapeer_api.application_role import router
 
 
 @router.get("/", response_model=list[ApplicationRoleRead])
@@ -40,9 +43,7 @@ async def create_application_role(
 
 
 @router.get("/{application_role_id}", response_model=ApplicationRole)
-async def get_application_role(
-    application_role_id: int, session: Session = Depends(get_session)
-) -> ApplicationRole:
+async def get_application_role(application_role_id: int, session: Session = Depends(get_session)) -> ApplicationRole:
     application_role = session.get(ApplicationRole, application_role_id)
     if not application_role:
         raise HTTPException(status_code=404, detail="Application Role not found")
@@ -51,9 +52,7 @@ async def get_application_role(
 
 # TODO: Should this even be exposed?
 @router.delete("/{application_role_id}")
-def delete_application_role(
-    application_role_id: int, session: Session = Depends(get_session)
-) -> dict[str, bool]:
+def delete_application_role(application_role_id: int, session: Session = Depends(get_session)) -> dict[str, bool]:
     application_role = session.get(ApplicationRole, application_role_id)
     if not application_role:
         raise HTTPException(status_code=404, detail="Application Role not found")

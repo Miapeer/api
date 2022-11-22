@@ -1,17 +1,10 @@
 import json
-from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse
-from sqlmodel import Field, Session, SQLModel, create_engine, select
 from starlette.requests import Request
 
-from miapeer.adapter.database import engine
-from miapeer.dependencies import (
-    get_current_active_user,
-    is_authorized,
-    is_miapeer_user,
-)
+from miapeer.dependencies import get_current_active_user, is_miapeer_user
 from miapeer.models.user import User
 
 router = APIRouter(

@@ -1,14 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
-
-from miapeer.adapter.database import engine
-from miapeer.dependencies import get_session, is_authorized
-from miapeer.models.permission import (
-    Permission,
-    PermissionCreate,
-    PermissionRead,
-    PermissionUpdate,
-)
+from fastapi import APIRouter
 
 router = APIRouter(
     prefix="/miapeer/v1/permissions",
@@ -16,6 +6,19 @@ router = APIRouter(
     # dependencies=[Depends(is_authorized)],
     responses={404: {"description": "Not found"}},
 )
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+
+from miapeer.adapter.database import engine
+from miapeer.dependencies import get_session
+from miapeer.models.permission import (
+    Permission,
+    PermissionCreate,
+    PermissionRead,
+    PermissionUpdate,
+)
+from miapeer.routers.miapeer_api.permission import router
 
 
 @router.get("/", response_model=list[PermissionRead])
@@ -39,9 +42,7 @@ async def create_permission(
 
 
 @router.get("/{permission_id}", response_model=Permission)
-async def get_permission(
-    permission_id: int, session: Session = Depends(get_session)
-) -> Permission:
+async def get_permission(permission_id: int, session: Session = Depends(get_session)) -> Permission:
     permission = session.get(Permission, permission_id)
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")
@@ -49,9 +50,7 @@ async def get_permission(
 
 
 @router.delete("/{permission_id}")
-def delete_permission(
-    permission_id: int, session: Session = Depends(get_session)
-) -> dict[str, bool]:
+def delete_permission(permission_id: int, session: Session = Depends(get_session)) -> dict[str, bool]:
     permission = session.get(Permission, permission_id)
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")

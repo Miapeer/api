@@ -9,6 +9,8 @@ class UserBase(SQLModel):
 
 class User(UserBase, table=True):
     user_id: Optional[int] = Field(default=None, primary_key=True)
+    password: str
+    disabled: bool
 
 
 class UserCreate(UserBase):
@@ -21,8 +23,3 @@ class UserRead(UserBase):
 
 class UserUpdate(SQLModel):
     email: Optional[str] = None
-
-
-class UserInDb(UserBase):
-    password: str
-    disabled: bool
