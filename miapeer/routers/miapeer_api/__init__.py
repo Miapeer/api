@@ -10,7 +10,6 @@ from miapeer.routers.miapeer_api import (
 
 router = APIRouter(
     prefix="/miapeer/v1",
-    tags=["Miapeer API"],
     responses={404: {"description": "Not found"}},
 )
 
