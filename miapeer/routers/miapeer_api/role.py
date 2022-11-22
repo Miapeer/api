@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 router = APIRouter(
-    prefix="/miapeer/v1/roles",
+    prefix="/roles",
     tags=["Miapeer API"],
     # dependencies=[Depends(is_authorized)],
     responses={404: {"description": "Not found"}},

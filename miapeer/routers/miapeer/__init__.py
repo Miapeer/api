@@ -14,7 +14,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/", include_in_schema=False, response_class=HTMLResponse)
 def home(request: Request) -> str:
     """
     Create an item with all the information:
@@ -45,7 +45,7 @@ def home(request: Request) -> str:
     """
 
 
-@router.get("/private", include_in_schema=True, dependencies=[Depends(is_miapeer_user)])
+@router.get("/private", include_in_schema=False, dependencies=[Depends(is_miapeer_user)])
 # def private(response: Response, token: str = Depends(token_auth_scheme)):
 def private(current_user: User = Depends(get_current_active_user)) -> str:
     # """A valid access token is required to access this route"""
@@ -57,6 +57,6 @@ def private(current_user: User = Depends(get_current_active_user)) -> str:
     #    return result
 
     # return result
-    from miapeer.dependencies import zzz
+    from miapeer.dependencies import permission_cache
 
     return f"PRIVATE: {current_user}"

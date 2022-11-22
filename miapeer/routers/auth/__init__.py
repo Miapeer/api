@@ -15,6 +15,8 @@ from miapeer.models.auth import Token
 from miapeer.models.user import User
 
 DEFAULT_JWT_ALGORITHM = "HS256"
+
+# TODO: Need salt?   https://auth0.com/blog/hashing-in-action-understanding-bcrypt/
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 router = APIRouter(
@@ -25,10 +27,15 @@ router = APIRouter(
 
 
 def _verify_password(plain_password: str, hashed_password: str) -> bool:
-    return _pwd_context.verify(
+    pw_verified = _pwd_context.verify(
         plain_password,
         hashed_password,
     )
+
+    if not pw_verified:
+        print(f"\n{_get_password_hash(plain_password) = }\n")
+
+    return pw_verified
 
 
 def _get_password_hash(password: str) -> str:
@@ -52,7 +59,7 @@ def _create_access_token(data: dict[str, str], expires_delta: timedelta | None =
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
 
-    to_encode.update({"exp": str(expire)})
+    to_encode.update({"exp": expire})  # type: ignore
 
     encoded_jwt: str = jwt.encode(
         to_encode, env.get("JWT_SECRET_KEY"), algorithm=env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)
