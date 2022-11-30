@@ -5,27 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Flask",
-            "type": "python",
+            "name": "Python: TDD",
+            "type": "node-terminal",
             "request": "launch",
-            "module": "flask",
-            "env": {
-                    "FLASK_APP": "app.py",
-                    "FLASK_ENV": "development"
-                },
-            "args": [
-                    "run",
-                    "--no-debugger"
-                ],
-            "jinja": true
-        },
-        {
-            "name": "Python: Gunicorn",
-            "type": "python",
-            "request": "launch",
-            "module": "gunicorn",
-            "args": [ "-w", "4", "-b", ":5000", "app:app" ],
-            "jinja": true
+            "command": "ptw",
+            "args": [ "--ext", "py,sql" ]
         },
         {
             "name": "Python: Uvicorn",
