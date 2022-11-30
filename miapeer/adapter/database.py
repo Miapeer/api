@@ -24,8 +24,7 @@ def db_uri() -> str:
     return db_uri
 
 
-connect_args = {"check_same_thread": False}
-engine: Engine = create_engine(db_uri(), echo=True, connect_args=connect_args)
+engine: Engine = create_engine(db_uri(), echo=True)
 
 
 def create_db_and_tables() -> None:

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
-from miapeer.dependencies import get_session, is_miapeer_admin
+from miapeer.dependencies import get_db, is_miapeer_admin
 from miapeer.models.permission import (
     Permission,
     PermissionCreate,
@@ -19,9 +19,9 @@ router = APIRouter(
 
 @router.get("/", response_model=list[PermissionRead])
 async def get_all_permissions(
-    session: Session = Depends(get_session),
+    db: Session = Depends(get_db),
 ) -> list[Permission]:
-    permissions = session.exec(select(Permission)).all()
+    permissions = db.exec(select(Permission)).all()
     return permissions
 
 
@@ -29,30 +29,30 @@ async def get_all_permissions(
 @router.post("/", response_model=PermissionRead)
 async def create_permission(
     permission: PermissionCreate,
-    session: Session = Depends(get_session),
+    db: Session = Depends(get_db),
 ) -> Permission:
     db_permission = Permission.from_orm(permission)
-    session.add(db_permission)
-    session.commit()
-    session.refresh(db_permission)
+    db.add(db_permission)
+    db.commit()
+    db.refresh(db_permission)
     return db_permission
 
 
 @router.get("/{permission_id}", response_model=Permission)
-async def get_permission(permission_id: int, session: Session = Depends(get_session)) -> Permission:
-    permission = session.get(Permission, permission_id)
+async def get_permission(permission_id: int, db: Session = Depends(get_db)) -> Permission:
+    permission = db.get(Permission, permission_id)
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")
     return permission
 
 
 @router.delete("/{permission_id}")
-def delete_permission(permission_id: int, session: Session = Depends(get_session)) -> dict[str, bool]:
-    permission = session.get(Permission, permission_id)
+def delete_permission(permission_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+    permission = db.get(Permission, permission_id)
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")
-    session.delete(permission)
-    session.commit()
+    db.delete(permission)
+    db.commit()
     return {"ok": True}
 
 
@@ -60,9 +60,9 @@ def delete_permission(permission_id: int, session: Session = Depends(get_session
 def update_permission(
     permission_id: int,
     permission: PermissionUpdate,
-    session: Session = Depends(get_session),
+    db: Session = Depends(get_db),
 ) -> Permission:
-    db_permission = session.get(Permission, permission_id)
+    db_permission = db.get(Permission, permission_id)
     if not db_permission:
         raise HTTPException(status_code=404, detail="Permission not found")
 
@@ -71,7 +71,7 @@ def update_permission(
     for key, value in permission_data.items():
         setattr(db_permission, key, value)
 
-    session.add(db_permission)
-    session.commit()
-    session.refresh(db_permission)
+    db.add(db_permission)
+    db.commit()
+    db.refresh(db_permission)
     return db_permission

@@ -38,12 +38,12 @@ permission_cache = set()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/miapeer/v1/auth/token")
 
 # TODO: Make async? ...or already async?
-def get_session() -> Iterator[Session]:
+def get_db() -> Iterator[Session]:
     with Session(engine) as session:
         yield session
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Depends(get_session)) -> User:
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -64,7 +64,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: Session
     except JWTError:
         raise credentials_exception
 
-    user = session.exec(select(User).where(User.email == token_data.username)).first()
+    user = db.exec(select(User).where(User.email == token_data.username)).first()
     if user is None:
         raise credentials_exception
 
@@ -77,36 +77,6 @@ async def get_current_active_user(
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
-
-
-def get_access_token(user: str) -> Any:
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-    try:
-        token = json.loads(user).get("access_token")
-    except JSONDecodeError:
-        raise HTTPException(status_code=401, detail="Invalid access token")
-
-    return token
-
-
-def get_user_email(user: str) -> Any:
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-    try:
-        token = json.loads(user).get("userinfo", {}).get("email", None)
-    except JSONDecodeError:
-        raise HTTPException(status_code=401, detail="Invalid access token")
-
-    return token
-
-
-def get_user_roles(user: str) -> Any:
-    email = get_user_email(user)
-
-    return []
 
 
 # TODO: Do we even need this?
@@ -127,7 +97,7 @@ def is_authorized(token: str = Depends(oauth2_scheme)) -> None:
 #         raise HTTPException(status_code=401, detail="Error decoding access token")
 
 
-def has_permission(session: Session, email: str, application: Applications, role: Roles) -> bool:
+def has_permission(db: Session, email: str, application: Applications, role: Roles) -> bool:
     # TODO: https://sqlmodel.tiangolo.com/tutorial/fastapi/relationships/
 
     # Check the cache first
@@ -142,7 +112,7 @@ def has_permission(session: Session, email: str, application: Applications, role
         .join(Role)
         .where(User.email == email)
     )
-    users = session.exec(sql).all()
+    users = db.exec(sql).all()
 
     for u in users:
         permission_cache.add(f"{u[0]}-{u[1]}-{u[2]}")
@@ -153,18 +123,16 @@ def has_permission(session: Session, email: str, application: Applications, role
     return f"{email}-{application}-{role}" in permission_cache
 
 
-def is_miapeer_user(session: Session = Depends(get_session), user: User = Depends(get_current_active_user)) -> None:
-    if not has_permission(session, user.email, Applications.MIAPEER, Roles.USER):
+def is_miapeer_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+    if not has_permission(db, user.email, Applications.MIAPEER, Roles.USER):
         raise HTTPException(status_code=400, detail="Unauthorized")
 
 
-def is_miapeer_admin(session: Session = Depends(get_session), user: User = Depends(get_current_active_user)) -> None:
-    if not has_permission(session, user.email, Applications.MIAPEER, Roles.ADMIN):
+def is_miapeer_admin(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+    if not has_permission(db, user.email, Applications.MIAPEER, Roles.ADMIN):
         raise HTTPException(status_code=400, detail="Unauthorized")
 
 
-def is_miapeer_super_user(
-    session: Session = Depends(get_session), user: User = Depends(get_current_active_user)
-) -> None:
-    if not has_permission(session, user.email, Applications.MIAPEER, Roles.SUPER_USER):
+def is_miapeer_super_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+    if not has_permission(db, user.email, Applications.MIAPEER, Roles.SUPER_USER):
         raise HTTPException(status_code=400, detail="Unauthorized")

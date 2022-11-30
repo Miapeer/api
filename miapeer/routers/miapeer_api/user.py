@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 
 from miapeer.dependencies import (
     get_current_user,
-    get_session,
+    get_db,
     is_miapeer_admin,
     is_miapeer_super_user,
 )
@@ -23,39 +23,39 @@ async def read_users_me(current_user: User = Depends(get_current_user)) -> User:
 
 @router.get("/", dependencies=[Depends(is_miapeer_admin)], response_model=list[UserRead])
 async def get_all_users(
-    session: Session = Depends(get_session),
+    db: Session = Depends(get_db),
 ) -> list[User]:
-    users = session.exec(select(User)).all()
+    users = db.exec(select(User)).all()
     return users
 
 
 @router.post("/", dependencies=[Depends(is_miapeer_admin)], response_model=UserRead)
 async def create_user(
     user: UserCreate,
-    session: Session = Depends(get_session),
+    db: Session = Depends(get_db),
 ) -> User:
     db_user = User.from_orm(user)
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
     return db_user
 
 
 @router.get("/{user_id}", dependencies=[Depends(is_miapeer_admin)], response_model=User)
-async def get_user(user_id: int, session: Session = Depends(get_session)) -> User:
-    user = session.get(User, user_id)
+async def get_user(user_id: int, db: Session = Depends(get_db)) -> User:
+    user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
 @router.delete("/{user_id}", dependencies=[Depends(is_miapeer_super_user)])
-def delete_user(user_id: int, session: Session = Depends(get_session)) -> dict[str, bool]:
-    user = session.get(User, user_id)
+def delete_user(user_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+    user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    session.delete(user)
-    session.commit()
+    db.delete(user)
+    db.commit()
     return {"ok": True}
 
 
@@ -63,9 +63,9 @@ def delete_user(user_id: int, session: Session = Depends(get_session)) -> dict[s
 def update_user(
     user_id: int,
     user: UserUpdate,
-    session: Session = Depends(get_session),
+    db: Session = Depends(get_db),
 ) -> User:
-    db_user = session.get(User, user_id)
+    db_user = db.get(User, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -74,7 +74,7 @@ def update_user(
     for key, value in user_data.items():
         setattr(db_user, key, value)
 
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
     return db_user

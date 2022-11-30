@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
-from miapeer.dependencies import get_session, is_miapeer_super_user
+from miapeer.dependencies import get_db, is_miapeer_super_user
 from miapeer.models.application_role import (
     ApplicationRole,
     ApplicationRoleCreate,
@@ -19,9 +19,9 @@ router = APIRouter(
 
 @router.get("/", response_model=list[ApplicationRoleRead])
 async def get_all_application_roles(
-    session: Session = Depends(get_session),
+    db: Session = Depends(get_db),
 ) -> list[ApplicationRole]:
-    application_roles = session.exec(select(ApplicationRole)).all()
+    application_roles = db.exec(select(ApplicationRole)).all()
     return application_roles
 
 
@@ -29,19 +29,19 @@ async def get_all_application_roles(
 @router.post("/", response_model=ApplicationRoleRead)
 async def create_application_role(
     application_role: ApplicationRoleCreate,
-    session: Session = Depends(get_session),
+    db: Session = Depends(get_db),
     # commons: dict = Depends(is_zomething)
 ) -> ApplicationRole:
     db_application_role = ApplicationRole.from_orm(application_role)
-    session.add(db_application_role)
-    session.commit()
-    session.refresh(db_application_role)
+    db.add(db_application_role)
+    db.commit()
+    db.refresh(db_application_role)
     return db_application_role
 
 
 @router.get("/{application_role_id}", response_model=ApplicationRole)
-async def get_application_role(application_role_id: int, session: Session = Depends(get_session)) -> ApplicationRole:
-    application_role = session.get(ApplicationRole, application_role_id)
+async def get_application_role(application_role_id: int, db: Session = Depends(get_db)) -> ApplicationRole:
+    application_role = db.get(ApplicationRole, application_role_id)
     if not application_role:
         raise HTTPException(status_code=404, detail="Application Role not found")
     return application_role
@@ -49,12 +49,12 @@ async def get_application_role(application_role_id: int, session: Session = Depe
 
 # TODO: Should this even be exposed?
 @router.delete("/{application_role_id}")
-def delete_application_role(application_role_id: int, session: Session = Depends(get_session)) -> dict[str, bool]:
-    application_role = session.get(ApplicationRole, application_role_id)
+def delete_application_role(application_role_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+    application_role = db.get(ApplicationRole, application_role_id)
     if not application_role:
         raise HTTPException(status_code=404, detail="Application Role not found")
-    session.delete(application_role)
-    session.commit()
+    db.delete(application_role)
+    db.commit()
     return {"ok": True}
 
 
@@ -62,9 +62,9 @@ def delete_application_role(application_role_id: int, session: Session = Depends
 def update_application_role(
     application_role_id: int,
     application_role: ApplicationRoleUpdate,
-    session: Session = Depends(get_session),
+    db: Session = Depends(get_db),
 ) -> ApplicationRole:
-    db_application_role = session.get(ApplicationRole, application_role_id)
+    db_application_role = db.get(ApplicationRole, application_role_id)
     if not db_application_role:
         raise HTTPException(status_code=404, detail="Application Role not found")
 
@@ -73,7 +73,7 @@ def update_application_role(
     for key, value in application_role_data.items():
         setattr(db_application_role, key, value)
 
-    session.add(db_application_role)
-    session.commit()
-    session.refresh(db_application_role)
+    db.add(db_application_role)
+    db.commit()
+    db.refresh(db_application_role)
     return db_application_role

@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from miapeer.auth.abstract import AbstractAuthenticator
-from miapeer.dependencies import get_session
+from miapeer.dependencies import get_db
 from miapeer.models.auth import Token
 from miapeer.models.user import User
 
@@ -42,8 +42,8 @@ def _get_password_hash(password: str) -> str:
     return _pwd_context.hash(password)
 
 
-def _authenticate_user(session: Session, username: str, password: str) -> Optional[User]:
-    user = session.exec(select(User).where(User.email == username)).one_or_none()
+def _authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
+    user = db.exec(select(User).where(User.email == username)).one_or_none()
     if user is None:
         return None
     if not _verify_password(password, user.password):
@@ -70,9 +70,9 @@ def _create_access_token(data: dict[str, str], expires_delta: timedelta | None =
 
 @router.post("/token", response_model=Token)
 async def _login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ) -> dict[str, str]:
-    user = _authenticate_user(session, form_data.username, form_data.password)
+    user = _authenticate_user(db, form_data.username, form_data.password)
 
     if not user:
         raise HTTPException(
