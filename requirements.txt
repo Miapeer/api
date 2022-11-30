@@ -127,7 +127,10 @@ pyparsing==3.0.8
 pytest==7.1.1
     # via
     #   -r requirements.in
+    #   pytest-asyncio
     #   pytest-watch
+pytest-asyncio==0.20.2
+    # via -r requirements.in
 pytest-watch==4.2.0
     # via -r requirements.in
 python-dotenv==0.19.2
