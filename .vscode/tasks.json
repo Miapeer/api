@@ -4,37 +4,37 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Development: Build miapeer image",
+            "label": "Development: Build Miapeer API image",
             "type": "shell",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "command": "docker image build --file ./Dockerfile-dev --tag miapeer.azurecr.io/miapeer-dev .",
+            "command": "docker image build --file ./Dockerfile-dev --tag miapeer.azurecr.io/miapeer-api-dev .",
             "problemMatcher": []
         },
         {
-            "label": "Development: Start miapeer container",
+            "label": "Development: Shell into Miapeer API container",
             "type": "shell",
-            "command": "docker container run --rm -d -p 8000:80 --env-file ${workspaceFolder}/.env --mount type=bind,source=${workspaceFolder},target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev",
-            // LOCAL: docker container run --rm -p 8000:80 -d --env-file /Users/jep/Workspace/Miapeer/miapeer/.env --mount type=bind,source=/Users/jep/Workspace/Miapeer/miapeer,target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev
+            "command": "docker container run --rm -it -p 8000:80 --env-file ${workspaceFolder}/.env --volume ${workspaceFolder}:/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-api-dev bash",
             "problemMatcher": []
         },
         {
-            "label": "Development: Shell into miapeer container",
+            "label": "Development: Start Miapeer API container",
             "type": "shell",
-            "command": "docker container run --rm -it -p 8000:80 --env-file ${workspaceFolder}/.env --mount type=bind,source=${workspaceFolder},target=/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev bash",
+            "command": "docker container run --rm -d -p 8000:80 --env-file ${workspaceFolder}/.env --volume ${workspaceFolder}:/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-api-dev",
+            // LOCAL: docker container run --rm -p 8000:80 -d --env-file /Users/jep/Workspace/Miapeer/miapeer/.env --volume /Users/jep/Workspace/Miapeer/miapeer:/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-dev
             "problemMatcher": []
         },
         {
-            "label": "Development: Stop miapeer container",
+            "label": "Development: Stop Miapeer API container",
             "type": "shell",
             "command": "docker container stop miapeer-api",
             "problemMatcher": []
         },
         {
-            "label": "Development: Restart miapeer container",
+            "label": "Development: Restart Miapeer API container",
             "type": "shell",
-            "dependsOn": ["Development: Stop miapeer container", "Development: Start miapeer container"],
+            "dependsOn": ["Development: Stop Miapeer API container", "Development: Start Miapeer API container"],
             "problemMatcher": []
         },
         {
@@ -44,21 +44,21 @@
             "problemMatcher": []
         },
         {
-            "label": "PRODUCTION: Build miapeer image",
+            "label": "PRODUCTION: Build Miapeer API image",
             "type": "shell",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "command": "docker image build --file ./Dockerfile-prod --tag miapeer.azurecr.io/miapeer .",
+            "command": "docker image build --file ./Dockerfile-prod --tag miapeer.azurecr.io/miapeer-api .",
             "problemMatcher": []
         },
         {
-            "label": "PRODUCTION: Deploy miapeer image",
+            "label": "PRODUCTION: Deploy Miapeer API image",
             "type": "shell",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "command": "docker push miapeer.azurecr.io/miapeer",
+            "command": "docker push miapeer.azurecr.io/miapeer-api",
             "problemMatcher": []
         },
     ]

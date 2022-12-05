@@ -8,8 +8,7 @@
             "name": "Python: TDD",
             "type": "node-terminal",
             "request": "launch",
-            "command": "ptw",
-            "args": [ "--ext", "py,sql" ]
+            "command": "ptw --ext py,sql"
         },
         {
             "name": "Python: Uvicorn",
