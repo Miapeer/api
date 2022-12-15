@@ -68,6 +68,8 @@ def _create_access_token(data: dict[str, str], expires_delta: timedelta | None =
     return encoded_jwt
 
 
+# TODO: Does data need to be sent encrypted, or is HTTPS sufficient?
+# TODO: If something does need to be changed, difference between SSL and TLS?
 @router.post("/token", response_model=Token)
 async def _login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
