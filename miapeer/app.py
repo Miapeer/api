@@ -16,6 +16,7 @@ app.add_middleware(SessionMiddleware, secret_key=env.get("APP_SECRET_KEY"))
 
 origins = [
     "http://localhost:8001",
+    "https://www.miapeer.com",
 ]
 
 app.add_middleware(
