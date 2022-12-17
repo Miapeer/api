@@ -11,7 +11,7 @@ from miapeer.models.permission import (
 
 router = APIRouter(
     prefix="/permissions",
-    tags=["Miapeer API"],
+    tags=["Miapeer API: Permissions"],
     dependencies=[Depends(is_miapeer_admin)],
     responses={404: {"description": "Not found"}},
 )
