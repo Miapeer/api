@@ -15,8 +15,10 @@ if env.get("APP_SECRET_KEY") is None or env.get("JWT_SECRET_KEY") is None:
 app.add_middleware(SessionMiddleware, secret_key=env.get("APP_SECRET_KEY"))
 
 origins = [
-    "http://localhost:8001",
+    "http://www.miapeer.com",
     "https://www.miapeer.com",
+    "http://miapeer.azurewebsites.net",
+    "https://miapeer.azurewebsites.net"
 ]
 
 app.add_middleware(
