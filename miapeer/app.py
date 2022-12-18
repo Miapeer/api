@@ -1,11 +1,10 @@
 from os import environ as env
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
-from miapeer.routers import auth, miapeer, miapeer_api
+from miapeer.routers import auth, miapeer
 
 app = FastAPI()
 
@@ -29,8 +28,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="./miapeer/static"), name="static")
-
 app.include_router(auth.router)
 app.include_router(miapeer.router)
-app.include_router(miapeer_api.router)

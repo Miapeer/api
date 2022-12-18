@@ -11,8 +11,8 @@ from sqlmodel import Session, select
 
 from miapeer.auth.abstract import AbstractAuthenticator
 from miapeer.dependencies import get_db
-from miapeer.models.auth import Token
-from miapeer.models.user import User
+from miapeer.models.miapeer.auth import Token
+from miapeer.models.miapeer.user import User
 
 DEFAULT_JWT_ALGORITHM = "HS256"
 

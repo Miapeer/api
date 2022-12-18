@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from miapeer.dependencies import get_db, is_miapeer_admin
-from miapeer.models.permission import (
+from miapeer.models.miapeer.permission import (
     Permission,
     PermissionCreate,
     PermissionRead,

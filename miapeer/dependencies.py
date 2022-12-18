@@ -11,12 +11,12 @@ from requests import JSONDecodeError
 from sqlmodel import Field, Session, select
 
 from miapeer.adapter.database import engine
-from miapeer.models.application import Application
-from miapeer.models.application_role import ApplicationRole
-from miapeer.models.auth import Token, TokenData
-from miapeer.models.permission import Permission
-from miapeer.models.role import Role
-from miapeer.models.user import User
+from miapeer.models.miapeer.application import Application
+from miapeer.models.miapeer.application_role import ApplicationRole
+from miapeer.models.miapeer.auth import Token, TokenData
+from miapeer.models.miapeer.permission import Permission
+from miapeer.models.miapeer.role import Role
+from miapeer.models.miapeer.user import User
 
 DEFAULT_JWT_ALGORITHM = "HS256"
 DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES = 30

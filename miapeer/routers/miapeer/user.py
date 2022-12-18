@@ -7,7 +7,7 @@ from miapeer.dependencies import (
     is_miapeer_admin,
     is_miapeer_super_user,
 )
-from miapeer.models.user import User, UserCreate, UserRead, UserUpdate
+from miapeer.models.miapeer.user import User, UserCreate, UserRead, UserUpdate
 
 router = APIRouter(
     prefix="/users",
