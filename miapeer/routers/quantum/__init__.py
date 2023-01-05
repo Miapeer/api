@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from miapeer.routers.quantum import (
     portfolio,
+    account,
 )
 
 router = APIRouter(
@@ -10,3 +11,4 @@ router = APIRouter(
 )
 
 router.include_router(portfolio.router)
+router.include_router(account.router)
