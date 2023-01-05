@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
-from miapeer.routers import auth, miapeer
+from miapeer.routers import auth, miapeer, quantum
 
 app = FastAPI()
 
@@ -30,3 +30,4 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(miapeer.router)
+app.include_router(quantum.router)
