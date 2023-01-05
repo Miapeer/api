@@ -17,7 +17,7 @@ router = APIRouter(
 
 
 @router.get("/me")
-async def read_users_me(current_user: User = Depends(get_current_user)) -> User:
+async def who_am_i(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
