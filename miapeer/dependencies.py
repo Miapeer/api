@@ -16,7 +16,7 @@ from miapeer.models.miapeer.application_role import ApplicationRole
 from miapeer.models.miapeer.auth import Token, TokenData
 from miapeer.models.miapeer.permission import Permission
 from miapeer.models.miapeer.role import Role
-from miapeer.models.miapeer.user import User
+from miapeer.models.miapeer.user import User, UserRead
 
 DEFAULT_JWT_ALGORITHM = "HS256"
 DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -43,6 +43,7 @@ def get_db() -> Iterator[Session]:
         yield session
 
 
+# TODO: Cache results to prevent multiple DB lookups
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -67,6 +68,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     user = db.exec(select(User).where(User.email == token_data.username)).first()
     if user is None:
         raise credentials_exception
+
+    print(f'\n{permission_cache = }\n') # TODO: Remove this!!!
 
     return user
 
@@ -98,6 +101,7 @@ def is_authorized(token: str = Depends(oauth2_scheme)) -> None:
 
 
 def has_permission(db: Session, email: str, application: Applications, role: Roles) -> bool:
+    print('has_permission')
     # TODO: https://sqlmodel.tiangolo.com/tutorial/fastapi/relationships/
 
     # Check the cache first
@@ -114,8 +118,12 @@ def has_permission(db: Session, email: str, application: Applications, role: Rol
     )
     users = db.exec(sql).all()
 
+    print(f'\n{users = }\n') # TODO: Remove this!!!
+
     for u in users:
         permission_cache.add(f"{u[0]}-{u[1]}-{u[2]}")
+
+    print(f'\n{permission_cache = }\n') # TODO: Remove this!!!
 
     # TODO: Improve memoization
     # TODO: Add expiration
@@ -135,4 +143,24 @@ def is_miapeer_admin(db: Session = Depends(get_db), user: User = Depends(get_cur
 
 def is_miapeer_super_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
     if not has_permission(db, user.email, Applications.MIAPEER, Roles.SUPER_USER):
+        raise HTTPException(status_code=400, detail="Unauthorized")
+
+
+# Dependencies are "and"s not "or"s. Need a separate function for each combo
+# ...or...
+# TODO: https://fastapi.tiangolo.com/advanced/advanced-dependencies/
+
+
+def is_quantum_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+    if not has_permission(db, user.email, Applications.QUANTUM, Roles.USER):
+        raise HTTPException(status_code=400, detail="Unauthorized")
+
+
+def is_quantum_admin(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+    if not has_permission(db, user.email, Applications.QUANTUM, Roles.ADMIN):
+        raise HTTPException(status_code=400, detail="Unauthorized")
+
+
+def is_quantum_super_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+    if not has_permission(db, user.email, Applications.QUANTUM, Roles.SUPER_USER):
         raise HTTPException(status_code=400, detail="Unauthorized")
