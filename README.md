@@ -14,3 +14,31 @@ Here are some ideas to get you started:
 - 😄 Pronouns: ...
 - ⚡ Fun fact: ...
 -->
+
+# Permissions
+## Miapeer
+### Unauthenticated
+Can access the home page in order to register or log in
+
+### User
+Can access their applications
+
+### Admin
+Can create users
+Can assign applications to users
+
+### Super User
+Can create applications
+
+## Quantum
+### Unauthenticated
+No access - Sign in first
+
+### User
+Can access their associated portfolios
+
+### Admin
+Can add users to their portfolios
+
+### Super User
+Can add admins to their portfolios

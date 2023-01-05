@@ -60,12 +60,12 @@ def seed_db() -> None:
         connection.execute(text("insert into role (name) values ('User')"))
     
         # ApplicationRoles
-        connection.execute(text("insert into application_role (application_id, role_id) values (1, 1)"))
-        connection.execute(text("insert into application_role (application_id, role_id) values (1, 2)"))
-        connection.execute(text("insert into application_role (application_id, role_id) values (1, 3)"))
-        connection.execute(text("insert into application_role (application_id, role_id) values (2, 1)"))
-        connection.execute(text("insert into application_role (application_id, role_id) values (2, 2)"))
-        connection.execute(text("insert into application_role (application_id, role_id) values (2, 3)"))
+        connection.execute(text("insert into application_role (application_id, role_id, description) values (1, 1, 'Can create applications')"))
+        connection.execute(text("insert into application_role (application_id, role_id, description) values (1, 2, 'Can create users and assign users to applications')"))
+        connection.execute(text("insert into application_role (application_id, role_id, description) values (1, 3, 'Can access their applications')"))
+        connection.execute(text("insert into application_role (application_id, role_id, description) values (2, 1, 'Can add Administrators to their Portfolios')"))
+        connection.execute(text("insert into application_role (application_id, role_id, description) values (2, 2, 'Can add Users to their Portfolios')"))
+        connection.execute(text("insert into application_role (application_id, role_id, description) values (2, 3, 'Can access their associated Portfolios')"))
     
         # Users
         connection.execute(text(f"insert into [user] (email, password, disabled) values ('{superuser_username}', '{superuser_password}', 0)"))
