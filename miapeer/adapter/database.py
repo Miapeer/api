@@ -30,9 +30,11 @@ engine: Engine = create_engine(db_uri(), connect_args={"check_same_thread": Fals
 
 def get_user_count() -> int:
     with engine.connect() as connection:
-        result = connection.execute(text("select count(*) from [user]")).one()
-        
-    return result[0]
+        from miapeer.models.miapeer.user import User
+
+        with Session(engine) as db:
+            user_count = db.query(User).count()
+            return user_count
 
 def create_db_and_tables() -> None:
     SQLModel.metadata.create_all(engine)
