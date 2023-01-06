@@ -10,7 +10,7 @@ from miapeer.models.miapeer.role import Role, RoleCreate, RoleRead, RoleUpdate
 
 router = APIRouter(
     prefix="/roles",
-    tags=["Miapeer API: Roles"],
+    tags=["Miapeer: Roles"],
     responses={404: {"description": "Not found"}},
 )
 

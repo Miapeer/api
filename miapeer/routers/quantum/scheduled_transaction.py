@@ -18,7 +18,7 @@ from miapeer.models.quantum.repeat_option import RepeatOption
 
 router = APIRouter(
     prefix="/accounts/{account_id}/scheduled-transactions",
-    tags=["Quantum API: Scheduled Transactions"],
+    tags=["Quantum: Scheduled Transactions"],
     responses={404: {"description": "Not found"}},
 )
 

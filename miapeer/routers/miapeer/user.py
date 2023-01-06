@@ -11,7 +11,7 @@ from miapeer.models.miapeer.user import User, UserCreate, UserRead, UserUpdate
 
 router = APIRouter(
     prefix="/users",
-    tags=["Miapeer API: Users"],
+    tags=["Miapeer: Users"],
     responses={404: {"description": "Not found"}},
 )
 

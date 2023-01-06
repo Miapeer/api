@@ -15,7 +15,7 @@ from miapeer.models.miapeer.user import User
 
 router = APIRouter(
     prefix="/categories",
-    tags=["Quantum API: Categories"],
+    tags=["Quantum: Categories"],
     responses={404: {"description": "Not found"}},
 )
 

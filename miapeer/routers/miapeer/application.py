@@ -11,7 +11,7 @@ from miapeer.models.miapeer.application import (
 
 router = APIRouter(
     prefix="/applications",
-    tags=["Miapeer API: Applications"],
+    tags=["Miapeer: Applications"],
     responses={404: {"description": "Not found"}},
 )
 

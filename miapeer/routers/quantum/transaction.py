@@ -16,7 +16,7 @@ from miapeer.models.miapeer.user import User
 
 router = APIRouter(
     prefix="/accounts/{account_id}/transactions",
-    tags=["Quantum API: Transactions"],
+    tags=["Quantum: Transactions"],
     responses={404: {"description": "Not found"}},
 )
 
