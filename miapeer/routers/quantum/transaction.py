@@ -30,6 +30,7 @@ async def get_all_transactions(
 
     sql = (
         select(Transaction)
+        .join(Account)
         .join(Portfolio)
         .join(PortfolioUser)
         .where(Transaction.account_id == account_id)

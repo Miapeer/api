@@ -32,7 +32,7 @@ async def get_all_scheduled_transactions(
 
     sql = (
         select(ScheduledTransaction)
-        .join(Account)
+        .join(Account, Account.account_id == ScheduledTransaction.account_id)
         .join(Portfolio)
         .join(PortfolioUser)
         .where(ScheduledTransaction.account_id == account_id)
@@ -84,7 +84,7 @@ async def get_scheduled_transaction(
 
     sql = (
         select(ScheduledTransaction)
-        .join(Account)
+        .join(Account, Account.account_id == ScheduledTransaction.account_id)
         .join(Portfolio)
         .join(PortfolioUser)
         .where(Account.account_id == account_id)
@@ -109,7 +109,7 @@ def delete_scheduled_transaction(
 
     sql = (
         select(ScheduledTransaction)
-        .join(Account)
+        .join(Account, Account.account_id == ScheduledTransaction.account_id)
         .join(Portfolio)
         .join(PortfolioUser)
         .where(Account.account_id == account_id)
@@ -138,7 +138,7 @@ def update_scheduled_transaction(
 
     sql = (
         select(ScheduledTransaction)
-        .join(Account)
+        .join(Account, Account.account_id == ScheduledTransaction.account_id)
         .join(Portfolio)
         .join(PortfolioUser)
         .where(Account.account_id == account_id)
