@@ -12,6 +12,8 @@ class ScheduledTransactionHistoryBase(SQLModel):
     transaction_id: int = Field(foreign_key="transaction.transaction_id")
 
 class ScheduledTransactionHistory(ScheduledTransactionHistoryBase, table=True):
+    __tablename__: str = "scheduled_transaction_history"  # type: ignore
+
     scheduled_transaction_history_id: Optional[int] = Field(default=None, primary_key=True)
 
 

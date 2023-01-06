@@ -13,6 +13,8 @@ from miapeer.models.quantum.account import Account
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
 from miapeer.models.miapeer.user import User
+from miapeer.models.quantum.repeat_unit import RepeatUnit
+from miapeer.models.quantum.repeat_option import RepeatOption
 
 router = APIRouter(
     prefix="/accounts/{account_id}/scheduled-transactions",

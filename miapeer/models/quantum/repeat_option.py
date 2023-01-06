@@ -10,6 +10,8 @@ class RepeatOptionBase(SQLModel):
     order_index: int
 
 class RepeatOption(RepeatOptionBase, table=True):
+    __tablename__: str = "repeat_option"  # type: ignore
+
     repeat_option_id: Optional[int] = Field(default=None, primary_key=True)
 
 

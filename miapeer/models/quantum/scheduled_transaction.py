@@ -24,6 +24,8 @@ class ScheduledTransactionBase(SQLModel):
 
 
 class ScheduledTransaction(ScheduledTransactionBase, table=True):
+    __tablename__: str = "scheduled_transaction"  # type: ignore
+
     scheduled_transaction_id: Optional[int] = Field(default=None, primary_key=True)
     account_id: int = Field(foreign_key="account.account_id")
 

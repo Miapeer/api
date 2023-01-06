@@ -14,6 +14,8 @@ class ImportDefinitionBase(SQLModel):
     category_id: int = Field(foreign_key="category.category_id")
 
 class ImportDefinition(ImportDefinitionBase, table=True):
+    __tablename__: str = "import_definition"  # type: ignore
+
     import_definition_id: Optional[int] = Field(default=None, primary_key=True)
 
 

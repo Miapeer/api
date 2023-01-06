@@ -10,6 +10,8 @@ class PortfolioUserSettingBase(SQLModel):
 
 
 class PortfolioUserSetting(PortfolioUserSettingBase, table=True):
+    __tablename__: str = "portfolio_user_setting"  # type: ignore
+
     portfolio_user_setting_id: Optional[int] = Field(default=None, primary_key=True)
 
 
