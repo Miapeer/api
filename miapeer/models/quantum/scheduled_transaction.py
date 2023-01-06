@@ -7,27 +7,27 @@ from datetime import date
 
 class ScheduledTransactionBase(SQLModel):
     name: str
-    transaction_type_id: int = Field(foreign_key="transaction_type.transaction_type_id")
-    payee_id: int = Field(foreign_key="payee.payee_id")
-    category_id: int = Field(foreign_key="category.category_id")
+    transaction_type_id: int = Field(foreign_key="quantum_transaction_type.transaction_type_id")
+    payee_id: int = Field(foreign_key="quantum_payee.payee_id")
+    category_id: int = Field(foreign_key="quantum_category.category_id")
     fixed_amount: Decimal
     estimate_occurrences: int
     prompt_days: int
     start_date: date
     end_date: date
     limit_occurrences: int
-    repeat_option_id: int = Field(foreign_key="repeat_option.repeat_option_id")
-    linked_account_id: int = Field(foreign_key="account.account_id")
+    repeat_option_id: int = Field(foreign_key="quantum_repeat_option.repeat_option_id")
+    linked_account_id: int = Field(foreign_key="quantum_account.account_id")
     linked_account_cycle_end_offset: int
     notes: str
     on_autopay: bool
 
 
 class ScheduledTransaction(ScheduledTransactionBase, table=True):
-    __tablename__: str = "scheduled_transaction"  # type: ignore
+    __tablename__: str = "quantum_scheduled_transaction"
 
     scheduled_transaction_id: Optional[int] = Field(default=None, primary_key=True)
-    account_id: int = Field(foreign_key="account.account_id")
+    account_id: int = Field(foreign_key="quantum_account.account_id")
 
 
 class ScheduledTransactionCreate(ScheduledTransactionBase):

@@ -13,7 +13,7 @@ class ApplicationRoleBase(SQLModel):
 
 
 class ApplicationRole(ApplicationRoleBase, table=True):
-    __tablename__: str = "miapeer_application_role"  # type: ignore
+    __tablename__: str = "miapeer_application_role"
 
     application_role_id: Optional[int] = Field(default=None, primary_key=True)
 

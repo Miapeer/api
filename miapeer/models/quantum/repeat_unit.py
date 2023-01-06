@@ -1,13 +1,13 @@
 from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, MetaData
 
 
 class RepeatUnitBase(SQLModel):
     name: str
 
 class RepeatUnit(RepeatUnitBase, table=True):
-    __tablename__: str = "repeat_unit"  # type: ignore
+    __tablename__: str = "quantum_repeat_unit"
 
     repeat_unit_id: Optional[int] = Field(default=None, primary_key=True)
 

@@ -9,7 +9,7 @@ class PermissionBase(SQLModel):
 
 
 class Permission(PermissionBase, table=True):
-    __tablename__: str = "miapeer_permission"  # type: ignore
+    __tablename__: str = "miapeer_permission"
 
     permission_id: Optional[int] = Field(default=None, primary_key=True)
 

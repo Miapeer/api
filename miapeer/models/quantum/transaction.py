@@ -7,9 +7,9 @@ from datetime import date
 
 class TransactionBase(SQLModel):
     name: str
-    transaction_type_id: int = Field(foreign_key="transaction_type.transaction_type_id")
-    payee_id: int = Field(foreign_key="payee.payee_id")
-    category_id: int = Field(foreign_key="category.category_id")
+    transaction_type_id: int = Field(foreign_key="quantum_transaction_type.transaction_type_id")
+    payee_id: int = Field(foreign_key="quantum_payee.payee_id")
+    category_id: int = Field(foreign_key="quantum_category.category_id")
     amount: Decimal
     transaction_date: date
     clear_date: date
@@ -18,8 +18,10 @@ class TransactionBase(SQLModel):
     notes: str
 
 class Transaction(TransactionBase, table=True):
+    __tablename__: str = "quantum_transaction"
+
     transaction_id: Optional[int] = Field(default=None, primary_key=True)
-    account_id: int = Field(foreign_key="account.account_id")
+    account_id: int = Field(foreign_key="quantum_account.account_id")
 
 class TransactionCreate(TransactionBase):
     ...
