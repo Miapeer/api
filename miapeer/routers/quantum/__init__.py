@@ -7,6 +7,7 @@ from miapeer.routers.quantum import (
     transaction_type,
     category,
     transaction,
+    scheduled_transaction,
 )
 
 router = APIRouter(
@@ -20,3 +21,4 @@ router.include_router(payee.router)
 router.include_router(transaction_type.router)
 router.include_router(category.router)
 router.include_router(transaction.router)
+router.include_router(scheduled_transaction.router)
