@@ -9,12 +9,13 @@ from miapeer.dependencies import (
     is_quantum_super_user,
 )
 from miapeer.models.quantum.transaction import Transaction, TransactionCreate, TransactionRead, TransactionUpdate
+from miapeer.models.quantum.account import Account
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
 from miapeer.models.miapeer.user import User
 
 router = APIRouter(
-    prefix="/transactions",
+    prefix="/accounts/{account_id}/transactions",
     tags=["Quantum API: Transactions"],
     responses={404: {"description": "Not found"}},
 )
@@ -22,6 +23,7 @@ router = APIRouter(
 
 @router.get("/", dependencies=[Depends(is_quantum_user)], response_model=list[TransactionRead])
 async def get_all_transactions(
+    account_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> list[Transaction]:
@@ -30,6 +32,7 @@ async def get_all_transactions(
         select(Transaction)
         .join(Portfolio)
         .join(PortfolioUser)
+        .where(Transaction.account_id == account_id)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     transactions = db.exec(sql).all()
@@ -39,24 +42,28 @@ async def get_all_transactions(
 
 @router.post("/", dependencies=[Depends(is_quantum_user)], response_model=TransactionRead)
 async def create_transaction(
+    account_id: int,
     transaction: TransactionCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Transaction:
 
-    # Get the user's portfolio
+    # Get the user's account to verify access
     sql = (
-        select(Portfolio)
+        select(Account)
+        .join(Portfolio)
         .join(PortfolioUser)
+        .where(Account.account_id == account_id)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
-    portfolio = db.exec(sql).first()
+    account = db.exec(sql).first()
 
-    if not portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
 
     # Create the transaction
     db_transaction = Transaction.from_orm(transaction)
+    db_transaction.account_id = account_id
     db.add(db_transaction)
     db.commit()
     db.refresh(db_transaction)
@@ -66,6 +73,7 @@ async def create_transaction(
 
 @router.get("/{transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=Transaction)
 async def get_transaction(
+    account_id: int,
     transaction_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -73,8 +81,10 @@ async def get_transaction(
 
     sql = (
         select(Transaction)
+        .join(Account)
         .join(Portfolio)
         .join(PortfolioUser)
+        .where(Account.account_id == account_id)
         .where(Transaction.transaction_id == transaction_id)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
@@ -88,6 +98,7 @@ async def get_transaction(
 
 @router.delete("/{transaction_id}", dependencies=[Depends(is_quantum_user)])
 def delete_transaction(
+    account_id: int,
     transaction_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -95,8 +106,10 @@ def delete_transaction(
 
     sql = (
         select(Transaction)
+        .join(Account)
         .join(Portfolio)
         .join(PortfolioUser)
+        .where(Account.account_id == account_id)
         .where(Transaction.transaction_id == transaction_id)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
@@ -113,6 +126,7 @@ def delete_transaction(
 
 @router.patch("/{transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=TransactionRead)
 def update_transaction(
+    account_id: int,
     transaction_id: int,
     transaction: TransactionUpdate,
     db: Session = Depends(get_db),
@@ -121,8 +135,10 @@ def update_transaction(
 
     sql = (
         select(Transaction)
+        .join(Account)
         .join(Portfolio)
         .join(PortfolioUser)
+        .where(Account.account_id == account_id)
         .where(Transaction.transaction_id == transaction_id)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
