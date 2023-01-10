@@ -114,6 +114,7 @@ def seed_db() -> None:
             # Miapeer: Permissions
             db.add_all([
                 Permission(user_id=super_user.user_id, application_role_id=miapeer_super_user.application_role_id),
+                Permission(user_id=super_user.user_id, application_role_id=miapeer_admin.application_role_id),
                 Permission(user_id=admin.user_id, application_role_id=miapeer_user.application_role_id),
                 Permission(user_id=admin.user_id, application_role_id=quantum_user.application_role_id),
             ])
