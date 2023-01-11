@@ -83,7 +83,7 @@ async def _login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    ACCESS_TOKEN_EXPIRE_MINUTES = 30  # TODO
+    ACCESS_TOKEN_EXPIRE_MINUTES = 300  # TODO
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
