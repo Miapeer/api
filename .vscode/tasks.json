@@ -58,8 +58,17 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "dependsOn": ["PRODUCTION: Azure ACR login"],
             "command": "docker push miapeer.azurecr.io/miapeer-api",
+            "problemMatcher": []
+        },
+        {
+            "label": "PRODUCTION: Build and deploy Miapeer API image",
+            "type": "shell",
+            "dependsOn": [
+                "PRODUCTION: Build Miapeer API image",
+                "PRODUCTION: Azure ACR login",
+                "PRODUCTION: Deploy Miapeer API image"
+            ],
             "problemMatcher": []
         },
     ]
