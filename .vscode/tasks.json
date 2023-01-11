@@ -69,6 +69,7 @@
                 "PRODUCTION: Azure ACR login",
                 "PRODUCTION: Deploy Miapeer API image"
             ],
+            "dependsOrder": "sequence",
             "problemMatcher": []
         },
     ]
