@@ -21,7 +21,10 @@ async def who_am_i(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
-@router.get("/", dependencies=[Depends(is_miapeer_admin)], response_model=list[UserRead])
+@router.get("/",
+    # dependencies=[Depends(is_miapeer_admin)],
+    response_model=list[UserRead]
+)
 async def get_all_users(
     db: Session = Depends(get_db),
 ) -> list[User]:
@@ -29,7 +32,10 @@ async def get_all_users(
     return users
 
 
-@router.post("/", dependencies=[Depends(is_miapeer_admin)], response_model=UserRead)
+@router.post("/",
+    # dependencies=[Depends(is_miapeer_admin)],
+    response_model=UserRead
+)
 async def create_user(
     user: UserCreate,
     db: Session = Depends(get_db),
@@ -41,7 +47,10 @@ async def create_user(
     return db_user
 
 
-@router.get("/{user_id}", dependencies=[Depends(is_miapeer_admin)], response_model=User)
+@router.get("/{user_id}",
+    # dependencies=[Depends(is_miapeer_admin)],
+    response_model=User
+)
 async def get_user(user_id: int, db: Session = Depends(get_db)) -> User:
     user = db.get(User, user_id)
     if not user:
@@ -49,7 +58,9 @@ async def get_user(user_id: int, db: Session = Depends(get_db)) -> User:
     return user
 
 
-@router.delete("/{user_id}", dependencies=[Depends(is_miapeer_super_user)])
+@router.delete("/{user_id}",
+    # dependencies=[Depends(is_miapeer_super_user)]
+)
 def delete_user(user_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     user = db.get(User, user_id)
     if not user:
@@ -59,7 +70,10 @@ def delete_user(user_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     return {"ok": True}
 
 
-@router.patch("/{user_id}", dependencies=[Depends(is_miapeer_super_user)], response_model=UserRead)
+@router.patch("/{user_id}",
+    # dependencies=[Depends(is_miapeer_super_user)],
+    response_model=UserRead
+)
 def update_user(
     user_id: int,
     user: UserUpdate,

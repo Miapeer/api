@@ -15,7 +15,10 @@ router = APIRouter(
 )
 
 
-@router.get("/", dependencies=[Depends(is_miapeer_admin)], response_model=list[RoleRead])
+@router.get("/",
+    # dependencies=[Depends(is_miapeer_admin)],
+    response_model=list[RoleRead]
+)
 async def get_all_roles(
     db: Session = Depends(get_db),
 ) -> list[Role]:
@@ -23,7 +26,10 @@ async def get_all_roles(
     return roles
 
 
-@router.post("/", dependencies=[Depends(is_miapeer_super_user)], response_model=RoleRead)
+@router.post("/",
+    # dependencies=[Depends(is_miapeer_super_user)],
+    response_model=RoleRead
+)
 async def create_role(
     role: RoleCreate,
     db: Session = Depends(get_db),
@@ -35,7 +41,10 @@ async def create_role(
     return db_role
 
 
-@router.get("/{role_id}", dependencies=[Depends(is_miapeer_admin)], response_model=Role)
+@router.get("/{role_id}",
+    # dependencies=[Depends(is_miapeer_admin)],
+    response_model=Role
+)
 async def get_role(role_id: int, db: Session = Depends(get_db)) -> Role:
     role = db.get(Role, role_id)
     if not role:
@@ -43,7 +52,9 @@ async def get_role(role_id: int, db: Session = Depends(get_db)) -> Role:
     return role
 
 
-@router.delete("/{role_id}", dependencies=[Depends(is_miapeer_super_user)])
+@router.delete("/{role_id}",
+    # dependencies=[Depends(is_miapeer_super_user)]
+)
 def delete_role(role_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     role = db.get(Role, role_id)
     if not role:
@@ -53,7 +64,10 @@ def delete_role(role_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     return {"ok": True}
 
 
-@router.patch("/{role_id}", dependencies=[Depends(is_miapeer_super_user)], response_model=RoleRead)
+@router.patch("/{role_id}",
+    # dependencies=[Depends(is_miapeer_super_user)],
+    response_model=RoleRead
+)
 def update_role(
     role_id: int,
     role: RoleUpdate,

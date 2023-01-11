@@ -24,7 +24,10 @@ async def get_all_applications(
     return applications
 
 
-@router.post("/", dependencies=[Depends(is_miapeer_super_user)], response_model=ApplicationRead)
+@router.post("/",
+    # dependencies=[Depends(is_miapeer_super_user)],
+    response_model=ApplicationRead
+)
 async def create_application(
     application: ApplicationCreate,
     db: Session = Depends(get_db),
@@ -45,7 +48,9 @@ async def get_application(application_id: int, db: Session = Depends(get_db)) ->
     return application
 
 
-@router.delete("/{application_id}", dependencies=[Depends(is_miapeer_super_user)])
+@router.delete("/{application_id}",
+    # dependencies=[Depends(is_miapeer_super_user)]
+)
 def delete_application(application_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     application = db.get(Application, application_id)
     if not application:
@@ -55,7 +60,10 @@ def delete_application(application_id: int, db: Session = Depends(get_db)) -> di
     return {"ok": True}
 
 
-@router.patch("/{application_id}", dependencies=[Depends(is_miapeer_super_user)], response_model=ApplicationRead)
+@router.patch("/{application_id}",
+    # dependencies=[Depends(is_miapeer_super_user)],
+    response_model=ApplicationRead
+)
 def update_application(
     application_id: int,
     application: ApplicationUpdate,
