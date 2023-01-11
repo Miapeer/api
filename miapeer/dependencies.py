@@ -104,9 +104,9 @@ def has_permission(db: Session, email: str, application: Applications, role: Rol
     print('has_permission')
     # TODO: https://sqlmodel.tiangolo.com/tutorial/fastapi/relationships/
 
-    # Check the cache first
-    if f"{email}-{application}-{role}" in permission_cache:
-        return True
+    # # Check the cache first
+    # if f"{email}-{application}-{role}" in permission_cache:
+    #     return True
 
     sql = (
         select(User.email, Application.name, Role.name)
@@ -115,20 +115,24 @@ def has_permission(db: Session, email: str, application: Applications, role: Rol
         .join(Application)
         .join(Role)
         .where(User.email == email)
+        .where(Role.name == role)
+        .where(Application.name == application)
     )
     users = db.exec(sql).all()
 
-    print(f'\n{users = }\n') # TODO: Remove this!!!
+    # print(f'\n{users = }\n') # TODO: Remove this!!!
 
-    for u in users:
-        permission_cache.add(f"{u[0]}-{u[1]}-{u[2]}")
+    # for u in users:
+    #     permission_cache.add(f"{u[0]}-{u[1]}-{u[2]}")
 
-    print(f'\n{permission_cache = }\n') # TODO: Remove this!!!
+    # print(f'\n{permission_cache = }\n') # TODO: Remove this!!!
 
     # TODO: Improve memoization
     # TODO: Add expiration
 
-    return f"{email}-{application}-{role}" in permission_cache
+    # return f"{email}-{application}-{role}" in permission_cache
+
+    return len(users) > 0
 
 
 def is_miapeer_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
