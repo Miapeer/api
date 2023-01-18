@@ -1,6 +1,7 @@
 from os import environ as env
 
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
+from fastapi.responses import HTMLResponse
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -30,6 +31,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+router = APIRouter(
+    tags=["Miapeer API"],
+)
+
+@router.get("/")
+async def get_last_publish_date() -> HTMLResponse:
+    update_str = None
+    try:
+        with open('last_update', 'r') as f:
+            update_str = f.readline()
+    except Exception:
+        pass
+
+    return HTMLResponse(f"Last updated: {update_str}")
+
+app.include_router(router)
 app.include_router(auth.router)
 app.include_router(miapeer.router)
 app.include_router(quantum.router)
