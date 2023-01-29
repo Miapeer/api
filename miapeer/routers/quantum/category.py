@@ -2,16 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from miapeer.dependencies import (
-    get_db,
     get_current_active_user,
+    get_db,
     is_quantum_user,
-    is_quantum_admin,
-    is_quantum_super_user,
 )
-from miapeer.models.quantum.category import Category, CategoryCreate, CategoryRead, CategoryUpdate
+from miapeer.models.miapeer.user import User
+from miapeer.models.quantum.category import (
+    Category,
+    CategoryCreate,
+    CategoryRead,
+    CategoryUpdate,
+)
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
-from miapeer.models.miapeer.user import User
 
 router = APIRouter(
     prefix="/categories",
@@ -26,12 +29,7 @@ async def get_all_categories(
     current_user: User = Depends(get_current_active_user),
 ) -> list[Category]:
 
-    sql = (
-        select(Category)
-        .join(Portfolio)
-        .join(PortfolioUser)
-        .where(PortfolioUser.user_id == current_user.user_id)
-    )
+    sql = select(Category).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
     categories = db.exec(sql).all()
 
     return categories
@@ -45,11 +43,7 @@ async def create_category(
 ) -> Category:
 
     # Get the user's portfolio
-    sql = (
-        select(Portfolio)
-        .join(PortfolioUser)
-        .where(PortfolioUser.user_id == current_user.user_id)
-    )
+    sql = select(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
     portfolio = db.exec(sql).first()
 
     if not portfolio:
@@ -101,10 +95,10 @@ def delete_category(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     category = db.exec(sql).one_or_none()
-    
+
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
-    
+
     db.delete(category)
     db.commit()
 
@@ -127,7 +121,7 @@ def update_category(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     db_category = db.exec(sql).one_or_none()
-    
+
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")
 

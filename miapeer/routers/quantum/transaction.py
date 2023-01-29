@@ -2,17 +2,20 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from miapeer.dependencies import (
-    get_db,
     get_current_active_user,
+    get_db,
     is_quantum_user,
-    is_quantum_admin,
-    is_quantum_super_user,
 )
-from miapeer.models.quantum.transaction import Transaction, TransactionCreate, TransactionRead, TransactionUpdate
+from miapeer.models.miapeer.user import User
 from miapeer.models.quantum.account import Account
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
-from miapeer.models.miapeer.user import User
+from miapeer.models.quantum.transaction import (
+    Transaction,
+    TransactionCreate,
+    TransactionRead,
+    TransactionUpdate,
+)
 
 router = APIRouter(
     prefix="/accounts/{account_id}/transactions",
@@ -115,10 +118,10 @@ def delete_transaction(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     transaction = db.exec(sql).one_or_none()
-    
+
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
-    
+
     db.delete(transaction)
     db.commit()
 
@@ -144,7 +147,7 @@ def update_transaction(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     db_transaction = db.exec(sql).one_or_none()
-    
+
     if not db_transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
 

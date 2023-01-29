@@ -2,19 +2,20 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from miapeer.dependencies import (
-    get_db,
     get_current_active_user,
+    get_db,
     is_quantum_user,
-    is_quantum_admin,
-    is_quantum_super_user,
 )
-from miapeer.models.quantum.scheduled_transaction import ScheduledTransaction, ScheduledTransactionCreate, ScheduledTransactionRead, ScheduledTransactionUpdate
+from miapeer.models.miapeer.user import User
 from miapeer.models.quantum.account import Account
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
-from miapeer.models.miapeer.user import User
-from miapeer.models.quantum.repeat_unit import RepeatUnit
-from miapeer.models.quantum.repeat_option import RepeatOption
+from miapeer.models.quantum.scheduled_transaction import (
+    ScheduledTransaction,
+    ScheduledTransactionCreate,
+    ScheduledTransactionRead,
+    ScheduledTransactionUpdate,
+)
 
 router = APIRouter(
     prefix="/accounts/{account_id}/scheduled-transactions",
@@ -74,7 +75,9 @@ async def create_scheduled_transaction(
     return db_scheduled_transaction
 
 
-@router.get("/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=ScheduledTransaction)
+@router.get(
+    "/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=ScheduledTransaction
+)
 async def get_scheduled_transaction(
     account_id: int,
     scheduled_transaction_id: int,
@@ -117,17 +120,19 @@ def delete_scheduled_transaction(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     scheduled_transaction = db.exec(sql).one_or_none()
-    
+
     if not scheduled_transaction:
         raise HTTPException(status_code=404, detail="Scheduled transaction not found")
-    
+
     db.delete(scheduled_transaction)
     db.commit()
 
     return {"ok": True}
 
 
-@router.patch("/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=ScheduledTransactionRead)
+@router.patch(
+    "/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=ScheduledTransactionRead
+)
 def update_scheduled_transaction(
     account_id: int,
     scheduled_transaction_id: int,
@@ -146,7 +151,7 @@ def update_scheduled_transaction(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     db_scheduled_transaction = db.exec(sql).one_or_none()
-    
+
     if not db_scheduled_transaction:
         raise HTTPException(status_code=404, detail="Scheduled transaction not found")
 

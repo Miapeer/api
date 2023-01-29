@@ -1,8 +1,8 @@
+from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
-from decimal import Decimal
-from datetime import date
 
 
 class TransactionBase(SQLModel):
@@ -17,11 +17,13 @@ class TransactionBase(SQLModel):
     exclude_from_forecast: bool
     notes: str
 
+
 class Transaction(TransactionBase, table=True):
-    __tablename__: str = "quantum_transaction"
+    __tablename__: str = "quantum_transaction"  # type: ignore
 
     transaction_id: Optional[int] = Field(default=None, primary_key=True)
     account_id: int = Field(foreign_key="quantum_account.account_id")
+
 
 class TransactionCreate(TransactionBase):
     ...

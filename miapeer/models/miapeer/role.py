@@ -8,7 +8,7 @@ class RoleBase(SQLModel):
 
 
 class Role(RoleBase, table=True):
-    __tablename__: str = "miapeer_role"
+    __tablename__: str = "miapeer_role"  # type: ignore
 
     role_id: Optional[int] = Field(default=None, primary_key=True)
 

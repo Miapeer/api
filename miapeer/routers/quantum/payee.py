@@ -2,16 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from miapeer.dependencies import (
-    get_db,
     get_current_active_user,
+    get_db,
     is_quantum_user,
-    is_quantum_admin,
-    is_quantum_super_user,
 )
-from miapeer.models.quantum.payee import Payee, PayeeCreate, PayeeRead, PayeeUpdate
+from miapeer.models.miapeer.user import User
+from miapeer.models.quantum.payee import (
+    Payee,
+    PayeeCreate,
+    PayeeRead,
+    PayeeUpdate,
+)
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
-from miapeer.models.miapeer.user import User
 
 router = APIRouter(
     prefix="/payees",
@@ -26,12 +29,7 @@ async def get_all_payees(
     current_user: User = Depends(get_current_active_user),
 ) -> list[Payee]:
 
-    sql = (
-        select(Payee)
-        .join(Portfolio)
-        .join(PortfolioUser)
-        .where(PortfolioUser.user_id == current_user.user_id)
-    )
+    sql = select(Payee).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
     payees = db.exec(sql).all()
 
     return payees
@@ -45,11 +43,7 @@ async def create_payee(
 ) -> Payee:
 
     # Get the user's portfolio
-    sql = (
-        select(Portfolio)
-        .join(PortfolioUser)
-        .where(PortfolioUser.user_id == current_user.user_id)
-    )
+    sql = select(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
     portfolio = db.exec(sql).first()
 
     if not portfolio:
@@ -101,10 +95,10 @@ def delete_payee(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     payee = db.exec(sql).one_or_none()
-    
+
     if not payee:
         raise HTTPException(status_code=404, detail="Payee not found")
-    
+
     db.delete(payee)
     db.commit()
 
@@ -127,7 +121,7 @@ def update_payee(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     db_payee = db.exec(sql).one_or_none()
-    
+
     if not db_payee:
         raise HTTPException(status_code=404, detail="Payee not found")
 

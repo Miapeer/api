@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
-from miapeer.dependencies import get_db, is_miapeer_super_user
+from miapeer.dependencies import get_db
 from miapeer.models.miapeer.application import (
     Application,
     ApplicationCreate,
@@ -24,9 +24,10 @@ async def get_all_applications(
     return applications
 
 
-@router.post("/",
+@router.post(
+    "/",
     # dependencies=[Depends(is_miapeer_super_user)],
-    response_model=ApplicationRead
+    response_model=ApplicationRead,
 )
 async def create_application(
     application: ApplicationCreate,
@@ -48,7 +49,8 @@ async def get_application(application_id: int, db: Session = Depends(get_db)) ->
     return application
 
 
-@router.delete("/{application_id}",
+@router.delete(
+    "/{application_id}",
     # dependencies=[Depends(is_miapeer_super_user)]
 )
 def delete_application(application_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
@@ -60,9 +62,10 @@ def delete_application(application_id: int, db: Session = Depends(get_db)) -> di
     return {"ok": True}
 
 
-@router.patch("/{application_id}",
+@router.patch(
+    "/{application_id}",
     # dependencies=[Depends(is_miapeer_super_user)],
-    response_model=ApplicationRead
+    response_model=ApplicationRead,
 )
 def update_application(
     application_id: int,

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlmodel import Field, Relationship, SQLModel, MetaData
+from sqlmodel import Field, SQLModel
 
 
 class PermissionBase(SQLModel):
@@ -9,7 +9,7 @@ class PermissionBase(SQLModel):
 
 
 class Permission(PermissionBase, table=True):
-    __tablename__: str = "miapeer_permission"
+    __tablename__: str = "miapeer_permission"  # type: ignore
 
     permission_id: Optional[int] = Field(default=None, primary_key=True)
 

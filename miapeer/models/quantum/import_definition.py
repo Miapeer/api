@@ -1,8 +1,6 @@
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
-from decimal import Decimal
-from datetime import date
 
 
 class ImportDefinitionBase(SQLModel):
@@ -13,8 +11,9 @@ class ImportDefinitionBase(SQLModel):
     payee_id: int = Field(foreign_key="quantum_payee.payee_id")
     category_id: int = Field(foreign_key="quantum_category.category_id")
 
+
 class ImportDefinition(ImportDefinitionBase, table=True):
-    __tablename__: str = "quantum_import_definition"
+    __tablename__: str = "quantum_import_definition"  # type: ignore
 
     import_definition_id: Optional[int] = Field(default=None, primary_key=True)
 

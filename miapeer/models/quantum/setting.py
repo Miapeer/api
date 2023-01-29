@@ -6,8 +6,9 @@ from sqlmodel import Field, SQLModel
 class SettingBase(SQLModel):
     name: str
 
+
 class Setting(SettingBase, table=True):
-    __tablename__: str = "quantum_setting"
+    __tablename__: str = "quantum_setting"  # type: ignore
 
     setting_id: Optional[int] = Field(default=None, primary_key=True)
 

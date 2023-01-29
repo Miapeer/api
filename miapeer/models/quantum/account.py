@@ -1,7 +1,7 @@
+from decimal import Decimal
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
-from decimal import Decimal
 
 
 class AccountBase(SQLModel):
@@ -9,8 +9,9 @@ class AccountBase(SQLModel):
     portfolio_id: int = Field(foreign_key="quantum_portfolio.portfolio_id")
     starting_balance: Decimal
 
+
 class Account(AccountBase, table=True):
-    __tablename__: str = "quantum_account"
+    __tablename__: str = "quantum_account"  # type: ignore
 
     account_id: Optional[int] = Field(default=None, primary_key=True)
 

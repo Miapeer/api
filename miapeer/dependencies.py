@@ -1,22 +1,19 @@
-import json
 from enum import Enum
 from os import environ as env
-from typing import Any, Iterator
+from typing import Iterator
 
-from fastapi import Cookie, Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
-from requests import JSONDecodeError
-from sqlmodel import Field, Session, select
+from sqlmodel import Session, select
 
 from miapeer.adapter.database import engine
 from miapeer.models.miapeer.application import Application
 from miapeer.models.miapeer.application_role import ApplicationRole
-from miapeer.models.miapeer.auth import Token, TokenData
+from miapeer.models.miapeer.auth import TokenData
 from miapeer.models.miapeer.permission import Permission
 from miapeer.models.miapeer.role import Role
-from miapeer.models.miapeer.user import User, UserRead
+from miapeer.models.miapeer.user import User
 
 DEFAULT_JWT_ALGORITHM = "HS256"
 DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -33,7 +30,7 @@ class Roles(str, Enum):
     SUPER_USER = "Super User"
 
 
-permission_cache = set()
+permission_cache: set[str] = set()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/miapeer/v1/auth/token")
 
@@ -69,7 +66,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         raise credentials_exception
 
-    print(f'\n{permission_cache = }\n') # TODO: Remove this!!!
+    print(f"\n{permission_cache = }\n")  # TODO: Remove this!!!
 
     return user
 
@@ -101,7 +98,7 @@ def is_authorized(token: str = Depends(oauth2_scheme)) -> None:
 
 
 def has_permission(db: Session, email: str, application: Applications, role: Roles) -> bool:
-    print('has_permission')
+    print("has_permission")
     # TODO: https://sqlmodel.tiangolo.com/tutorial/fastapi/relationships/
 
     # # Check the cache first

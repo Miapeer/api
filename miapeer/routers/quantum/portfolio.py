@@ -2,15 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from miapeer.dependencies import (
-    get_db,
     get_current_active_user,
-    is_quantum_user,
-    is_quantum_admin,
+    get_db,
     is_quantum_super_user,
+    is_quantum_user,
 )
-from miapeer.models.quantum.portfolio import Portfolio, PortfolioCreate, PortfolioRead, PortfolioUpdate
-from miapeer.models.quantum.portfolio_user import PortfolioUser
 from miapeer.models.miapeer.user import User
+from miapeer.models.quantum.portfolio import (
+    Portfolio,
+    PortfolioCreate,
+    PortfolioRead,
+    PortfolioUpdate,
+)
+from miapeer.models.quantum.portfolio_user import PortfolioUser
 
 router = APIRouter(
     prefix="/portfolios",
@@ -25,11 +29,7 @@ async def get_all_portfolios(
     current_user: User = Depends(get_current_active_user),
 ) -> list[Portfolio]:
 
-    sql = (
-        select(Portfolio)
-        .join(PortfolioUser)
-        .where(PortfolioUser.user_id == current_user.user_id)
-    )
+    sql = select(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
     portfolios = db.exec(sql).all()
 
     return portfolios
@@ -80,10 +80,10 @@ async def get_portfolio(
 @router.delete("/{portfolio_id}", dependencies=[Depends(is_quantum_super_user)])
 def delete_portfolio(portfolio_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     portfolio = db.get(Portfolio, portfolio_id)
-    
+
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
-    
+
     db.delete(portfolio)
     db.commit()
 
@@ -98,7 +98,7 @@ def update_portfolio(
 ) -> Portfolio:
 
     db_portfolio = db.get(Portfolio, portfolio_id)
-    
+
     if not db_portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
 

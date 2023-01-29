@@ -1,19 +1,19 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
-from sqlmodel import Field, Relationship, SQLModel, MetaData
+from sqlmodel import Field, SQLModel
 
 # if TYPE_CHECKING:
 #     from miapeer.models.miapeer.application import ApplicationRead
 
 
 class ApplicationRoleBase(SQLModel):
-    application_id: int = Field( schema_extra={'schema': "miapeer"}, foreign_key="miapeer_application.application_id")
+    application_id: int = Field(schema_extra={"schema": "miapeer"}, foreign_key="miapeer_application.application_id")
     role_id: int = Field(foreign_key="miapeer_role.role_id")
     description: str = Field(default=None)
 
 
 class ApplicationRole(ApplicationRoleBase, table=True):
-    __tablename__: str = "miapeer_application_role"
+    __tablename__: str = "miapeer_application_role"  # type: ignore
 
     application_role_id: Optional[int] = Field(default=None, primary_key=True)
 

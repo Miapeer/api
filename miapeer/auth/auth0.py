@@ -99,9 +99,7 @@ def get_token_auth_header(request: Request) -> str:
             401,
         )
     elif len(parts) == 1:
-        raise AuthError(
-            {"code": "invalid_header", "description": "Token not found"}, 401
-        )
+        raise AuthError({"code": "invalid_header", "description": "Token not found"}, 401)
     elif len(parts) > 2:
         raise AuthError(
             {
@@ -139,15 +137,12 @@ def verify_token(token: str) -> bool:
                 issuer=f"https://{env.get('AUTH0_DOMAIN')}/",
             )
         except jwt.ExpiredSignatureError:
-            raise AuthError(
-                {"code": "token_expired", "description": "token is expired"}, 401
-            )
+            raise AuthError({"code": "token_expired", "description": "token is expired"}, 401)
         except jwt.JWTClaimsError:
             raise AuthError(
                 {
                     "code": "invalid_claims",
-                    "description": "incorrect claims,"
-                    "please check the audience and issuer",
+                    "description": "incorrect claims," "please check the audience and issuer",
                 },
                 401,
             )

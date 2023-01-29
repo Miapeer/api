@@ -1,6 +1,6 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
-from sqlmodel import Field, Relationship, SQLModel, MetaData
+from sqlmodel import Field, SQLModel
 
 # if TYPE_CHECKING:
 #     from miapeer.models.miapeer.application_role import ApplicationRoleRead
@@ -15,7 +15,7 @@ class ApplicationBase(SQLModel):
 
 
 class Application(ApplicationBase, table=True):
-    __tablename__: str = "miapeer_application"
+    __tablename__: str = "miapeer_application"  # type: ignore
 
     application_id: Optional[int] = Field(default=None, primary_key=True)
 

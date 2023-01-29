@@ -1,8 +1,8 @@
+from datetime import date
+from decimal import Decimal
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
-from decimal import Decimal
-from datetime import date
 
 
 class ScheduledTransactionBase(SQLModel):
@@ -24,7 +24,7 @@ class ScheduledTransactionBase(SQLModel):
 
 
 class ScheduledTransaction(ScheduledTransactionBase, table=True):
-    __tablename__: str = "quantum_scheduled_transaction"
+    __tablename__: str = "quantum_scheduled_transaction"  # type: ignore
 
     scheduled_transaction_id: Optional[int] = Field(default=None, primary_key=True)
     account_id: int = Field(foreign_key="quantum_account.account_id")

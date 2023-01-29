@@ -2,16 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from miapeer.dependencies import (
-    get_db,
     get_current_active_user,
+    get_db,
     is_quantum_user,
-    is_quantum_admin,
-    is_quantum_super_user,
 )
-from miapeer.models.quantum.transaction_type import TransactionType, TransactionTypeCreate, TransactionTypeRead, TransactionTypeUpdate
+from miapeer.models.miapeer.user import User
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
-from miapeer.models.miapeer.user import User
+from miapeer.models.quantum.transaction_type import (
+    TransactionType,
+    TransactionTypeCreate,
+    TransactionTypeRead,
+    TransactionTypeUpdate,
+)
 
 router = APIRouter(
     prefix="/transaction-types",
@@ -45,11 +48,7 @@ async def create_transaction_type(
 ) -> TransactionType:
 
     # Get the user's portfolio
-    sql = (
-        select(Portfolio)
-        .join(PortfolioUser)
-        .where(PortfolioUser.user_id == current_user.user_id)
-    )
+    sql = select(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
     portfolio = db.exec(sql).first()
 
     if not portfolio:
@@ -101,10 +100,10 @@ def delete_transaction_type(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     transaction_type = db.exec(sql).one_or_none()
-    
+
     if not transaction_type:
         raise HTTPException(status_code=404, detail="Transaction type not found")
-    
+
     db.delete(transaction_type)
     db.commit()
 
@@ -127,7 +126,7 @@ def update_transaction_type(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     db_transaction_type = db.exec(sql).one_or_none()
-    
+
     if not db_transaction_type:
         raise HTTPException(status_code=404, detail="Transaction type not found")
 

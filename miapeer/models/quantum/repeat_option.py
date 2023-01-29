@@ -9,8 +9,9 @@ class RepeatOptionBase(SQLModel):
     quantity: int
     order_index: int
 
+
 class RepeatOption(RepeatOptionBase, table=True):
-    __tablename__: str = "quantum_repeat_option"
+    __tablename__: str = "quantum_repeat_option"  # type: ignore
 
     repeat_option_id: Optional[int] = Field(default=None, primary_key=True)
 
