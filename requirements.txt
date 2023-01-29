@@ -17,6 +17,8 @@ authlib==1.0.0
     # via -r requirements.in
 bcrypt==4.0.1
     # via passlib
+build==0.10.0
+    # via pip-tools
 certifi==2021.10.8
     # via
     #   httpcore
@@ -24,8 +26,6 @@ certifi==2021.10.8
     #   requests
 cffi==1.15.0
     # via cryptography
-cfgv==3.3.1
-    # via pre-commit
 charset-normalizer==2.0.12
     # via
     #   httpx
@@ -42,8 +42,6 @@ cryptography==36.0.2
     # via
     #   authlib
     #   python-jose
-distlib==0.3.4
-    # via virtualenv
 dnspython==2.2.1
     # via email-validator
 docopt==0.6.2
@@ -54,8 +52,6 @@ email-validator==1.2.0
     # via fastapi
 fastapi[all]==0.75.2
     # via -r requirements.in
-filelock==3.6.0
-    # via virtualenv
 greenlet==1.1.2
     # via sqlalchemy
 h11==0.12.0
@@ -68,8 +64,6 @@ httptools==0.4.0
     # via uvicorn
 httpx==0.22.0
     # via -r requirements.in
-identify==2.4.12
-    # via pre-commit
 idna==3.3
     # via
     #   anyio
@@ -88,24 +82,18 @@ mypy==0.942
     # via -r requirements.in
 mypy-extensions==0.4.3
     # via mypy
-nodeenv==1.6.0
-    # via pre-commit
 orjson==3.6.8
     # via fastapi
 packaging==21.3
-    # via pytest
+    # via
+    #   build
+    #   pytest
 passlib[bcrypt]==1.7.4
     # via -r requirements.in
-pep517==0.12.0
-    # via pip-tools
-pip-tools==6.6.0
+pip-tools==6.12.1
     # via -r requirements.in
-platformdirs==2.5.1
-    # via virtualenv
 pluggy==1.0.0
     # via pytest
-pre-commit==2.18.1
-    # via -r requirements.in
 py==1.11.0
     # via pytest
 pyasn1==0.4.8
@@ -124,6 +112,8 @@ pyodbc==4.0.32
     # via -r requirements.in
 pyparsing==3.0.8
     # via packaging
+pyproject-hooks==1.0.0
+    # via build
 pytest==7.1.1
     # via
     #   -r requirements.in
@@ -144,7 +134,6 @@ python-multipart==0.0.5
 pyyaml==6.0
     # via
     #   fastapi
-    #   pre-commit
     #   uvicorn
 requests==2.27.1
     # via fastapi
@@ -159,7 +148,6 @@ six==1.16.0
     #   -r requirements.in
     #   ecdsa
     #   python-multipart
-    #   virtualenv
 sniffio==1.2.0
     # via
     #   anyio
@@ -173,12 +161,11 @@ sqlmodel==0.0.6
     # via -r requirements.in
 starlette==0.17.1
     # via fastapi
-toml==0.10.2
-    # via pre-commit
 tomli==2.0.1
     # via
+    #   build
     #   mypy
-    #   pep517
+    #   pyproject-hooks
     #   pytest
 types-passlib==1.7.7.1
     # via -r requirements.in
@@ -199,15 +186,13 @@ uvicorn[standard]==0.17.6
     # via fastapi
 uvloop==0.16.0
     # via uvicorn
-virtualenv==20.14.1
-    # via pre-commit
 watchdog==2.1.7
     # via pytest-watch
 watchgod==0.8.2
     # via uvicorn
 websockets==10.3
     # via uvicorn
-wheel==0.37.1
+wheel==0.38.4
     # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:

@@ -4,7 +4,6 @@ httpx==0.22.0
 mypy
 passlib[bcrypt]==1.7.4
 pip-tools
-pre-commit
 pyodbc==4.0.32
 pytest
 pytest-asyncio
