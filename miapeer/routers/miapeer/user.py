@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
-from miapeer.dependencies import get_current_user, get_db
+from miapeer.dependencies import (
+    get_current_user,
+    get_db,
+    is_miapeer_admin,
+    is_miapeer_super_user,
+)
 from miapeer.models.miapeer.user import User, UserCreate, UserRead, UserUpdate
 
 router = APIRouter(
@@ -18,7 +23,7 @@ async def who_am_i(current_user: User = Depends(get_current_user)) -> User:
 
 @router.get(
     "/",
-    # dependencies=[Depends(is_miapeer_admin)],
+    dependencies=[Depends(is_miapeer_admin)],
     response_model=list[UserRead],
 )
 async def get_all_users(
@@ -30,7 +35,7 @@ async def get_all_users(
 
 @router.post(
     "/",
-    # dependencies=[Depends(is_miapeer_admin)],
+    dependencies=[Depends(is_miapeer_admin)],
     response_model=UserRead,
 )
 async def create_user(
@@ -46,7 +51,7 @@ async def create_user(
 
 @router.get(
     "/{user_id}",
-    # dependencies=[Depends(is_miapeer_admin)],
+    dependencies=[Depends(is_miapeer_admin)],
     response_model=User,
 )
 async def get_user(user_id: int, db: Session = Depends(get_db)) -> User:
@@ -56,10 +61,7 @@ async def get_user(user_id: int, db: Session = Depends(get_db)) -> User:
     return user
 
 
-@router.delete(
-    "/{user_id}",
-    # dependencies=[Depends(is_miapeer_super_user)]
-)
+@router.delete("/{user_id}", dependencies=[Depends(is_miapeer_super_user)])
 def delete_user(user_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     user = db.get(User, user_id)
     if not user:
@@ -71,7 +73,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
 
 @router.patch(
     "/{user_id}",
-    # dependencies=[Depends(is_miapeer_super_user)],
+    dependencies=[Depends(is_miapeer_super_user)],
     response_model=UserRead,
 )
 def update_user(

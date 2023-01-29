@@ -12,7 +12,7 @@ from miapeer.models.miapeer.application_role import (
 router = APIRouter(
     prefix="/application-roles",
     tags=["Miapeer: Application-Roles"],
-    # dependencies=[Depends(is_miapeer_super_user)],
+    dependencies=[Depends(is_miapeer_super_user)],
     responses={404: {"description": "Not found"}},
 )
 

@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
-from miapeer.dependencies import get_db
+from miapeer.dependencies import (
+    get_db,
+    is_miapeer_admin,
+    is_miapeer_super_user,
+)
 from miapeer.models.miapeer.role import Role, RoleCreate, RoleRead, RoleUpdate
 
 router = APIRouter(
@@ -13,7 +17,7 @@ router = APIRouter(
 
 @router.get(
     "/",
-    # dependencies=[Depends(is_miapeer_admin)],
+    dependencies=[Depends(is_miapeer_admin)],
     response_model=list[RoleRead],
 )
 async def get_all_roles(
@@ -25,7 +29,7 @@ async def get_all_roles(
 
 @router.post(
     "/",
-    # dependencies=[Depends(is_miapeer_super_user)],
+    dependencies=[Depends(is_miapeer_super_user)],
     response_model=RoleRead,
 )
 async def create_role(
@@ -41,7 +45,7 @@ async def create_role(
 
 @router.get(
     "/{role_id}",
-    # dependencies=[Depends(is_miapeer_admin)],
+    dependencies=[Depends(is_miapeer_admin)],
     response_model=Role,
 )
 async def get_role(role_id: int, db: Session = Depends(get_db)) -> Role:
@@ -51,10 +55,7 @@ async def get_role(role_id: int, db: Session = Depends(get_db)) -> Role:
     return role
 
 
-@router.delete(
-    "/{role_id}",
-    # dependencies=[Depends(is_miapeer_super_user)]
-)
+@router.delete("/{role_id}", dependencies=[Depends(is_miapeer_super_user)])
 def delete_role(role_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     role = db.get(Role, role_id)
     if not role:
@@ -66,7 +67,7 @@ def delete_role(role_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
 
 @router.patch(
     "/{role_id}",
-    # dependencies=[Depends(is_miapeer_super_user)],
+    dependencies=[Depends(is_miapeer_super_user)],
     response_model=RoleRead,
 )
 def update_role(
