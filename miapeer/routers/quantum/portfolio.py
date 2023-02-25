@@ -81,10 +81,16 @@ async def get_portfolio(
 def delete_portfolio(portfolio_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     portfolio = db.get(Portfolio, portfolio_id)
 
+    sql = select(PortfolioUser).where(PortfolioUser.portfolio_id == portfolio_id)
+    portfolio_users = db.exec(sql).all()
+
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
     db.delete(portfolio)
+    for portfolio_user in portfolio_users:
+        db.delete(portfolio_user)
+
     db.commit()
 
     return {"ok": True}
