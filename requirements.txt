@@ -4,55 +4,55 @@
 #
 #    pip-compile
 #
-anyio==3.5.0
+anyio==3.6.2
     # via
     #   httpcore
     #   starlette
     #   watchgod
-asgiref==3.5.0
+asgiref==3.6.0
     # via uvicorn
-attrs==21.4.0
+attrs==22.2.0
     # via pytest
-authlib==1.0.0
+authlib==1.2.0
     # via -r requirements.in
 bcrypt==4.0.1
     # via passlib
 build==0.10.0
     # via pip-tools
-certifi==2021.10.8
+certifi==2022.12.7
     # via
     #   httpcore
     #   httpx
     #   requests
-cffi==1.15.0
+cffi==1.15.1
     # via cryptography
-charset-normalizer==2.0.12
+charset-normalizer==3.0.1
     # via
     #   httpx
     #   requests
-click==8.0.4
+click==8.1.3
     # via
     #   pip-tools
     #   uvicorn
-colorama==0.4.4
+colorama==0.4.6
     # via pytest-watch
-commonmark==0.9.1
-    # via rich
-cryptography==36.0.2
+cryptography==39.0.1
     # via
     #   authlib
     #   python-jose
-dnspython==2.2.1
+dnspython==2.3.0
     # via email-validator
 docopt==0.6.2
     # via pytest-watch
-ecdsa==0.17.0
+ecdsa==0.18.0
     # via python-jose
-email-validator==1.2.0
+email-validator==1.3.1
     # via fastapi
+exceptiongroup==1.1.0
+    # via pytest
 fastapi[all]==0.75.2
     # via -r requirements.in
-greenlet==1.1.2
+greenlet==2.0.2
     # via sqlalchemy
 h11==0.12.0
     # via
@@ -60,41 +60,43 @@ h11==0.12.0
     #   uvicorn
 httpcore==0.14.7
     # via httpx
-httptools==0.4.0
+httptools==0.5.0
     # via uvicorn
 httpx==0.22.0
     # via -r requirements.in
-idna==3.3
+idna==3.4
     # via
     #   anyio
     #   email-validator
     #   requests
     #   rfc3986
-iniconfig==1.1.1
+iniconfig==2.0.0
     # via pytest
 itsdangerous==2.1.2
     # via fastapi
-jinja2==3.1.1
+jinja2==3.1.2
     # via fastapi
-markupsafe==2.1.1
+markdown-it-py==2.2.0
+    # via rich
+markupsafe==2.1.2
     # via jinja2
-mypy==0.942
+mdurl==0.1.2
+    # via markdown-it-py
+mypy==1.0.1
     # via -r requirements.in
-mypy-extensions==0.4.3
+mypy-extensions==1.0.0
     # via mypy
-orjson==3.6.8
+orjson==3.8.6
     # via fastapi
-packaging==21.3
+packaging==23.0
     # via
     #   build
     #   pytest
 passlib[bcrypt]==1.7.4
     # via -r requirements.in
-pip-tools==6.12.1
+pip-tools==6.12.2
     # via -r requirements.in
 pluggy==1.0.0
-    # via pytest
-py==1.11.0
     # via pytest
 pyasn1==0.4.8
     # via
@@ -102,28 +104,26 @@ pyasn1==0.4.8
     #   rsa
 pycparser==2.21
     # via cffi
-pydantic==1.9.0
+pydantic==1.10.5
     # via
     #   fastapi
     #   sqlmodel
-pygments==2.11.2
+pygments==2.14.0
     # via rich
 pyodbc==4.0.32
     # via -r requirements.in
-pyparsing==3.0.8
-    # via packaging
 pyproject-hooks==1.0.0
     # via build
-pytest==7.1.1
+pytest==7.2.1
     # via
     #   -r requirements.in
     #   pytest-asyncio
     #   pytest-watch
-pytest-asyncio==0.20.2
+pytest-asyncio==0.20.3
     # via -r requirements.in
 pytest-watch==4.2.0
     # via -r requirements.in
-python-dotenv==0.19.2
+python-dotenv==1.0.0
     # via uvicorn
 python-jose[cryptography]==3.3.0
     # via -r requirements.in
@@ -135,29 +135,29 @@ pyyaml==6.0
     # via
     #   fastapi
     #   uvicorn
-requests==2.27.1
+requests==2.28.2
     # via fastapi
 rfc3986[idna2008]==1.5.0
     # via httpx
-rich==12.2.0
+rich==13.3.1
     # via -r requirements.in
-rsa==4.8
+rsa==4.9
     # via python-jose
 six==1.16.0
     # via
     #   -r requirements.in
     #   ecdsa
     #   python-multipart
-sniffio==1.2.0
+sniffio==1.3.0
     # via
     #   anyio
     #   httpcore
     #   httpx
-sqlalchemy==1.4.36
+sqlalchemy==1.4.41
     # via sqlmodel
-sqlalchemy2-stubs==0.0.2a22
+sqlalchemy2-stubs==0.0.2a32
     # via sqlmodel
-sqlmodel==0.0.6
+sqlmodel==0.0.8
     # via -r requirements.in
 starlette==0.17.1
     # via fastapi
@@ -171,26 +171,26 @@ types-passlib==1.7.7.1
     # via -r requirements.in
 types-requests==2.28.11.4
     # via -r requirements.in
-types-urllib3==1.26.25.3
+types-urllib3==1.26.25.8
     # via types-requests
-typing-extensions==4.1.1
+typing-extensions==4.5.0
     # via
     #   mypy
     #   pydantic
     #   sqlalchemy2-stubs
-ujson==5.2.0
+ujson==5.7.0
     # via fastapi
-urllib3==1.26.9
+urllib3==1.26.14
     # via requests
 uvicorn[standard]==0.17.6
     # via fastapi
-uvloop==0.16.0
+uvloop==0.17.0
     # via uvicorn
-watchdog==2.1.7
+watchdog==2.3.0
     # via pytest-watch
 watchgod==0.8.2
     # via uvicorn
-websockets==10.3
+websockets==10.4
     # via uvicorn
 wheel==0.38.4
     # via pip-tools
