@@ -1,9 +1,12 @@
-from typing import Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
-# if TYPE_CHECKING:
-#     from miapeer.models.miapeer.application import ApplicationRead
+from miapeer.models.miapeer.application import Application
+from miapeer.models.miapeer.role import Role
+
+if TYPE_CHECKING:
+    from miapeer.models.miapeer.permission import Permission
 
 
 class ApplicationRoleBase(SQLModel):
@@ -17,6 +20,11 @@ class ApplicationRole(ApplicationRoleBase, table=True):
 
     application_role_id: Optional[int] = Field(default=None, primary_key=True)
 
+    application: Application = Relationship(back_populates="application_roles")
+    role: Role = Relationship(back_populates="application_roles")
+
+    permissions: List["Permission"] = Relationship(back_populates="application_role")
+
 
 class ApplicationRoleCreate(ApplicationRoleBase):
     ...
@@ -24,7 +32,9 @@ class ApplicationRoleCreate(ApplicationRoleBase):
 
 class ApplicationRoleRead(ApplicationRoleBase):
     application_role_id: int
-    # application: Optional["ApplicationRead"] = Relationship(back_populates="application_roles")
+
+    application: Optional[Application] = None
+    role: Optional[Role] = None
 
 
 class ApplicationRoleUpdate(SQLModel):

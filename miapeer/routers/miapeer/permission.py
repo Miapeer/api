@@ -38,7 +38,7 @@ async def create_permission(
     return db_permission
 
 
-@router.get("/{permission_id}", response_model=Permission)
+@router.get("/{permission_id}", response_model=PermissionRead)
 async def get_permission(permission_id: int, db: Session = Depends(get_db)) -> Permission:
     permission = db.get(Permission, permission_id)
     if not permission:

@@ -22,6 +22,7 @@ async def get_all_application_roles(
     db: Session = Depends(get_db),
 ) -> list[ApplicationRole]:
     application_roles = db.exec(select(ApplicationRole)).all()
+
     return application_roles
 
 
@@ -39,7 +40,7 @@ async def create_application_role(
     return db_application_role
 
 
-@router.get("/{application_role_id}", response_model=ApplicationRole)
+@router.get("/{application_role_id}", response_model=ApplicationRoleRead)
 async def get_application_role(application_role_id: int, db: Session = Depends(get_db)) -> ApplicationRole:
     application_role = db.get(ApplicationRole, application_role_id)
     if not application_role:

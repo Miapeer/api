@@ -1,6 +1,9 @@
-from typing import Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+if TYPE_CHECKING:
+    from miapeer.models.miapeer.permission import Permission
 
 
 class UserBase(SQLModel):
@@ -13,6 +16,9 @@ class User(UserBase, table=True):
     user_id: Optional[int] = Field(default=None, primary_key=True)
     password: str
     disabled: bool
+
+    permissions: List["Permission"] = Relationship(back_populates="user")
+    # portfolio_users: List["PortfolioUser"] = Relationship(back_populates="user")
 
 
 class UserCreate(UserBase):
