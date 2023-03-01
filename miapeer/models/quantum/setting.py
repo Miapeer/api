@@ -12,6 +12,8 @@ class Setting(SettingBase, table=True):
 
     setting_id: Optional[int] = Field(default=None, primary_key=True)
 
+    # portfolio_user_settings: List["PortfolioUserSetting"] = Relationship(back_populates="setting")
+
 
 class SettingCreate(SettingBase):
     ...

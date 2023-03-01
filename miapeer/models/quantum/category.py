@@ -14,6 +14,14 @@ class Category(CategoryBase, table=True):
 
     category_id: Optional[int] = Field(default=None, primary_key=True)
 
+    # portfolio: Portfolio = Relationship(back_populates="categories")
+    # parent: "Category" = Relationship(back_populates="children")
+
+    # children: List["Category"] = Relationship(back_populates="parent")
+    # transactions: List["Transaction"] = Relationship(back_populates="category")
+    # scheduled_transactions: List["ScheduledTransaction"] = Relationship(back_populates="category")
+    # import_definitions: List["ImportDefinition"] = Relationship(back_populates="category")
+
 
 class CategoryCreate(CategoryBase):
     ...

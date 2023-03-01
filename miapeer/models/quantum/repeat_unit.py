@@ -12,6 +12,8 @@ class RepeatUnit(RepeatUnitBase, table=True):
 
     repeat_unit_id: Optional[int] = Field(default=None, primary_key=True)
 
+    # repeat_options: List["RepeatOption"] = Relationship(back_populates="repeat_unit")
+
 
 class RepeatUnitCreate(RepeatUnitBase):
     ...

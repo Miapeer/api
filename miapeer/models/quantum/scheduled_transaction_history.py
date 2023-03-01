@@ -16,6 +16,9 @@ class ScheduledTransactionHistory(ScheduledTransactionHistoryBase, table=True):
 
     scheduled_transaction_history_id: Optional[int] = Field(default=None, primary_key=True)
 
+    # scheduled_transaction: ScheduledTransaction = Relationship(back_populates="scheduled_transaction_history")
+    # transaction: Transaction = Relationship(back_populates="scheduled_transaction_history")
+
 
 class ScheduledTransactionHistoryCreate(ScheduledTransactionHistoryBase):
     ...

@@ -13,6 +13,11 @@ class PortfolioUser(PortfolioUserBase, table=True):
 
     portfolio_user_id: Optional[int] = Field(default=None, primary_key=True)
 
+    # portfolio: Portfolio = Relationship(back_populates="portfolio_users")
+    # user: User = Relationship(back_populates="portfolio_users")
+
+    # portfolio_user_settings: List["PortfolioUserSetting"] = Relationship(back_populates="portfolio_user")
+
 
 class PortfolioUserCreate(PortfolioUserBase):
     ...

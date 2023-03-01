@@ -6,7 +6,6 @@ from sqlmodel import Field, SQLModel
 
 
 class ScheduledTransactionBase(SQLModel):
-    name: str
     transaction_type_id: int = Field(foreign_key="quantum_transaction_type.transaction_type_id")
     payee_id: int = Field(foreign_key="quantum_payee.payee_id")
     category_id: int = Field(foreign_key="quantum_category.category_id")
@@ -17,8 +16,8 @@ class ScheduledTransactionBase(SQLModel):
     end_date: date
     limit_occurrences: int
     repeat_option_id: int = Field(foreign_key="quantum_repeat_option.repeat_option_id")
-    linked_account_id: int = Field(foreign_key="quantum_account.account_id")
-    linked_account_cycle_end_offset: int
+    # linked_account_id: int = Field(foreign_key="quantum_account.account_id")
+    # linked_account_cycle_end_offset: int
     notes: str
     on_autopay: bool
 
@@ -28,6 +27,15 @@ class ScheduledTransaction(ScheduledTransactionBase, table=True):
 
     scheduled_transaction_id: Optional[int] = Field(default=None, primary_key=True)
     account_id: int = Field(foreign_key="quantum_account.account_id")
+
+    # account: Account = Relationship(back_populates="scheduled_transactions")
+    # transaction_type: TransactionType = Relationship(back_populates="scheduled_transactions")
+    # payee: Payee = Relationship(back_populates="scheduled_transactions")
+    # category: Category = Relationship(back_populates="scheduled_transactions")
+    # repeat_option: RepeatOption = Relationship(back_populates="scheduled_transactions")
+    # linked_account: Account = Relationship(back_populates="linked_scheduled_transactions")
+
+    # scheduled_transaction_history: List["ScheduledTransactionHistory"] = Relationship(back_populates="scheduled_transaction")
 
 
 class ScheduledTransactionCreate(ScheduledTransactionBase):

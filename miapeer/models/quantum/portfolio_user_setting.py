@@ -10,9 +10,12 @@ class PortfolioUserSettingBase(SQLModel):
 
 
 class PortfolioUserSetting(PortfolioUserSettingBase, table=True):
-    __tablename__: str = "quantum_portfolio_user_setting"
+    __tablename__: str = "quantum_portfolio_user_setting"  # type: ignore
 
     portfolio_user_setting_id: Optional[int] = Field(default=None, primary_key=True)
+
+    # portfolio_user: PortfolioUser = Relationship(back_populates="portfolio_user_settings")
+    # setting: Setting = Relationship(back_populates="portfolio_user_settings")
 
 
 class PortfolioUserSettingCreate(PortfolioUserSettingBase):

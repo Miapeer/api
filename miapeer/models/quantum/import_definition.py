@@ -17,6 +17,11 @@ class ImportDefinition(ImportDefinitionBase, table=True):
 
     import_definition_id: Optional[int] = Field(default=None, primary_key=True)
 
+    # account: Account = Relationship(back_populates="import_definitions")
+    # transaction_type: TransactionType = Relationship(back_populates="import_definitions")
+    # payee: Payee = Relationship(back_populates="import_definitions")
+    # category: Category = Relationship(back_populates="import_definitions")
+
 
 class ImportDefinitionCreate(ImportDefinitionBase):
     ...

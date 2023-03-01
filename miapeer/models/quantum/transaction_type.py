@@ -13,6 +13,12 @@ class TransactionType(TransactionTypeBase, table=True):
 
     transaction_type_id: Optional[int] = Field(default=None, primary_key=True)
 
+    # portfolio: Portfolio = Relationship(back_populates="transaction_types")
+
+    # transactions: List["Transaction"] = Relationship(back_populates="transaction_type")
+    # scheduled_transactions: List["ScheduledTransaction"] = Relationship(back_populates="transaction_type")
+    # import_definitions: List["ImportDefinition"] = Relationship(back_populates="transaction_type")
+
 
 class TransactionTypeCreate(TransactionTypeBase):
     ...

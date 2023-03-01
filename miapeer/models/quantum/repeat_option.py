@@ -15,6 +15,9 @@ class RepeatOption(RepeatOptionBase, table=True):
 
     repeat_option_id: Optional[int] = Field(default=None, primary_key=True)
 
+    # scheduled_transactions: List["ScheduledTransaction"] = Relationship(back_populates="repeat_option")
+    # repeat_unit: RepeatUnit = Relationship(back_populates="repeat_options")
+
 
 class RepeatOptionCreate(RepeatOptionBase):
     ...

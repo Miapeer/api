@@ -13,6 +13,12 @@ class Payee(PayeeBase, table=True):
 
     payee_id: Optional[int] = Field(default=None, primary_key=True)
 
+    # portfolio: Portfolio = Relationship(back_populates="payees")
+
+    # transactions: List["Transaction"] = Relationship(back_populates="payee")
+    # scheduled_transactions: List["ScheduledTransaction"] = Relationship(back_populates="payee")
+    # import_definitions: List["ImportDefinition"] = Relationship(back_populates="payee")
+
 
 class PayeeCreate(PayeeBase):
     ...

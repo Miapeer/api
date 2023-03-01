@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
@@ -15,6 +17,7 @@ from miapeer.models.quantum.account import (
 )
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
+from miapeer.models.quantum.transaction import Transaction
 
 router = APIRouter(
     prefix="/accounts",
@@ -54,6 +57,21 @@ async def create_account(
     db.add(db_account)
     db.commit()
     db.refresh(db_account)
+
+    initial_transaction = Transaction(
+        transaction_type_id=-1,
+        payee_id=None,
+        category_id=None,
+        amount=account.starting_balance,
+        transaction_date=datetime.utcnow(),
+        clear_date=datetime.utcnow(),
+        check_number=None,
+        exclude_from_forecast=True,
+        notes=None,
+    )
+
+    db.add(initial_transaction)
+    db.commit()
 
     return db_account
 
