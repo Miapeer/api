@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from miapeer.dependencies import get_db, is_miapeer_super_user
-from miapeer.models.miapeer.application_role import (
+from miapeer.models.miapeer import (
     ApplicationRole,
     ApplicationRoleCreate,
     ApplicationRoleRead,

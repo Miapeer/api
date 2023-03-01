@@ -3,16 +3,13 @@ from os import environ as env
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
+from fastapi.security import OAuth2PasswordRequestForm
+from jose import jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel
 from sqlmodel import Session, select
 
-from miapeer.auth.abstract import AbstractAuthenticator
 from miapeer.dependencies import get_db
-from miapeer.models.miapeer.auth import Token
-from miapeer.models.miapeer.user import User
+from miapeer.models.miapeer import Token, User
 
 DEFAULT_JWT_ALGORITHM = "HS256"
 

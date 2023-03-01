@@ -7,7 +7,7 @@ from miapeer.dependencies import (
     is_quantum_super_user,
     is_quantum_user,
 )
-from miapeer.models.miapeer.user import User
+from miapeer.models.miapeer import User
 from miapeer.models.quantum.portfolio import (
     Portfolio,
     PortfolioCreate,

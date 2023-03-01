@@ -3,7 +3,7 @@ from abc import ABC
 from fastapi import APIRouter
 from fastapi.security import OAuth2PasswordBearer
 
-from miapeer.models.miapeer.user import User
+from miapeer.models.miapeer import User
 
 
 # Not in use

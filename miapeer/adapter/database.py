@@ -4,6 +4,14 @@ from urllib.parse import quote_plus
 from sqlalchemy.engine.base import Engine
 from sqlmodel import Session, SQLModel, create_engine
 
+from miapeer.models.miapeer import (
+    Application,
+    ApplicationRole,
+    Permission,
+    Role,
+    User,
+)
+
 
 def connection_string() -> str:
     server = env.get("MIAPEER_DB_SERVER")
@@ -31,8 +39,6 @@ engine: Engine = create_engine(db_uri(), connect_args={"check_same_thread": Fals
 
 def get_user_count() -> int:
     with engine.connect() as connection:
-        from miapeer.models.miapeer.user import User
-
         with Session(engine) as db:
             user_count = db.query(User).count()
             return user_count
@@ -53,11 +59,6 @@ def seed_db() -> None:
     admin_password = env.get("MIAPEER_DB_SEED_ADMIN_PASSWORD")
 
     with engine.connect() as connection:
-        from miapeer.models.miapeer.application import Application
-        from miapeer.models.miapeer.application_role import ApplicationRole
-        from miapeer.models.miapeer.permission import Permission
-        from miapeer.models.miapeer.role import Role
-        from miapeer.models.miapeer.user import User
         from miapeer.models.quantum.repeat_option import RepeatOption
         from miapeer.models.quantum.repeat_unit import RepeatUnit
 

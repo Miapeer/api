@@ -8,12 +8,14 @@ from jose import JWTError, jwt
 from sqlmodel import Session, select
 
 from miapeer.adapter.database import engine
-from miapeer.models.miapeer.application import Application
-from miapeer.models.miapeer.application_role import ApplicationRole
-from miapeer.models.miapeer.auth import TokenData
-from miapeer.models.miapeer.permission import Permission
-from miapeer.models.miapeer.role import Role
-from miapeer.models.miapeer.user import User
+from miapeer.models.miapeer import (
+    Application,
+    ApplicationRole,
+    Permission,
+    Role,
+    TokenData,
+    User,
+)
 
 DEFAULT_JWT_ALGORITHM = "HS256"
 DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES = 30

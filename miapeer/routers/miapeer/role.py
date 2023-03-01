@@ -6,7 +6,7 @@ from miapeer.dependencies import (
     is_miapeer_admin,
     is_miapeer_super_user,
 )
-from miapeer.models.miapeer.role import Role, RoleCreate, RoleRead, RoleUpdate
+from miapeer.models.miapeer import Role, RoleCreate, RoleRead, RoleUpdate
 
 router = APIRouter(
     prefix="/roles",

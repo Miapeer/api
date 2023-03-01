@@ -6,7 +6,7 @@ from miapeer.dependencies import (
     get_db,
     is_quantum_user,
 )
-from miapeer.models.miapeer.user import User
+from miapeer.models.miapeer import User
 from miapeer.models.quantum.account import (
     Account,
     AccountCreate,
