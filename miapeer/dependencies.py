@@ -1,13 +1,13 @@
 from enum import Enum
 from os import environ as env
-from typing import Iterator
+from typing import Iterator, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
 from sqlmodel import Session, select
 
 from miapeer.adapter.database import engine
+from miapeer.auth.jwt import decode_jwt
 from miapeer.models.miapeer import (
     Application,
     ApplicationRole,
@@ -36,39 +36,43 @@ permission_cache: set[str] = set()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/miapeer/v1/auth/token")
 
+
 # TODO: Make async? ...or already async?
 def get_db() -> Iterator[Session]:
     with Session(engine) as session:
         yield session
 
 
-# TODO: Cache results to prevent multiple DB lookups
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+def get_jwk() -> Optional[str]:
+    return env.get("JWT_SECRET_KEY")
 
-    try:
-        payload = jwt.decode(
-            token, env.get("JWT_SECRET_KEY"), algorithms=[env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)]
+
+# TODO: Cache results to prevent multiple DB lookups
+async def get_current_user(
+    token: str = Depends(oauth2_scheme), jwt_key: str = Depends(get_jwk), db: Session = Depends(get_db)
+) -> User:
+    payload = decode_jwt(token, jwt_key)
+
+    username: Optional[str] = payload.get("sub")
+
+    if username is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-        username: str = payload.get("sub")
-
-        if username is None:
-            raise credentials_exception
-
-        token_data = TokenData(username=username)
-    except JWTError:
-        raise credentials_exception
+    token_data = TokenData(username=username)
 
     user = db.exec(select(User).where(User.email == token_data.username)).first()
     if user is None:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
-    print(f"\n{permission_cache = }\n")  # TODO: Remove this!!!
+    # print(f"\n{permission_cache = }\n")  # TODO: Remove this!!!
 
     return user
 

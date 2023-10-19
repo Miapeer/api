@@ -1,14 +1,13 @@
-from datetime import datetime, timedelta
-from os import environ as env
+from datetime import timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import jwt
 from passlib.context import CryptContext
 from sqlmodel import Session, select
 
-from miapeer.dependencies import get_db
+from miapeer.auth.jwt import encode_jwt
+from miapeer.dependencies import get_db, get_jwk
 from miapeer.models.miapeer import Token, User
 
 DEFAULT_JWT_ALGORITHM = "HS256"
@@ -48,28 +47,11 @@ def _authenticate_user(db: Session, username: str, password: str) -> Optional[Us
     return user
 
 
-def _create_access_token(data: dict[str, str], expires_delta: timedelta | None = None) -> str:
-    to_encode = data.copy()
-
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-
-    to_encode.update({"exp": expire})  # type: ignore
-
-    encoded_jwt: str = jwt.encode(
-        to_encode, env.get("JWT_SECRET_KEY"), algorithm=env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)
-    )
-
-    return encoded_jwt
-
-
 # TODO: Does data need to be sent encrypted, or is HTTPS sufficient?
 # TODO: If something does need to be changed, difference between SSL and TLS?
 @router.post("/token", response_model=Token)
 async def _login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), jwk: str = Depends(get_jwk), db: Session = Depends(get_db)
 ) -> dict[str, str]:
     user = _authenticate_user(db, form_data.username, form_data.password)
 
@@ -84,6 +66,6 @@ async def _login_for_access_token(
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    access_token = _create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
+    access_token = encode_jwt(jwt_key=jwk, data={"sub": user.email}, expires_delta=access_token_expires)
 
     return {"access_token": access_token, "token_type": "bearer"}

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
@@ -32,7 +32,7 @@ class User(UserBase, table=True):
     password: str
     disabled: bool
 
-    permissions: list["Permission"] = Relationship(back_populates="user")
+    permissions: List["Permission"] = Relationship(back_populates="user")
     # portfolio_users: List["PortfolioUser"] = Relationship(back_populates="user")
 
 
@@ -66,7 +66,7 @@ class Application(ApplicationBase, table=True):
     __tablename__: str = "miapeer_application"  # type: ignore
 
     application_id: Optional[int] = Field(default=None, primary_key=True)
-    application_roles: list["ApplicationRole"] = Relationship(back_populates="application")
+    application_roles: List["ApplicationRole"] = Relationship(back_populates="application")
 
 
 class ApplicationCreate(ApplicationBase):
@@ -100,7 +100,7 @@ class Role(RoleBase, table=True):
 
     role_id: Optional[int] = Field(default=None, primary_key=True)
 
-    application_roles: list["ApplicationRole"] = Relationship(back_populates="role")
+    application_roles: List["ApplicationRole"] = Relationship(back_populates="role")
 
 
 class RoleCreate(RoleBase):
@@ -136,7 +136,7 @@ class ApplicationRole(ApplicationRoleBase, table=True):
     application: "Application" = Relationship(back_populates="application_roles")
     role: "Role" = Relationship(back_populates="application_roles")
 
-    permissions: list["Permission"] = Relationship(back_populates="application_role")
+    permissions: List["Permission"] = Relationship(back_populates="application_role")
 
 
 class ApplicationRoleCreate(ApplicationRoleBase):
