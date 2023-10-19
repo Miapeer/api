@@ -118,8 +118,11 @@ pytest==7.2.1
     # via
     #   -r requirements.in
     #   pytest-asyncio
+    #   pytest-only
     #   pytest-watch
 pytest-asyncio==0.20.3
+    # via -r requirements.in
+pytest-only==2.0.0
     # via -r requirements.in
 pytest-watch==4.2.0
     # via -r requirements.in
