@@ -11,6 +11,8 @@ from miapeer.models.miapeer import (
     Role,
     User,
 )
+from miapeer.models.quantum import RepeatOption  # noqa
+from miapeer.models.quantum import RepeatUnit  # noqa
 
 
 def connection_string() -> str:
