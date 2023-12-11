@@ -20,7 +20,7 @@ def connection_string() -> str:
     database = env.get("MIAPEER_DB_NAME")
     username = env.get("MIAPEER_DB_USERNAME")
     password = env.get("MIAPEER_DB_PASSWORD")
-    driver = "{ODBC Driver 17 for SQL Server}"
+    driver = "{ODBC Driver 18 for SQL Server}"
 
     connection_string = (
         f"DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}"
