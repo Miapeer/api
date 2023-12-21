@@ -1,44 +1,49 @@
-### Hi there 👋
+# Miapeer API
+This is the Miapeer API.
 
-<!--
-**Miapeer/miapeer** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+Check out the front-end [here](https://github.com/Miapeer).
 
-Here are some ideas to get you started:
+## Table of Contents
+- [User Permission list](#user-permission-list)
+- [License](#license)
+- [Installation](#installation)
+- [Copyright](#copyright-notice)
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
-
-# Permissions
-## Miapeer
-### Unauthenticated
+## User Permission list
+### Miapeer
+#### Unauthenticated
 Can access the home page in order to register or log in
 
-### User
+#### User
 Can access their applications
 
-### Admin
+#### Admin
 Can create users
 Can assign applications to users
 
-### Super User
+#### Super User
 Can create applications
 
-## Quantum
-### Unauthenticated
+### Quantum
+#### Unauthenticated
 No access - Sign in first
 
-### User
+#### User
 Can access their associated portfolios
 
-### Admin
+#### Admin
 Can add users to their portfolios
 
-### Super User
+#### Super User
 Can add admins to their portfolios
+
+
+## License
+No license is currently offered
+
+## Copyright Notice
+Copyright © 2023 Miapeer LLC
+
+All rights reserved. This [software/product/content] is the property of Miapeer LLC and is protected by copyright and other intellectual property laws. You may not reproduce, distribute, or create derivative works without explicit written consent from Miapeer LLC.
+
+For inquiries, please contact [Jeff Navarra](mailto:jeff.navarra@miapeer.com).
