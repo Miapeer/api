@@ -39,7 +39,7 @@ class TestDecodeJwt:
             ("some.bad.token", JwtErrorMessage.INVALID_TOKEN),
             # Expired token
             (
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXBuMTNAZ21haWwuY29tIiwiZXhwIjoxNjc3OTg1NTY1fQ.pXj4Rk42O5iJB1XhIRWfVCO-fSdnuCXEJwLW5G1NU64",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZWZmLm5hdmFycmFAbWlhcGVlci5jb20iLCJleHAiOjE2Nzc5ODU1NjV9.gCV8uhqs1QiMQvBVfY4RUiyVwVo7R3Sn7opRY79LeQ8",
                 JwtErrorMessage.INVALID_TOKEN,
             ),
         ],
