@@ -1,0 +1,14 @@
+version: '3'
+
+tasks:
+    compile-requirements:
+        cmds:
+            - pip-compile
+
+    install-local:
+        cmds:
+            - pip install -r requirements.txt
+
+    tdd:
+        cmds:
+            - ptw
