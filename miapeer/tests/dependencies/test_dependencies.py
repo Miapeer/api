@@ -1,49 +1,52 @@
-# import pytest
+import pytest
 
-# from miapeer.dependencies import _decode_jwt, get_current_user, CredentialErrorMessage
-# # from miapeer.dependencies import get_current_active_user
-# from fastapi import HTTPException
-
-# pytestmark = pytest.mark.asyncio
+from miapeer.auth.jwt import JwtException, TokenData, decode_jwt
 
 
-# class TestDecodeJwt:
-#     @pytest.fixture
-#     def jwk(self):
-#         return "super secret key"
+class TestDecodeJwt:
+    @pytest.fixture
+    def jwk(self) -> str:
+        return "super secret key"
 
-#     @pytest.fixture
-#     def empty_token(self):
-#         return ""
+    @pytest.fixture
+    def empty_token(self) -> str:
+        return ""
 
-#     @pytest.fixture
-#     def invalid_token(self):
-#         return "zzz"
+    @pytest.fixture
+    def invalid_token(self) -> str:
+        return "zzz"
 
-#     @pytest.fixture
-#     def expired_token(self):
-#         return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXBuMTNAZ21haWwuY29tIiwiZXhwIjoxNjc3OTg1NTY1fQ.pXj4Rk42O5iJB1XhIRWfVCO-fSdnuCXEJwLW5G1NU64"
+    @pytest.fixture
+    def expired_token(self) -> str:
+        return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXAubmF2YXJyYUBtaWFwZWVyLmNvbSIsImV4cCI6MTcwNTQ1MTk5M30.YtKDGY0yTTxYUser8mhCHrpf34NfuWH64t8FSqER7tU"
 
-#     async def test_no_bearer_token_raises_exception(self, empty_token, jwk):
-#         with pytest.raises(HTTPException):
-#             await _decode_jwt(token=empty_token, jwt_key=jwk)
+    @pytest.fixture
+    def future_valid_token(self) -> str:
+        return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXAubmF2YXJyYUBtaWFwZWVyLmNvbSIsImV4cCI6Nzc1MjkzNzQyOX0.RYipfri10zKHHyAk8Vg_fRfQmKXpp_7nyjuaKRUIWmk"
 
-#     async def test_invalid_bearer_token_raises_exception(self, invalid_token, jwk):
-#         with pytest.raises(HTTPException):
-#             await _decode_jwt(token=invalid_token, jwt_key=jwk)
+    @pytest.fixture
+    def future_valid_token_data(self) -> TokenData:
+        return {"sub": "jep.navarra@miapeer.com", "exp": 7752937429}
 
-#     async def test_expired_bearer_token_raises_exception(self, expired_token, jwk):
-#         with pytest.raises(HTTPException):
-#             await _decode_jwt(token=expired_token, jwt_key=jwk)
+    def test_no_bearer_token_raises_exception(self, empty_token: str, jwk: str) -> None:
+        with pytest.raises(JwtException):
+            decode_jwt(token=empty_token, jwt_key=jwk)
 
-#     async def test_missing_jwk_raises_exception(self):
-#         ...
+    def test_invalid_bearer_token_raises_exception(self, invalid_token: str, jwk: str) -> None:
+        with pytest.raises(JwtException):
+            decode_jwt(token=invalid_token, jwt_key=jwk)
 
-#     async def test_decode_fail_raises_exception(self):
-#         ...
+    def test_expired_bearer_token_raises_exception(self, expired_token: str, jwk: str) -> None:
+        with pytest.raises(JwtException):
+            decode_jwt(token=expired_token, jwt_key=jwk)
 
-#     async def test_decodes_token(self):
-#         ...
+    def test_missing_jwk_raises_exception(self, expired_token: str) -> None:
+        with pytest.raises(JwtException):
+            decode_jwt(token=expired_token, jwt_key="")
+
+    def test_decodes_token(self, jwk: str, future_valid_token: str, future_valid_token_data: TokenData) -> None:
+        token_data = decode_jwt(token=future_valid_token, jwt_key=jwk)
+        assert token_data == future_valid_token_data
 
 
 # # class TestGetCurrentUser:
