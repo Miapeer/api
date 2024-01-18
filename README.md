@@ -41,6 +41,23 @@ Can add admins to their portfolios
 ## License
 No license is currently offered
 
+## Installation
+If error on Mac:
+```
+Building wheels for collected packages: pyodbc
+  Building wheel for pyodbc (setup.py) ... error
+  error: subprocess-exited-with-error
+
+  × python setup.py bdist_wheel did not run successfully.
+  │ exit code: 1
+...
+```
+Explanation: https://stackoverflow.com/questions/72142381/unable-to-pip-install-pyodbc-on-mac
+- `brew install unixodbc`
+- `export LDFLAGS="-L/opt/homebrew/Cellar/unixodbc/[your version]/lib"`
+- `export CPPFLAGS="-I/opt/homebrew/Cellar/unixodbc/[your version]/include"`
+- `task install-local`
+
 ## Copyright Notice
 Copyright © 2023 Miapeer LLC
 

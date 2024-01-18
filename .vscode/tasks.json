@@ -4,15 +4,6 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Development: Build Miapeer API image",
-            "type": "shell",
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "command": "docker image build --file ./Dockerfile-dev --tag miapeer.azurecr.io/miapeer-api-dev .",
-            "problemMatcher": []
-        },
-        {
             "label": "Development: Shell into Miapeer API container",
             "type": "shell",
             "command": "docker container run --rm -it -p 8000:80 --env-file ${workspaceFolder}/.env --volume ${workspaceFolder}:/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-api-dev bash",

@@ -1,14 +1,37 @@
 version: '3'
 
 tasks:
-    compile-requirements:
-        cmds:
-            - pip-compile
+  compile-requirements:
+    cmds:
+      - pip-compile
 
-    install-local:
-        cmds:
-            - pip install -r requirements.txt
+  install-local:
+    cmds:
+      - pip install -r requirements.txt
 
-    tdd:
-        cmds:
-            - ptw
+  build-dev:
+    cmds:
+      - docker image build --file ./Dockerfile-dev --tag miapeer.azurecr.io/miapeer-api-dev .
+
+  run-command:
+    internal: true
+    cmds:
+      - docker container run --rm -it -p 8000:80 --env-file {{.USER_WORKING_DIR}}/.env --volume {{.USER_WORKING_DIR}}:/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-api-dev {{.COMMAND_STRING}}
+
+  run-cmd:
+    cmds:
+      - task: run-command
+        vars:
+          COMMAND_STRING: "{{.CLI_ARGS}}"
+
+  tdd:
+    cmds:
+      - task: run-command
+        vars:
+          COMMAND_STRING: ptw
+
+  coverage-report:
+    cmds:
+      - task: run-command
+        vars:
+          COMMAND_STRING: pytest --cov-report term-missing:skip-covered --cov=miapeer miapeer/tests/
