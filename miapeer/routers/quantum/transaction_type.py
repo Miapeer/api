@@ -86,7 +86,7 @@ async def get_transaction_type(
 
 
 @router.delete("/{transaction_type_id}", dependencies=[Depends(is_quantum_user)])
-def delete_transaction_type(
+async def delete_transaction_type(
     transaction_type_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -111,9 +111,9 @@ def delete_transaction_type(
 
 
 @router.patch("/{transaction_type_id}", dependencies=[Depends(is_quantum_user)], response_model=TransactionTypeRead)
-def update_transaction_type(
+async def update_transaction_type(
     transaction_type_id: int,
-    payee: TransactionTypeUpdate,
+    transaction_type: TransactionTypeUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> TransactionType:
@@ -130,7 +130,7 @@ def update_transaction_type(
     if not db_transaction_type:
         raise HTTPException(status_code=404, detail="Transaction type not found")
 
-    transaction_type_data = payee.dict(exclude_unset=True)
+    transaction_type_data = transaction_type.dict(exclude_unset=True)
 
     for key, value in transaction_type_data.items():
         setattr(db_transaction_type, key, value)

@@ -29,4 +29,4 @@ class TransactionTypeRead(TransactionTypeBase):
 
 
 class TransactionTypeUpdate(SQLModel):
-    ...
+    name: Optional[str]
