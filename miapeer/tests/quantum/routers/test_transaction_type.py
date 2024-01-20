@@ -15,6 +15,21 @@ from miapeer.routers.quantum import transaction_type
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.fixture
+def transaction_type_id() -> int:
+    return 12345
+
+
+@pytest.fixture
+def transaction_type_name() -> str:
+    return "transaction type name"
+
+
+@pytest.fixture
+def portfolio_id() -> int:
+    return 321
+
+
 class TestGetAll:
     @pytest.fixture
     def expected_sql(self, user_id: int) -> str:
@@ -33,14 +48,6 @@ class TestGetAll:
 
 class TestCreate:
     @pytest.fixture
-    def transaction_type_name(self) -> str:
-        return "transaction type name"
-
-    @pytest.fixture
-    def portfolio_id(self) -> int:
-        return 321
-
-    @pytest.fixture
     def transaction_type_create(self, transaction_type_name: str, portfolio_id: int) -> TransactionTypeCreate:
         return TransactionTypeCreate(name=transaction_type_name, portfolio_id=portfolio_id)
 
@@ -53,7 +60,7 @@ class TestCreate:
         return f"SELECT quantum_portfolio.portfolio_id \nFROM quantum_portfolio JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.mark.parametrize("db_first_return_val", ["some data"])
-    async def test_create(
+    async def test_create_with_portfolio_found(
         self,
         user: User,
         transaction_type_create: TransactionTypeCreate,
@@ -75,7 +82,7 @@ class TestCreate:
         # Don't need to test the response here because it's just the updated transaction_type_to_add
 
     @pytest.mark.parametrize("db_first_return_val", [None, ""])
-    async def test_create_portfolio_not_found(
+    async def test_create_with_portfolio_not_found(
         self, user: User, transaction_type_create: TransactionTypeCreate, mock_db: Mock, expected_sql: str
     ) -> None:
         with pytest.raises(HTTPException):
@@ -93,10 +100,6 @@ class TestCreate:
 
 
 class TestGet:
-    @pytest.fixture
-    def transaction_type_id(self) -> int:
-        return 12345
-
     @pytest.fixture
     def expected_sql(self, user_id: int, transaction_type_id: int) -> str:
         return f"SELECT quantum_transaction_type.name, quantum_transaction_type.portfolio_id, quantum_transaction_type.transaction_type_id \nFROM quantum_transaction_type JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_transaction_type.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_transaction_type.transaction_type_id = {transaction_type_id} AND quantum_portfolio_user.user_id = {user_id}"
@@ -116,7 +119,9 @@ class TestGet:
         assert response == db_one_or_none_return_val
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
-    async def test_get_no_data(self, user: User, transaction_type_id: int, mock_db: Mock, expected_sql: str) -> None:
+    async def test_get_with_no_data(
+        self, user: User, transaction_type_id: int, mock_db: Mock, expected_sql: str
+    ) -> None:
         with pytest.raises(HTTPException):
             await transaction_type.get_transaction_type(
                 transaction_type_id=transaction_type_id, db=mock_db, current_user=user
@@ -130,15 +135,11 @@ class TestGet:
 
 class TestDelete:
     @pytest.fixture
-    def transaction_type_id(self) -> int:
-        return 12345
-
-    @pytest.fixture
     def expected_sql(self, user_id: int, transaction_type_id: int) -> str:
         return f"SELECT quantum_transaction_type.name, quantum_transaction_type.portfolio_id, quantum_transaction_type.transaction_type_id \nFROM quantum_transaction_type JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_transaction_type.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_transaction_type.transaction_type_id = {transaction_type_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.mark.parametrize("db_one_or_none_return_val", ["some data", 123])
-    async def test_delete_when_transaction_type_found(
+    async def test_delete_with_transaction_type_found(
         self, user: User, transaction_type_id: int, mock_db: Mock, expected_sql: str, db_one_or_none_return_val: Any
     ) -> None:
         response = await transaction_type.delete_transaction_type(
@@ -154,7 +155,7 @@ class TestDelete:
         assert response == {"ok": True}
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
-    async def test_delete_when_transaction_type_not_found(
+    async def test_delete_with_transaction_type_not_found(
         self, user: User, transaction_type_id: int, mock_db: Mock, expected_sql: str
     ) -> None:
         with pytest.raises(HTTPException):
@@ -172,10 +173,6 @@ class TestDelete:
 
 class TestUpdate:
     @pytest.fixture
-    def transaction_type_id(self) -> int:
-        return 12345
-
-    @pytest.fixture
     def transaction_type(self) -> TransactionType:
         return TransactionType(transaction_type_id=None, name="transaction type name", portfolio_id=23541)
 
@@ -188,7 +185,7 @@ class TestUpdate:
         return f"SELECT quantum_transaction_type.name, quantum_transaction_type.portfolio_id, quantum_transaction_type.transaction_type_id \nFROM quantum_transaction_type JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_transaction_type.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_transaction_type.transaction_type_id = {transaction_type_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [transaction_type])
-    async def test_update_when_transaction_type_found(
+    async def test_update_with_transaction_type_found(
         self,
         user: User,
         transaction_type_id: int,
@@ -214,7 +211,7 @@ class TestUpdate:
         assert response == db_one_or_none_return_val
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
-    async def test_update_when_transaction_type_not_found(
+    async def test_update_with_transaction_type_not_found(
         self,
         user: User,
         transaction_type_id: int,
