@@ -1,5 +1,4 @@
 from datetime import date
-from decimal import Decimal
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
@@ -9,7 +8,7 @@ class TransactionBase(SQLModel):
     transaction_type_id: int = Field(foreign_key="quantum_transaction_type.transaction_type_id")
     payee_id: int = Field(foreign_key="quantum_payee.payee_id")
     category_id: int = Field(foreign_key="quantum_category.category_id")
-    amount: Decimal
+    amount: int
     transaction_date: date
     clear_date: date
     check_number: int
@@ -41,4 +40,12 @@ class TransactionRead(TransactionBase):
 
 
 class TransactionUpdate(SQLModel):
-    ...
+    transaction_type_id: Optional[int]
+    payee_id: Optional[int]
+    category_id: Optional[int]
+    amount: Optional[int]
+    transaction_date: Optional[date]
+    clear_date: Optional[date]
+    check_number: Optional[int]
+    exclude_from_forecast: Optional[bool]
+    notes: Optional[str]

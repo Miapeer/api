@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
@@ -23,7 +22,7 @@ class Account(AccountBase, table=True):
 
 
 class AccountCreate(AccountBase):
-    starting_balance: Decimal
+    starting_balance: int
 
 
 class AccountRead(AccountBase):

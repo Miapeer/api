@@ -66,8 +66,9 @@ async def create_transaction(
         raise HTTPException(status_code=404, detail="Account not found")
 
     # Create the transaction
-    db_transaction = Transaction.from_orm(transaction)
-    db_transaction.account_id = account_id
+    transaction_data = transaction.dict()
+    transaction_data["account_id"] = account_id
+    db_transaction = Transaction(**transaction_data)
     db.add(db_transaction)
     db.commit()
     db.refresh(db_transaction)
@@ -101,7 +102,7 @@ async def get_transaction(
 
 
 @router.delete("/{transaction_id}", dependencies=[Depends(is_quantum_user)])
-def delete_transaction(
+async def delete_transaction(
     account_id: int,
     transaction_id: int,
     db: Session = Depends(get_db),
@@ -129,7 +130,7 @@ def delete_transaction(
 
 
 @router.patch("/{transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=TransactionRead)
-def update_transaction(
+async def update_transaction(
     account_id: int,
     transaction_id: int,
     transaction: TransactionUpdate,

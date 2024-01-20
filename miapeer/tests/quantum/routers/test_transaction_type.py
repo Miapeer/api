@@ -173,12 +173,12 @@ class TestDelete:
 
 class TestUpdate:
     @pytest.fixture
-    def transaction_type(self) -> TransactionType:
-        return TransactionType(transaction_type_id=None, name="transaction type name", portfolio_id=23541)
+    def transaction_type(self, transaction_type_name: str, portfolio_id: int) -> TransactionType:
+        return TransactionType(transaction_type_id=None, name=transaction_type_name, portfolio_id=portfolio_id)
 
     @pytest.fixture
     def updated_transaction_type(self) -> TransactionTypeUpdate:
-        return TransactionTypeUpdate(name="333")
+        return TransactionTypeUpdate(name="some new name")
 
     @pytest.fixture
     def expected_sql(self, user_id: int, transaction_type_id: int) -> str:

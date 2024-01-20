@@ -1,5 +1,4 @@
 from datetime import date
-from decimal import Decimal
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
@@ -9,7 +8,7 @@ class ScheduledTransactionBase(SQLModel):
     transaction_type_id: int = Field(foreign_key="quantum_transaction_type.transaction_type_id")
     payee_id: int = Field(foreign_key="quantum_payee.payee_id")
     category_id: int = Field(foreign_key="quantum_category.category_id")
-    fixed_amount: Decimal
+    fixed_amount: int
     estimate_occurrences: int
     prompt_days: int
     start_date: date
