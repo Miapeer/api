@@ -66,8 +66,9 @@ async def create_scheduled_transaction(
         raise HTTPException(status_code=404, detail="Account not found")
 
     # Create the scheduled transaction
-    db_scheduled_transaction = ScheduledTransaction.from_orm(scheduled_transaction)
-    db_scheduled_transaction.account_id = account_id
+    scheduled_transaction_data = scheduled_transaction.dict()
+    scheduled_transaction_data["account_id"] = account_id
+    db_scheduled_transaction = ScheduledTransaction(**scheduled_transaction_data)
     db.add(db_scheduled_transaction)
     db.commit()
     db.refresh(db_scheduled_transaction)
@@ -103,7 +104,7 @@ async def get_scheduled_transaction(
 
 
 @router.delete("/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)])
-def delete_scheduled_transaction(
+async def delete_scheduled_transaction(
     account_id: int,
     scheduled_transaction_id: int,
     db: Session = Depends(get_db),
@@ -133,7 +134,7 @@ def delete_scheduled_transaction(
 @router.patch(
     "/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=ScheduledTransactionRead
 )
-def update_scheduled_transaction(
+async def update_scheduled_transaction(
     account_id: int,
     scheduled_transaction_id: int,
     scheduled_transaction: ScheduledTransactionUpdate,

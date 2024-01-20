@@ -168,7 +168,7 @@ class TestCreate:
         mock_db.add.assert_called_once_with(transaction_to_add)
         mock_db.commit.assert_called_once()
         mock_db.refresh.assert_called_once_with(transaction_to_add)
-        # Don't need to test the response here because it's just the updated transaction_type_to_add
+        # Don't need to test the response here because it's just the updated transaction_to_add
 
     @pytest.mark.parametrize("db_first_return_val", [None, ""])
     async def test_create_with_portfolio_not_found(

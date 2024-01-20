@@ -47,4 +47,17 @@ class ScheduledTransactionRead(ScheduledTransactionBase):
 
 
 class ScheduledTransactionUpdate(SQLModel):
-    ...
+    transaction_type_id: Optional[int]
+    payee_id: Optional[int]
+    category_id: Optional[int]
+    fixed_amount: Optional[int]
+    estimate_occurrences: Optional[int]
+    prompt_days: Optional[int]
+    start_date: Optional[date]
+    end_date: Optional[date]
+    limit_occurrences: Optional[int]
+    repeat_option_id: Optional[int]
+    # linked_account_id: Optional[int]
+    # linked_account_cycle_end_offset: Optional[int]
+    notes: Optional[str]
+    on_autopay: Optional[bool]
