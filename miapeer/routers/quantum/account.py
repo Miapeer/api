@@ -99,7 +99,7 @@ async def get_account(
 
 
 @router.delete("/{account_id}", dependencies=[Depends(is_quantum_user)])
-def delete_account(
+async def delete_account(
     account_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -124,7 +124,7 @@ def delete_account(
 
 
 @router.patch("/{account_id}", dependencies=[Depends(is_quantum_user)], response_model=AccountRead)
-def update_account(
+async def update_account(
     account_id: int,
     account: AccountUpdate,
     db: Session = Depends(get_db),

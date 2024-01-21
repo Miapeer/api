@@ -30,4 +30,4 @@ class AccountRead(AccountBase):
 
 
 class AccountUpdate(SQLModel):
-    ...
+    name: Optional[str]
