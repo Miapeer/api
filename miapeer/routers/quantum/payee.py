@@ -81,7 +81,7 @@ async def get_payee(
 
 
 @router.delete("/{payee_id}", dependencies=[Depends(is_quantum_user)])
-def delete_payee(
+async def delete_payee(
     payee_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -106,7 +106,7 @@ def delete_payee(
 
 
 @router.patch("/{payee_id}", dependencies=[Depends(is_quantum_user)], response_model=PayeeRead)
-def update_payee(
+async def update_payee(
     payee_id: int,
     payee: PayeeUpdate,
     db: Session = Depends(get_db),

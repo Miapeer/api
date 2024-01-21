@@ -29,4 +29,4 @@ class PayeeRead(PayeeBase):
 
 
 class PayeeUpdate(SQLModel):
-    ...
+    name: Optional[str]
