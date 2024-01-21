@@ -32,4 +32,5 @@ class CategoryRead(CategoryBase):
 
 
 class CategoryUpdate(SQLModel):
-    ...
+    name: Optional[str]
+    parent_category_id: Optional[int]

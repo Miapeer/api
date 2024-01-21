@@ -81,7 +81,7 @@ async def get_category(
 
 
 @router.delete("/{category_id}", dependencies=[Depends(is_quantum_user)])
-def delete_category(
+async def delete_category(
     category_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -106,7 +106,7 @@ def delete_category(
 
 
 @router.patch("/{category_id}", dependencies=[Depends(is_quantum_user)], response_model=CategoryRead)
-def update_category(
+async def update_category(
     category_id: int,
     category: CategoryUpdate,
     db: Session = Depends(get_db),
