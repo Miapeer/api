@@ -12,7 +12,6 @@ from miapeer.models.quantum.portfolio import (
     Portfolio,
     PortfolioCreate,
     PortfolioRead,
-    PortfolioUpdate,
 )
 from miapeer.models.quantum.portfolio_user import PortfolioUser
 
@@ -78,7 +77,7 @@ async def get_portfolio(
 
 
 @router.delete("/{portfolio_id}", dependencies=[Depends(is_quantum_super_user)])
-def delete_portfolio(portfolio_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+async def delete_portfolio(portfolio_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     portfolio = db.get(Portfolio, portfolio_id)
 
     sql = select(PortfolioUser).where(PortfolioUser.portfolio_id == portfolio_id)
@@ -94,27 +93,3 @@ def delete_portfolio(portfolio_id: int, db: Session = Depends(get_db)) -> dict[s
     db.commit()
 
     return {"ok": True}
-
-
-@router.patch("/{portfolio_id}", dependencies=[Depends(is_quantum_super_user)], response_model=PortfolioRead)
-def update_portfolio(
-    portfolio_id: int,
-    portfolio: PortfolioUpdate,
-    db: Session = Depends(get_db),
-) -> Portfolio:
-
-    db_portfolio = db.get(Portfolio, portfolio_id)
-
-    if not db_portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
-
-    portfolio_data = portfolio.dict(exclude_unset=True)
-
-    for key, value in portfolio_data.items():
-        setattr(db_portfolio, key, value)
-
-    db.add(db_portfolio)
-    db.commit()
-    db.refresh(db_portfolio)
-
-    return db_portfolio

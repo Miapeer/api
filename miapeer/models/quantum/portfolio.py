@@ -26,7 +26,3 @@ class PortfolioCreate(PortfolioBase):
 
 class PortfolioRead(PortfolioBase):
     portfolio_id: int
-
-
-class PortfolioUpdate(SQLModel):
-    ...

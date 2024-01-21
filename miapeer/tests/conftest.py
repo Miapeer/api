@@ -20,7 +20,14 @@ def db_one_or_none_return_val() -> None:
 
 
 @pytest.fixture
-def mock_db(db_all_return_val: Any, db_first_return_val: Any, db_one_or_none_return_val: Any) -> Mock:
+def db_get_return_val() -> None:
+    return None
+
+
+@pytest.fixture
+def mock_db(
+    db_all_return_val: Any, db_first_return_val: Any, db_one_or_none_return_val: Any, db_get_return_val: Any
+) -> Mock:
     mock_db = Mock()
 
     db_methods = Mock()
@@ -28,6 +35,7 @@ def mock_db(db_all_return_val: Any, db_first_return_val: Any, db_one_or_none_ret
     db_methods.first.return_value = db_first_return_val
     db_methods.one_or_none.return_value = db_one_or_none_return_val
 
+    mock_db.get.return_value = db_get_return_val
     mock_db.exec.return_value = db_methods
 
     return mock_db
