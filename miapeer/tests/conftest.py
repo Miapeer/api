@@ -3,6 +3,8 @@ from unittest.mock import Mock
 
 import pytest
 
+from miapeer.models.miapeer import User
+
 
 @pytest.fixture
 def db_all_return_val() -> None:
@@ -39,3 +41,13 @@ def mock_db(
     mock_db.exec.return_value = db_methods
 
     return mock_db
+
+
+@pytest.fixture
+def user_id() -> int:
+    return 9999
+
+
+@pytest.fixture
+def user(user_id: int) -> User:
+    return User(user_id=user_id)

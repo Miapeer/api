@@ -2,12 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from miapeer.dependencies import get_db, is_miapeer_admin
-from miapeer.models.miapeer import (
-    Permission,
-    PermissionCreate,
-    PermissionRead,
-    PermissionUpdate,
-)
+from miapeer.models.miapeer import Permission, PermissionCreate, PermissionRead
 
 router = APIRouter(
     prefix="/permissions",
@@ -47,31 +42,10 @@ async def get_permission(permission_id: int, db: Session = Depends(get_db)) -> P
 
 
 @router.delete("/{permission_id}")
-def delete_permission(permission_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+async def delete_permission(permission_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     permission = db.get(Permission, permission_id)
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")
     db.delete(permission)
     db.commit()
     return {"ok": True}
-
-
-@router.patch("/{permission_id}", response_model=PermissionRead)
-def update_permission(
-    permission_id: int,
-    permission: PermissionUpdate,
-    db: Session = Depends(get_db),
-) -> Permission:
-    db_permission = db.get(Permission, permission_id)
-    if not db_permission:
-        raise HTTPException(status_code=404, detail="Permission not found")
-
-    permission_data = permission.dict(exclude_unset=True)
-
-    for key, value in permission_data.items():
-        setattr(db_permission, key, value)
-
-    db.add(db_permission)
-    db.commit()
-    db.refresh(db_permission)
-    return db_permission
