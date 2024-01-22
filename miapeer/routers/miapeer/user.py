@@ -42,7 +42,10 @@ async def create_user(
     user: UserCreate,
     db: Session = Depends(get_db),
 ) -> User:
-    db_user = User.from_orm(user)
+    user_data = user.dict()
+    user_data["password"] = ""
+    user_data["disabled"] = False
+    db_user = User(**user_data)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -62,7 +65,7 @@ async def get_user(user_id: int, db: Session = Depends(get_db)) -> User:
 
 
 @router.delete("/{user_id}", dependencies=[Depends(is_miapeer_super_user)])
-def delete_user(user_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+async def delete_user(user_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -76,7 +79,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     dependencies=[Depends(is_miapeer_super_user)],
     response_model=UserRead,
 )
-def update_user(
+async def update_user(
     user_id: int,
     user: UserUpdate,
     db: Session = Depends(get_db),
