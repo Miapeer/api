@@ -6,7 +6,6 @@ from miapeer.models.miapeer import (
     ApplicationRole,
     ApplicationRoleCreate,
     ApplicationRoleRead,
-    ApplicationRoleUpdate,
 )
 
 router = APIRouter(
@@ -50,31 +49,10 @@ async def get_application_role(application_role_id: int, db: Session = Depends(g
 
 # TODO: Should this even be exposed?
 @router.delete("/{application_role_id}")
-def delete_application_role(application_role_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+async def delete_application_role(application_role_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     application_role = db.get(ApplicationRole, application_role_id)
     if not application_role:
         raise HTTPException(status_code=404, detail="Application Role not found")
     db.delete(application_role)
     db.commit()
     return {"ok": True}
-
-
-@router.patch("/{application_role_id}", response_model=ApplicationRoleRead)
-def update_application_role(
-    application_role_id: int,
-    application_role: ApplicationRoleUpdate,
-    db: Session = Depends(get_db),
-) -> ApplicationRole:
-    db_application_role = db.get(ApplicationRole, application_role_id)
-    if not db_application_role:
-        raise HTTPException(status_code=404, detail="Application Role not found")
-
-    application_role_data = application_role.dict(exclude_unset=True)
-
-    for key, value in application_role_data.items():
-        setattr(db_application_role, key, value)
-
-    db.add(db_application_role)
-    db.commit()
-    db.refresh(db_application_role)
-    return db_application_role
