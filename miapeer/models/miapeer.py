@@ -151,7 +151,7 @@ class ApplicationRoleRead(ApplicationRoleBase):
 
 
 class ApplicationRoleUpdate(SQLModel):
-    ...
+    description: Optional[str]
 
 
 # ApplicationRoleRead.update_forward_refs()

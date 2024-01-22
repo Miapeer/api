@@ -4,7 +4,11 @@ from unittest.mock import Mock
 import pytest
 from fastapi import HTTPException
 
-from miapeer.models.miapeer import ApplicationRole, ApplicationRoleCreate
+from miapeer.models.miapeer import (
+    ApplicationRole,
+    ApplicationRoleCreate,
+    ApplicationRoleUpdate,
+)
 from miapeer.routers.miapeer import application_role
 
 pytestmark = pytest.mark.asyncio
@@ -112,3 +116,54 @@ class TestDelete:
 
         mock_db.delete.assert_not_called()
         mock_db.commit.assert_not_called()
+
+
+class TestUpdate:
+    @pytest.fixture
+    def application_role_to_update(
+        self, application_id: int, role_id: int, application_role_description: str
+    ) -> ApplicationRole:
+        return ApplicationRole(
+            user_id=None, application_id=application_id, role_id=role_id, description=application_role_description
+        )
+
+    @pytest.fixture
+    def updated_application_role(self) -> ApplicationRoleUpdate:
+        return ApplicationRoleUpdate(description="some new description")
+
+    @pytest.mark.parametrize("db_get_return_val", [application_role_to_update])
+    async def test_update_with_user_found(
+        self,
+        application_role_id: int,
+        updated_application_role: ApplicationRoleUpdate,
+        mock_db: Mock,
+        db_get_return_val: ApplicationRole,
+    ) -> None:
+        response = await application_role.update_application_role(
+            application_role_id=application_role_id,
+            application_role=updated_application_role,
+            db=mock_db,
+        )
+
+        mock_db.add.assert_called_once_with(db_get_return_val)
+        mock_db.commit.assert_called_once()
+        mock_db.refresh.assert_called_once_with(db_get_return_val)
+        assert response == db_get_return_val
+
+    @pytest.mark.parametrize("db_get_return_val", [None, []])
+    async def test_update_with_user_not_found(
+        self,
+        application_role_id: int,
+        updated_application_role: ApplicationRoleUpdate,
+        mock_db: Mock,
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await application_role.update_application_role(
+                application_role_id=application_role_id,
+                application_role=updated_application_role,
+                db=mock_db,
+            )
+
+        mock_db.add.assert_not_called()
+        mock_db.commit.assert_not_called()
+        mock_db.refresh.assert_not_called()
