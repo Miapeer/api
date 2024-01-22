@@ -56,7 +56,7 @@ async def get_role(role_id: int, db: Session = Depends(get_db)) -> Role:
 
 
 @router.delete("/{role_id}", dependencies=[Depends(is_miapeer_super_user)])
-def delete_role(role_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+async def delete_role(role_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     role = db.get(Role, role_id)
     if not role:
         raise HTTPException(status_code=404, detail="Role not found")
@@ -70,7 +70,7 @@ def delete_role(role_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     dependencies=[Depends(is_miapeer_super_user)],
     response_model=RoleRead,
 )
-def update_role(
+async def update_role(
     role_id: int,
     role: RoleUpdate,
     db: Session = Depends(get_db),
