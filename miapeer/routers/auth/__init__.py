@@ -50,7 +50,7 @@ def _authenticate_user(db: Session, username: str, password: str) -> Optional[Us
 # TODO: Does data need to be sent encrypted, or is HTTPS sufficient?
 # TODO: If something does need to be changed, difference between SSL and TLS?
 @router.post("/token", response_model=Token)
-async def _login_for_access_token(
+async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(), jwk: str = Depends(get_jwk), db: Session = Depends(get_db)
 ) -> dict[str, str]:
     user = _authenticate_user(db, form_data.username, form_data.password)
@@ -66,6 +66,6 @@ async def _login_for_access_token(
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    access_token = encode_jwt(jwt_key=jwk, data={"sub": user.email}, expires_delta=access_token_expires)
+    access_token = encode_jwt(jwt_key=jwk, data={"sub": user.email, "exp": 0}, expires_delta=access_token_expires)
 
     return {"access_token": access_token, "token_type": "bearer"}

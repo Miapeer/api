@@ -18,7 +18,7 @@ def jwk() -> str:
 class TestEncodeJwt:
     def test_missing_jwk_raises_exception(self) -> None:
         with pytest.raises(JwtException) as exc_info:
-            encode_jwt(jwt_key="", data={})
+            encode_jwt(jwt_key="", data={"sub": "aaa", "exp": 111})
 
         assert str(exc_info.value) == JwtErrorMessage.INVALID_JWK
 
