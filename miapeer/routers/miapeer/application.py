@@ -50,7 +50,7 @@ async def get_application(application_id: int, db: Session = Depends(get_db)) ->
 
 
 @router.delete("/{application_id}", dependencies=[Depends(is_miapeer_super_user)])
-def delete_application(application_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+async def delete_application(application_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
     application = db.get(Application, application_id)
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")
@@ -64,7 +64,7 @@ def delete_application(application_id: int, db: Session = Depends(get_db)) -> di
     dependencies=[Depends(is_miapeer_super_user)],
     response_model=ApplicationRead,
 )
-def update_application(
+async def update_application(
     application_id: int,
     application: ApplicationUpdate,
     db: Session = Depends(get_db),
