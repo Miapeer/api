@@ -18,12 +18,19 @@ def jwk() -> str:
 class TestEncodeJwt:
     def test_missing_jwk_raises_exception(self) -> None:
         with pytest.raises(JwtException) as exc_info:
-            encode_jwt(jwt_key="", data={"sub": "aaa", "exp": 111})
+            encode_jwt(jwt_key="", data={"sub": "aaa", "exp": 1111})
 
         assert str(exc_info.value) == JwtErrorMessage.INVALID_JWK
 
 
 class TestDecodeJwt:
+    def test_decodes_token(self, jwk: str) -> None:
+        token_data = decode_jwt(
+            token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZXAubmF2YXJyYUBtaWFwZWVyLmNvbSIsImV4cCI6Nzc1MjkzNzQyOX0.RYipfri10zKHHyAk8Vg_fRfQmKXpp_7nyjuaKRUIWmk",
+            jwt_key=jwk,
+        )
+        assert token_data == {"sub": "jep.navarra@miapeer.com", "exp": 7752937429}
+
     def test_missing_jwk_raises_exception(self) -> None:
         with pytest.raises(JwtException) as exc_info:
             decode_jwt(jwt_key="", token="")
