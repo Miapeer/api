@@ -1,2 +1,2 @@
 [run]
-omit = miapeer/tests/*
+omit = miapeer/tests/*,miapeer/models/*
