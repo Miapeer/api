@@ -49,5 +49,15 @@ def user_id() -> int:
 
 
 @pytest.fixture
-def user(user_id: int) -> User:
-    return User(user_id=user_id)
+def user_password() -> str:
+    return "user's cool password"
+
+
+@pytest.fixture
+def user_hashed_password() -> str:
+    return "$2b$12$5fckMX0mfWa6FR0GO/HcfOrd1wLBLl3ZRrxuZLFALBhbicjQ7AVPi"
+
+
+@pytest.fixture
+def user(user_id: int, user_hashed_password: str) -> User:
+    return User(user_id=user_id, password=user_hashed_password)

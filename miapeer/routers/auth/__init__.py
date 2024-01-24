@@ -28,22 +28,25 @@ def _verify_password(plain_password: str, hashed_password: str) -> bool:
         hashed_password,
     )
 
-    if not pw_verified:
-        print(f"\n{_get_password_hash(plain_password) = }\n")
+    # if not pw_verified:
+    #     print(f"\n{_get_password_hash(plain_password) = }\n")
 
     return pw_verified
 
 
 def _get_password_hash(password: str) -> str:
-    return _pwd_context.hash(password)
+    return _pwd_context.hash(password)  # pragma: no cover
 
 
 def _authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
     user = db.exec(select(User).where(User.email == username)).one_or_none()
+
     if user is None:
         return None
+
     if not _verify_password(password, user.password):
         return None
+
     return user
 
 
