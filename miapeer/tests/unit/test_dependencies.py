@@ -1,4 +1,32 @@
-# # class TestGetCurrentUser:
+from typing import Any
+from unittest.mock import Mock
+
+import pytest
+from fastapi import HTTPException
+
+from miapeer import dependencies
+
+pytestmark = pytest.mark.asyncio
+
+
+class TestGetCurrentUser:
+    @pytest.mark.parametrize("db_first_return_val", ["some data", 123])
+    async def test_get_current_user(self, mock_db: Mock, valid_jwt: str, jwk: str, db_first_return_val: Any) -> None:
+        res = await dependencies.get_current_user(token=valid_jwt, jwt_key=jwk, db=mock_db)
+        assert res == db_first_return_val
+
+    async def test_get_current_user_raises_exception_when_username_not_provided(
+        self, mock_db: Mock, jwt_missing_sub: str, jwk: str
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await dependencies.get_current_user(token=jwt_missing_sub, jwt_key=jwk, db=mock_db)
+
+    @pytest.mark.parametrize("db_first_return_val", [None])
+    async def test_get_current_user_raises_exception_when_user_not_found(
+        self, mock_db: Mock, valid_jwt: str, jwk: str, db_first_return_val: Any
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await dependencies.get_current_user(token=valid_jwt, jwt_key=jwk, db=mock_db)
 
 
 # # # class TestGetCurrentActiveUser:

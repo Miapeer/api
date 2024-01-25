@@ -51,7 +51,7 @@ def get_jwk() -> Optional[str]:
 async def get_current_user(
     token: str = Depends(oauth2_scheme), jwt_key: str = Depends(get_jwk), db: Session = Depends(get_db)
 ) -> User:
-    payload = decode_jwt(token, jwt_key)
+    payload = decode_jwt(token=token, jwt_key=jwt_key)
 
     username: Optional[str] = payload.get("sub")
 

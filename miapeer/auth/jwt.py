@@ -10,7 +10,7 @@ from typing_extensions import TypedDict
 DEFAULT_JWT_ALGORITHM = "HS256"
 DEFAULT_ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-TokenData = TypedDict("TokenData", {"sub": str, "exp": int})
+TokenData = TypedDict("TokenData", {"sub": str, "exp": Optional[int]})
 
 
 class JwtException(Exception):
@@ -28,12 +28,18 @@ def encode_jwt(jwt_key: str, data: TokenData, expires_delta: Optional[timedelta]
 
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
+    elif "exp" in data and data.get("exp") is not None:
+        token_exp = data.get("exp")
+        assert isinstance(token_exp, int)
+        expire = datetime.fromtimestamp(token_exp)
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
 
     to_encode = data | {"exp": expire}
 
-    encoded_jwt: str = jwt.encode(to_encode, jwt_key, algorithm=env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM))
+    encoded_jwt: str = jwt.encode(
+        claims=to_encode, key=jwt_key, algorithm=env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)
+    )
 
     return encoded_jwt
 
@@ -43,7 +49,9 @@ def decode_jwt(jwt_key: str, token: str) -> TokenData:
         raise JwtException(JwtErrorMessage.INVALID_JWK.value)
 
     try:
-        payload: TokenData = jwt.decode(token, jwt_key, algorithms=[env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)])
+        payload: TokenData = jwt.decode(
+            token=token, key=jwt_key, algorithms=env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)
+        )
     except JWTError:
         raise JwtException(JwtErrorMessage.INVALID_TOKEN.value)
     except JWKError:
