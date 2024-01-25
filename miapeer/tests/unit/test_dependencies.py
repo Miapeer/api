@@ -5,6 +5,7 @@ import pytest
 from fastapi import HTTPException
 
 from miapeer import dependencies
+from miapeer.models.miapeer import User
 
 pytestmark = pytest.mark.asyncio
 
@@ -29,13 +30,14 @@ class TestGetCurrentUser:
             await dependencies.get_current_user(token=valid_jwt, jwt_key=jwk, db=mock_db)
 
 
-# # # class TestGetCurrentActiveUser:
-# # #     ...
-# # #     # def test_inactive_user_raises_exception(self):
-# # #     #     ...
+class TestGetCurrentActiveUser:
+    async def test_returns_user(self, user: User) -> None:
+        returned_user = await dependencies.get_current_active_user(current_user=user)
+        assert returned_user == user
 
-# # #     # def test_returns_user(self):
-# # #     #     ...
+    async def test_inactive_user_raises_exception(self, inactive_user: User) -> None:
+        with pytest.raises(HTTPException):
+            await dependencies.get_current_active_user(current_user=inactive_user)
 
 
 # # # import pytest

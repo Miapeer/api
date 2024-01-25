@@ -87,3 +87,8 @@ def user_hashed_password() -> str:
 @pytest.fixture
 def user(user_id: int, user_hashed_password: str) -> User:
     return User(user_id=user_id, password=user_hashed_password)
+
+
+@pytest.fixture
+def inactive_user(user_id: int, user_hashed_password: str) -> User:
+    return User(user_id=user_id, password=user_hashed_password, disabled=True)
