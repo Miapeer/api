@@ -23,7 +23,7 @@ class TestGetCurrentUser:
 
     @pytest.mark.parametrize("db_first_return_val", [None])
     async def test_get_current_user_raises_exception_when_user_not_found(
-        self, mock_db: Mock, valid_jwt: str, jwk: str, db_first_return_val: Any
+        self, mock_db: Mock, valid_jwt: str, jwk: str
     ) -> None:
         with pytest.raises(HTTPException):
             await dependencies.get_current_user(token=valid_jwt, jwt_key=jwk, db=mock_db)
