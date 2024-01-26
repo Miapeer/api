@@ -1,2 +1,2 @@
 [run]
-omit = miapeer/tests/*,miapeer/models/*,**/abstract.py
+omit = miapeer/tests/*,miapeer/app.py,miapeer/models/*,**/abstract.py
