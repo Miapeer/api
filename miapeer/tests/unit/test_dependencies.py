@@ -1,5 +1,5 @@
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -7,9 +7,8 @@ from fastapi import HTTPException
 from miapeer import dependencies
 from miapeer.models.miapeer import User
 
-pytestmark = pytest.mark.asyncio
 
-
+@pytest.mark.asyncio
 class TestGetCurrentUser:
     @pytest.mark.parametrize("db_first_return_val", ["some data", 123])
     async def test_get_current_user(self, mock_db: Mock, valid_jwt: str, jwk: str, db_first_return_val: Any) -> None:
@@ -30,6 +29,7 @@ class TestGetCurrentUser:
             await dependencies.get_current_user(token=valid_jwt, jwt_key=jwk, db=mock_db)
 
 
+@pytest.mark.asyncio
 class TestGetCurrentActiveUser:
     async def test_returns_user(self, user: User) -> None:
         returned_user = await dependencies.get_current_active_user(current_user=user)
@@ -40,43 +40,66 @@ class TestGetCurrentActiveUser:
             await dependencies.get_current_active_user(current_user=inactive_user)
 
 
-# # # import pytest
-# # # from fastapi.testclient import TestClient
-# # # from sqlmodel import Session, SQLModel, create_engine
-# # # from sqlmodel.pool import StaticPool
+class TestHasPermission:
+    @pytest.mark.parametrize("db_all_return_val", [[{}]])
+    def test_has_permission(self, mock_db: Mock) -> None:
+        permitted = dependencies.has_permission(
+            db=mock_db, email="", application=dependencies.Applications.MIAPEER, role=dependencies.Roles.USER
+        )
+        assert permitted is True
 
-# # # from .main import Hero, app, get_session
-
-
-# # # @pytest.fixture(name="session")
-# # # def session_fixture():
-# # #     engine = create_engine(
-# # #         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
-# # #     )
-# # #     SQLModel.metadata.create_all(engine)
-# # #     with Session(engine) as session:
-# # #         yield session
+    @pytest.mark.parametrize("db_all_return_val", [[]])
+    def test_no_permission(self, mock_db: Mock) -> None:
+        permitted = dependencies.has_permission(
+            db=mock_db, email="", application=dependencies.Applications.MIAPEER, role=dependencies.Roles.USER
+        )
+        assert permitted is False
 
 
-# # # @pytest.fixture(name="client")
-# # # def client_fixture(session: Session):
-# # #     def get_session_override():
-# # #         return session
+class TestIndividualPermissions:
+    @patch(f"{dependencies.__name__}.has_permission")
+    @pytest.mark.parametrize(
+        "permission_function",
+        [
+            dependencies.is_miapeer_user,
+            dependencies.is_miapeer_admin,
+            dependencies.is_miapeer_super_user,
+            dependencies.is_quantum_user,
+            dependencies.is_quantum_admin,
+            dependencies.is_quantum_super_user,
+        ],
+    )
+    def test_has_permission(
+        self,
+        patched_has_permission: Mock,
+        mock_db: Mock,
+        permission_function: Any,
+        user: User,
+    ) -> None:
+        patched_has_permission.return_value = True
 
-# # #     app.dependency_overrides[get_session] = get_session_override
-# # #     client = TestClient(app)
-# # #     yield client
-# # #     app.dependency_overrides.clear()
+        permission_function(db=mock_db, user=user)
 
+    @patch(f"{dependencies.__name__}.has_permission")
+    @pytest.mark.parametrize(
+        "permission_function",
+        [
+            dependencies.is_miapeer_user,
+            dependencies.is_miapeer_admin,
+            dependencies.is_miapeer_super_user,
+            dependencies.is_quantum_user,
+            dependencies.is_quantum_admin,
+            dependencies.is_quantum_super_user,
+        ],
+    )
+    def test_no_permission(
+        self,
+        patched_has_permission: Mock,
+        mock_db: Mock,
+        permission_function: Any,
+        user: User,
+    ) -> None:
+        patched_has_permission.return_value = False
 
-# # # def test_create_hero(client: TestClient):
-# # #     response = client.post(
-# # #         "/heroes/", json={"name": "Deadpond", "secret_name": "Dive Wilson"}
-# # #     )
-# # #     data = response.json()
-
-# # #     assert response.status_code == 200
-# # #     assert data["name"] == "Deadpond"
-# # #     assert data["secret_name"] == "Dive Wilson"
-# # #     assert data["age"] is None
-# # #     assert data["id"] is not None
+        with pytest.raises(HTTPException) as exc_info:
+            permission_function(db=mock_db, user=user)

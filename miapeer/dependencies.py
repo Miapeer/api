@@ -85,12 +85,6 @@ async def get_current_active_user(
     return current_user
 
 
-# TODO: Do we even need this?
-def is_authorized(token: str = Depends(oauth2_scheme)) -> None:
-    # If we made it this far, we're authorized
-    pass
-
-
 # async def is_authorized(user: str = Cookie(None)) -> None:
 #     print(f"\n{user = }\n")  # TODO: Remove this!!!
 #     token = get_access_token(user)
