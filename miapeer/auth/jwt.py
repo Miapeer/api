@@ -4,7 +4,7 @@ from os import environ as env
 from typing import Optional
 
 from jose import jwt
-from jose.exceptions import JWKError, JWTError
+from jose.exceptions import JWTError
 from typing_extensions import TypedDict
 
 DEFAULT_JWT_ALGORITHM = "HS256"
@@ -54,7 +54,5 @@ def decode_jwt(jwt_key: str, token: str) -> TokenData:
         )
     except JWTError:
         raise JwtException(JwtErrorMessage.INVALID_TOKEN.value)
-    except JWKError:
-        raise JwtException(JwtErrorMessage.INVALID_JWK.value)
 
     return payload
