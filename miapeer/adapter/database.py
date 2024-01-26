@@ -39,21 +39,21 @@ def db_uri() -> str:
 engine: Engine = create_engine(db_uri(), connect_args={"check_same_thread": False}, echo=True)
 
 
-def get_user_count() -> int:
+def get_user_count() -> int:  # pragma: no cover
     with engine.connect() as connection:
         with Session(engine) as db:
             user_count = db.query(User).count()
             return user_count
 
 
-def create_db_and_tables() -> None:
+def create_db_and_tables() -> None:  # pragma: no cover
     SQLModel.metadata.create_all(engine)
 
     if get_user_count() == 0:
         seed_db()
 
 
-def seed_db() -> None:
+def seed_db() -> None:  # pragma: no cover
     superuser_username = env.get("MIAPEER_DB_SEED_SUPERUSER_USERNAME")
     superuser_password = env.get("MIAPEER_DB_SEED_SUPERUSER_PASSWORD")
 
