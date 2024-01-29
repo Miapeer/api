@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
@@ -33,7 +33,7 @@ async def get_all_accounts(
 ) -> list[Account]:
 
     sql = select(Account).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
-    accounts = db.exec(sql).all()
+    accounts = list(db.exec(sql).all())
 
     return accounts
 
@@ -53,7 +53,7 @@ async def create_account(
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
     # Create the account
-    db_account = Account.from_orm(account)
+    db_account = Account.model_validate(account)
     db.add(db_account)
     db.commit()
     db.refresh(db_account)
@@ -63,8 +63,8 @@ async def create_account(
         payee_id=None,
         category_id=None,
         amount=account.starting_balance,
-        transaction_date=datetime.utcnow(),
-        clear_date=datetime.utcnow(),
+        transaction_date=date.today(),
+        clear_date=date.today(),
         check_number=None,
         exclude_from_forecast=True,
         notes=None,
@@ -143,7 +143,7 @@ async def update_account(
     if not db_account:
         raise HTTPException(status_code=404, detail="Account not found")
 
-    account_data = account.dict(exclude_unset=True)
+    account_data = account.model_dump(exclude_unset=True)
 
     for key, value in account_data.items():
         setattr(db_account, key, value)

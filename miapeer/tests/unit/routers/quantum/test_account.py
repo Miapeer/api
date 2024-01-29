@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date
 from typing import Any
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 
 import pytest
 from fastapi import HTTPException
@@ -66,10 +66,14 @@ class TestCreate:
     def initial_transaction(self, starting_balance: int) -> Transaction:
         return Transaction(
             transaction_type_id=-1,
+            payee_id=None,
+            category_id=None,
             amount=starting_balance,
-            transaction_date=datetime.utcnow(),
-            clear_date=datetime.utcnow(),
+            transaction_date=date.today(),
+            clear_date=date.today(),
+            check_number=None,
             exclude_from_forecast=True,
+            notes=None,
         )
 
     @pytest.fixture
@@ -92,14 +96,21 @@ class TestCreate:
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
         assert sql_str == expected_sql
 
-        expected_add_calls = [call(account_to_add)]
-        expected_add_calls.append(call(initial_transaction))
-        assert mock_db.add.mock_calls == expected_add_calls
+        expected_add_params = [account_to_add.model_dump(), initial_transaction.model_dump()]
+        assert mock_db.add.call_count == 2
+
+        actual_add_call_params = [mock_call.args[0].model_dump() for mock_call in mock_db.add.mock_calls]
+
+        assert actual_add_call_params == expected_add_params
 
         assert mock_db.commit.call_count == 2
 
-        mock_db.refresh.assert_called_once_with(account_to_add)
-        # Don't need to test the response here because it's just the updated account_to_add
+        # mock_db.refresh.assert_called_once_with(account_to_add)  # TODO: Try to go back to this once SQLModel can equate models again
+        assert mock_db.refresh.call_count == 1
+        refresh_call_param = mock_db.refresh.call_args[0][0]
+        assert refresh_call_param.model_dump() == account_to_add.model_dump()
+
+        # # Don't need to test the response here because it's just the updated account_to_add
 
     @pytest.mark.parametrize("db_first_return_val", [None, ""])
     async def test_create_with_portfolio_not_found(

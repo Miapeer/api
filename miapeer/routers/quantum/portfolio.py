@@ -29,7 +29,7 @@ async def get_all_portfolios(
 ) -> list[Portfolio]:
 
     sql = select(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
-    portfolios = db.exec(sql).all()
+    portfolios = list(db.exec(sql).all())
 
     return portfolios
 
@@ -42,7 +42,7 @@ async def create_portfolio(
 ) -> Portfolio:
 
     # Create the portfolio
-    db_portfolio = Portfolio.from_orm(portfolio)
+    db_portfolio = Portfolio.model_validate(portfolio)
     db.add(db_portfolio)
     db.commit()
     db.refresh(db_portfolio)

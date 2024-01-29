@@ -30,7 +30,7 @@ async def get_all_payees(
 ) -> list[Payee]:
 
     sql = select(Payee).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
-    payees = db.exec(sql).all()
+    payees = list(db.exec(sql).all())
 
     return payees
 
@@ -50,7 +50,7 @@ async def create_payee(
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
     # Create the payee
-    db_payee = Payee.from_orm(payee)
+    db_payee = Payee.model_validate(payee)
     db.add(db_payee)
     db.commit()
     db.refresh(db_payee)
@@ -125,7 +125,7 @@ async def update_payee(
     if not db_payee:
         raise HTTPException(status_code=404, detail="Payee not found")
 
-    payee_data = payee.dict(exclude_unset=True)
+    payee_data = payee.model_dump(exclude_unset=True)
 
     for key, value in payee_data.items():
         setattr(db_payee, key, value)

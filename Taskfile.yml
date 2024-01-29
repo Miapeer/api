@@ -5,13 +5,24 @@ tasks:
     cmds:
       - pip-compile
 
+  uninstall-local:
+    cmds:
+      - pyenv local --unset
+      - pyenv virtualenv-delete miapeer-api
+
   install-local:
     cmds:
+      - pyenv virtualenv 3.10 miapeer-api
+      - pyenv local miapeer-api
       - pip install -r requirements.txt
 
   build-dev:
     cmds:
       - docker image build --file ./Dockerfile-dev --tag miapeer.azurecr.io/miapeer-api-dev .
+
+  start:
+    cmds:
+      - docker container run --rm -d -p 8000:80 --env-file {{.USER_WORKING_DIR}}/.env --volume {{.USER_WORKING_DIR}}:/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-api-dev
 
   run-command:
     internal: true
@@ -23,6 +34,10 @@ tasks:
       - task: run-command
         vars:
           COMMAND_STRING: "{{.CLI_ARGS}}"
+
+  stop:
+    cmds:
+      - docker container stop miapeer-api
 
   tdd:
     cmds:

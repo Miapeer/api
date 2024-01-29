@@ -33,13 +33,13 @@ async def get_all_scheduled_transactions(
 
     sql = (
         select(ScheduledTransaction)
-        .join(Account, Account.account_id == ScheduledTransaction.account_id)
+        .join(Account, Account.account_id == ScheduledTransaction.account_id)  # type: ignore
         .join(Portfolio)
         .join(PortfolioUser)
         .where(ScheduledTransaction.account_id == account_id)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
-    scheduled_transactions = db.exec(sql).all()
+    scheduled_transactions = list(db.exec(sql).all())
 
     return scheduled_transactions
 
@@ -66,7 +66,7 @@ async def create_scheduled_transaction(
         raise HTTPException(status_code=404, detail="Account not found")
 
     # Create the scheduled transaction
-    scheduled_transaction_data = scheduled_transaction.dict()
+    scheduled_transaction_data = scheduled_transaction.model_dump()
     scheduled_transaction_data["account_id"] = account_id
     db_scheduled_transaction = ScheduledTransaction(**scheduled_transaction_data)
     db.add(db_scheduled_transaction)
@@ -88,7 +88,7 @@ async def get_scheduled_transaction(
 
     sql = (
         select(ScheduledTransaction)
-        .join(Account, Account.account_id == ScheduledTransaction.account_id)
+        .join(Account, Account.account_id == ScheduledTransaction.account_id)  # type: ignore
         .join(Portfolio)
         .join(PortfolioUser)
         .where(Account.account_id == account_id)
@@ -113,7 +113,7 @@ async def delete_scheduled_transaction(
 
     sql = (
         select(ScheduledTransaction)
-        .join(Account, Account.account_id == ScheduledTransaction.account_id)
+        .join(Account, Account.account_id == ScheduledTransaction.account_id)  # type: ignore
         .join(Portfolio)
         .join(PortfolioUser)
         .where(Account.account_id == account_id)
@@ -144,7 +144,7 @@ async def update_scheduled_transaction(
 
     sql = (
         select(ScheduledTransaction)
-        .join(Account, Account.account_id == ScheduledTransaction.account_id)
+        .join(Account, ScheduledTransaction.account_id == Account.account_id)  # type: ignore
         .join(Portfolio)
         .join(PortfolioUser)
         .where(Account.account_id == account_id)
@@ -156,7 +156,7 @@ async def update_scheduled_transaction(
     if not db_scheduled_transaction:
         raise HTTPException(status_code=404, detail="Scheduled transaction not found")
 
-    scheduled_transaction_data = scheduled_transaction.dict(exclude_unset=True)
+    scheduled_transaction_data = scheduled_transaction.model_dump(exclude_unset=True)
 
     for key, value in scheduled_transaction_data.items():
         setattr(db_scheduled_transaction, key, value)

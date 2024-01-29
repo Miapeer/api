@@ -35,7 +35,7 @@ async def get_all_transaction_types(
         .join(PortfolioUser)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
-    transaction_types = db.exec(sql).all()
+    transaction_types = list(db.exec(sql).all())
 
     return transaction_types
 
@@ -55,7 +55,8 @@ async def create_transaction_type(
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
     # Create the transaction type
-    db_transaction_type = TransactionType.from_orm(transaction_type)
+    db_transaction_type = TransactionType.model_validate(transaction_type)
+
     db.add(db_transaction_type)
     db.commit()
     db.refresh(db_transaction_type)
@@ -130,7 +131,7 @@ async def update_transaction_type(
     if not db_transaction_type:
         raise HTTPException(status_code=404, detail="Transaction type not found")
 
-    transaction_type_data = transaction_type.dict(exclude_unset=True)
+    transaction_type_data = transaction_type.model_dump(exclude_unset=True)
 
     for key, value in transaction_type_data.items():
         setattr(db_transaction_type, key, value)

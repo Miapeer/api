@@ -5,7 +5,7 @@ from sqlmodel import Field, SQLModel
 
 class CategoryBase(SQLModel):
     name: str
-    parent_category_id: int = Field(foreign_key="quantum_category.category_id")
+    parent_category_id: Optional[int] = Field(default=None, foreign_key="quantum_category.category_id")
     portfolio_id: int = Field(foreign_key="quantum_portfolio.portfolio_id")
 
 
@@ -32,5 +32,5 @@ class CategoryRead(CategoryBase):
 
 
 class CategoryUpdate(SQLModel):
-    name: Optional[str]
-    parent_category_id: Optional[int]
+    name: Optional[str] = None
+    parent_category_id: Optional[int] = None

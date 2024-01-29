@@ -16,7 +16,7 @@ router = APIRouter(
 async def get_all_permissions(
     db: Session = Depends(get_db),
 ) -> list[Permission]:
-    permissions = db.exec(select(Permission)).all()
+    permissions = list(db.exec(select(Permission)).all())
     return permissions
 
 
@@ -26,7 +26,7 @@ async def create_permission(
     permission: PermissionCreate,
     db: Session = Depends(get_db),
 ) -> Permission:
-    db_permission = Permission.from_orm(permission)
+    db_permission = Permission.model_validate(permission)
     db.add(db_permission)
     db.commit()
     db.refresh(db_permission)

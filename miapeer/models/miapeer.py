@@ -154,7 +154,7 @@ class ApplicationRoleUpdate(SQLModel):
     description: Optional[str]
 
 
-# ApplicationRoleRead.update_forward_refs()
+# ApplicationRoleRead.model_rebuild()
 
 # endregion
 
@@ -196,6 +196,6 @@ class PermissionUpdate(SQLModel):
 
 # region Finalization steps
 
-ApplicationRoleRead.update_forward_refs()
+ApplicationRoleRead.model_rebuild()
 
 # endregion

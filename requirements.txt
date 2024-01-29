@@ -4,33 +4,24 @@
 #
 #    pip-compile
 #
-anyio==3.6.2
+annotated-types==0.6.0
+    # via pydantic
+anyio==4.2.0
     # via
-    #   httpcore
+    #   httpx
     #   starlette
-    #   watchgod
-asgiref==3.6.0
-    # via uvicorn
-attrs==22.2.0
-    # via pytest
-authlib==1.2.0
-    # via -r requirements.in
-bcrypt==4.0.1
+    #   watchfiles
+bcrypt==4.1.2
     # via passlib
-build==0.10.0
+build==1.0.3
     # via pip-tools
-certifi==2022.12.7
+certifi==2023.11.17
     # via
     #   httpcore
     #   httpx
-    #   requests
-cffi==1.15.1
+cffi==1.16.0
     # via cryptography
-charset-normalizer==3.0.1
-    # via
-    #   httpx
-    #   requests
-click==8.1.3
+click==8.1.7
     # via
     #   pip-tools
     #   typer
@@ -39,85 +30,94 @@ colorama==0.4.6
     # via
     #   pytest-watch
     #   typer
-coverage[toml]==7.4.0
+coverage[toml]==7.4.1
     # via pytest-cov
-cryptography==39.0.1
-    # via
-    #   authlib
-    #   python-jose
-dnspython==2.3.0
+cryptography==42.0.1
+    # via python-jose
+dnspython==2.5.0
     # via email-validator
 docopt==0.6.2
     # via pytest-watch
 ecdsa==0.18.0
     # via python-jose
-email-validator==1.3.1
+email-validator==2.1.0.post1
     # via fastapi
-exceptiongroup==1.1.0
-    # via pytest
-fastapi[all]==0.75.2
+exceptiongroup==1.2.0
+    # via
+    #   anyio
+    #   pytest
+fastapi[all]==0.109.0
     # via -r requirements.in
-h11==0.12.0
+h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.14.7
+httpcore==1.0.2
     # via httpx
-httptools==0.5.0
+httptools==0.6.1
     # via uvicorn
-httpx==0.22.0
-    # via -r requirements.in
-idna==3.4
+httpx==0.26.0
+    # via
+    #   -r requirements.in
+    #   fastapi
+idna==3.6
     # via
     #   anyio
     #   email-validator
-    #   requests
-    #   rfc3986
+    #   httpx
 iniconfig==2.0.0
     # via pytest
 itsdangerous==2.1.2
     # via fastapi
-jinja2==3.1.2
+jinja2==3.1.3
     # via fastapi
-markdown-it-py==2.2.0
+markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.2
+markupsafe==2.1.4
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-mypy==1.0.1
+mypy==1.8.0
     # via -r requirements.in
 mypy-extensions==1.0.0
     # via mypy
-orjson==3.8.6
+orjson==3.9.12
     # via fastapi
-packaging==23.0
+packaging==23.2
     # via
     #   build
     #   pytest
 passlib[bcrypt]==1.7.4
     # via -r requirements.in
-pip-tools==6.12.2
+pip-tools==7.3.0
     # via -r requirements.in
-pluggy==1.0.0
+pluggy==1.4.0
     # via pytest
-pyasn1==0.4.8
+pyasn1==0.5.1
     # via
     #   python-jose
     #   rsa
 pycparser==2.21
     # via cffi
-pydantic==1.10.5
+pydantic==2.5.3
     # via
     #   fastapi
+    #   pydantic-extra-types
+    #   pydantic-settings
     #   sqlmodel
-pygments==2.14.0
+pydantic-core==2.14.6
+    # via pydantic
+pydantic-extra-types==2.4.1
+    # via fastapi
+pydantic-settings==2.1.0
+    # via fastapi
+pygments==2.17.2
     # via rich
-pyodbc==4.0.32
+pyodbc==5.0.1
     # via -r requirements.in
 pyproject-hooks==1.0.0
     # via build
-pytest==7.2.1
+pytest==7.4.4
     # via
     #   -r requirements.in
     #   pytest-asyncio
@@ -125,7 +125,7 @@ pytest==7.2.1
     #   pytest-lazy-fixture
     #   pytest-only
     #   pytest-watch
-pytest-asyncio==0.20.3
+pytest-asyncio==0.23.3
     # via -r requirements.in
 pytest-cov==4.1.0
     # via -r requirements.in
@@ -135,23 +135,21 @@ pytest-only==2.0.0
     # via -r requirements.in
 pytest-watch==4.2.0
     # via -r requirements.in
-python-dotenv==1.0.0
-    # via uvicorn
+python-dotenv==1.0.1
+    # via
+    #   pydantic-settings
+    #   uvicorn
 python-jose[cryptography]==3.3.0
     # via -r requirements.in
-python-multipart==0.0.5
+python-multipart==0.0.6
     # via
     #   -r requirements.in
     #   fastapi
-pyyaml==6.0
+pyyaml==6.0.1
     # via
     #   fastapi
     #   uvicorn
-requests==2.28.2
-    # via fastapi
-rfc3986[idna2008]==1.5.0
-    # via httpx
-rich==13.3.1
+rich==13.7.0
     # via
     #   -r requirements.in
     #   typer
@@ -160,61 +158,58 @@ rsa==4.9
 shellingham==1.5.4
     # via typer
 six==1.16.0
-    # via
-    #   -r requirements.in
-    #   ecdsa
-    #   python-multipart
+    # via ecdsa
 sniffio==1.3.0
     # via
     #   anyio
-    #   httpcore
     #   httpx
-sqlalchemy==1.4.41
+sqlalchemy==2.0.25
     # via sqlmodel
-sqlalchemy2-stubs==0.0.2a32
-    # via sqlmodel
-sqlmodel==0.0.8
+sqlmodel==0.0.14
     # via -r requirements.in
-starlette==0.17.1
+starlette==0.35.1
     # via fastapi
 tomli==2.0.1
     # via
     #   build
     #   coverage
     #   mypy
+    #   pip-tools
     #   pyproject-hooks
     #   pytest
 typer[all]==0.9.0
     # via -r requirements.in
-types-passlib==1.7.7.1
+types-passlib==1.7.7.20240106
     # via -r requirements.in
 types-pytest-lazy-fixture==0.6.3.4
     # via -r requirements.in
-types-requests==2.28.11.4
+types-requests==2.31.0.20240125
     # via -r requirements.in
-types-urllib3==1.26.25.8
-    # via types-requests
-typing-extensions==4.5.0
+typing-extensions==4.9.0
     # via
+    #   anyio
+    #   fastapi
     #   mypy
     #   pydantic
-    #   sqlalchemy2-stubs
+    #   pydantic-core
+    #   sqlalchemy
     #   typer
-ujson==5.7.0
+    #   uvicorn
+ujson==5.9.0
     # via fastapi
-urllib3==1.26.14
-    # via requests
-uvicorn[standard]==0.17.6
+urllib3==2.1.0
+    # via types-requests
+uvicorn[standard]==0.27.0
     # via fastapi
-uvloop==0.17.0
+uvloop==0.19.0
     # via uvicorn
-watchdog==2.3.0
+watchdog==3.0.0
     # via pytest-watch
-watchgod==0.8.2
+watchfiles==0.21.0
     # via uvicorn
-websockets==10.4
+websockets==12.0
     # via uvicorn
-wheel==0.38.4
+wheel==0.42.0
     # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:

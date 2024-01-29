@@ -29,7 +29,7 @@ async def who_am_i(current_user: User = Depends(get_current_user)) -> User:
 async def get_all_users(
     db: Session = Depends(get_db),
 ) -> list[User]:
-    users = db.exec(select(User)).all()
+    users = list(db.exec(select(User)).all())
     return users
 
 
@@ -42,7 +42,7 @@ async def create_user(
     user: UserCreate,
     db: Session = Depends(get_db),
 ) -> User:
-    user_data = user.dict()
+    user_data = user.model_dump()
     user_data["password"] = ""
     user_data["disabled"] = False
     db_user = User(**user_data)
@@ -88,7 +88,7 @@ async def update_user(
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_data = user.dict(exclude_unset=True)
+    user_data = user.model_dump(exclude_unset=True)
 
     for key, value in user_data.items():
         setattr(db_user, key, value)

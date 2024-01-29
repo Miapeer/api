@@ -30,7 +30,7 @@ async def get_all_categories(
 ) -> list[Category]:
 
     sql = select(Category).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
-    categories = db.exec(sql).all()
+    categories = list(db.exec(sql).all())
 
     return categories
 
@@ -50,7 +50,7 @@ async def create_category(
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
     # Create the category
-    db_category = Category.from_orm(category)
+    db_category = Category.model_validate(category)
     db.add(db_category)
     db.commit()
     db.refresh(db_category)
@@ -125,7 +125,7 @@ async def update_category(
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    category_data = category.dict(exclude_unset=True)
+    category_data = category.model_dump(exclude_unset=True)
 
     for key, value in category_data.items():
         setattr(db_category, key, value)

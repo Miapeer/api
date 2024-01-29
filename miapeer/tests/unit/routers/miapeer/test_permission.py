@@ -54,9 +54,18 @@ class TestCreate:
     ) -> None:
         await permission.create_permission(permission=permission_create, db=mock_db)
 
-        mock_db.add.assert_called_once_with(permission_to_add)
+        # mock_db.add.assert_called_once_with(permission_to_add)  # TODO: Try to go back to this once SQLModel can equate models again
+        assert mock_db.add.call_count == 1
+        add_call_param = mock_db.add.call_args[0][0]
+        assert add_call_param.model_dump() == permission_to_add.model_dump()
+
         mock_db.commit.assert_called_once()
-        mock_db.refresh.assert_called_once_with(permission_to_add)
+
+        # mock_db.refresh.assert_called_once_with(permission_to_add)  # TODO: Try to go back to this once SQLModel can equate models again
+        assert mock_db.refresh.call_count == 1
+        refresh_call_param = mock_db.refresh.call_args[0][0]
+        assert refresh_call_param.model_dump() == permission_to_add.model_dump()
+
         # Don't need to test the response here because it's just the updated permission_to_add
 
 

@@ -23,7 +23,7 @@ router = APIRouter(
 async def get_all_roles(
     db: Session = Depends(get_db),
 ) -> list[Role]:
-    roles = db.exec(select(Role)).all()
+    roles = list(db.exec(select(Role)).all())
     return roles
 
 
@@ -36,7 +36,7 @@ async def create_role(
     role: RoleCreate,
     db: Session = Depends(get_db),
 ) -> Role:
-    db_role = Role.from_orm(role)
+    db_role = Role.model_validate(role)
     db.add(db_role)
     db.commit()
     db.refresh(db_role)
@@ -79,7 +79,7 @@ async def update_role(
     if not db_role:
         raise HTTPException(status_code=404, detail="Role not found")
 
-    role_data = role.dict(exclude_unset=True)
+    role_data = role.model_dump(exclude_unset=True)
 
     for key, value in role_data.items():
         setattr(db_role, key, value)

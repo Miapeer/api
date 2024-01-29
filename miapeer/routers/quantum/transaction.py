@@ -39,7 +39,7 @@ async def get_all_transactions(
         .where(Transaction.account_id == account_id)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
-    transactions = db.exec(sql).all()
+    transactions = list(db.exec(sql).all())
 
     return transactions
 
@@ -66,7 +66,7 @@ async def create_transaction(
         raise HTTPException(status_code=404, detail="Account not found")
 
     # Create the transaction
-    transaction_data = transaction.dict()
+    transaction_data = transaction.model_dump()
     transaction_data["account_id"] = account_id
     db_transaction = Transaction(**transaction_data)
     db.add(db_transaction)
@@ -152,7 +152,7 @@ async def update_transaction(
     if not db_transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    transaction_data = transaction.dict(exclude_unset=True)
+    transaction_data = transaction.model_dump(exclude_unset=True)
 
     for key, value in transaction_data.items():
         setattr(db_transaction, key, value)

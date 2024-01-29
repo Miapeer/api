@@ -165,9 +165,19 @@ class TestCreate:
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
 
         assert sql_str == expected_sql
-        mock_db.add.assert_called_once_with(transaction_to_add)
+
+        # mock_db.add.assert_called_once_with(transaction_to_add)  # TODO: Try to go back to this once SQLModel can equate models again
+        assert mock_db.add.call_count == 1
+        add_call_param = mock_db.add.call_args[0][0]
+        assert add_call_param.model_dump() == transaction_to_add.model_dump()
+
         mock_db.commit.assert_called_once()
-        mock_db.refresh.assert_called_once_with(transaction_to_add)
+
+        # mock_db.refresh.assert_called_once_with(transaction_to_add)  # TODO: Try to go back to this once SQLModel can equate models again
+        assert mock_db.refresh.call_count == 1
+        refresh_call_param = mock_db.refresh.call_args[0][0]
+        assert refresh_call_param.model_dump() == transaction_to_add.model_dump()
+
         # Don't need to test the response here because it's just the updated transaction_to_add
 
     @pytest.mark.parametrize("db_first_return_val", [None, ""])

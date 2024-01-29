@@ -21,7 +21,7 @@ router = APIRouter(
 async def get_all_application_roles(
     db: Session = Depends(get_db),
 ) -> list[ApplicationRole]:
-    application_roles = db.exec(select(ApplicationRole)).all()
+    application_roles = list(db.exec(select(ApplicationRole)).all())
 
     return application_roles
 
@@ -33,7 +33,7 @@ async def create_application_role(
     db: Session = Depends(get_db),
     # commons: dict = Depends(is_zomething)
 ) -> ApplicationRole:
-    db_application_role = ApplicationRole.from_orm(application_role)
+    db_application_role = ApplicationRole.model_validate(application_role)
     db.add(db_application_role)
     db.commit()
     db.refresh(db_application_role)
@@ -72,7 +72,7 @@ async def update_application_role(
     if not db_application_role:
         raise HTTPException(status_code=404, detail="Application Role not found")
 
-    application_role_data = application_role.dict(exclude_unset=True)
+    application_role_data = application_role.model_dump(exclude_unset=True)
 
     for key, value in application_role_data.items():
         setattr(db_application_role, key, value)

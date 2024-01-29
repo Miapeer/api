@@ -20,7 +20,7 @@ router = APIRouter(
 async def get_all_applications(
     db: Session = Depends(get_db),
 ) -> list[Application]:
-    applications = db.exec(select(Application).order_by(Application.name)).all()
+    applications = list(db.exec(select(Application).order_by(Application.name)).all())
     return applications
 
 
@@ -33,7 +33,7 @@ async def create_application(
     application: ApplicationCreate,
     db: Session = Depends(get_db),
 ) -> Application:
-    db_application = Application.from_orm(application)
+    db_application = Application.model_validate(application)
     db.add(db_application)
     # TODO: Add application roles
     db.commit()
@@ -73,7 +73,7 @@ async def update_application(
     if not db_application:
         raise HTTPException(status_code=404, detail="Application not found")
 
-    application_data = application.dict(exclude_unset=True)
+    application_data = application.model_dump(exclude_unset=True)
 
     for key, value in application_data.items():
         setattr(db_application, key, value)

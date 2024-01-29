@@ -44,7 +44,7 @@ class TestCreate:
 
     @pytest.fixture
     def portfolio_user_to_add(self, user_id: int) -> PortfolioUser:
-        return PortfolioUser(user_id=user_id)
+        return PortfolioUser(portfolio_id=None, user_id=user_id)
 
     @pytest.fixture
     def expected_sql(self, user_id: int) -> str:
@@ -61,16 +61,22 @@ class TestCreate:
     ) -> None:
         await portfolio.create_portfolio(portfolio=portfolio_create, db=mock_db, current_user=user)
 
-        expected_add_calls = [
-            call(portfolio_to_add),
-            call(portfolio_user_to_add),
+        expected_add_params = [
+            portfolio_to_add.model_dump(),
+            portfolio_user_to_add.model_dump(),
         ]
         assert mock_db.add.call_count == 2
-        assert mock_db.add.mock_calls == expected_add_calls
+
+        actual_add_call_params = [mock_call.args[0].model_dump() for mock_call in mock_db.add.mock_calls]
+        assert actual_add_call_params == expected_add_params
 
         assert mock_db.commit.call_count == 2
 
-        mock_db.refresh.assert_called_once_with(portfolio_to_add)
+        # mock_db.refresh.assert_called_once_with(portfolio_to_add)  # TODO: Try to go back to this once SQLModel can equate models again
+        assert mock_db.refresh.call_count == 1
+        refresh_call_param = mock_db.refresh.call_args[0][0]
+        assert refresh_call_param.model_dump() == portfolio_to_add.model_dump()
+
         # Don't need to test the response here because it's just the updated portfolio_to_add
 
 
