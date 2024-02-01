@@ -133,8 +133,8 @@ class ApplicationRole(ApplicationRoleBase, table=True):
 
     application_role_id: Optional[int] = Field(default=None, primary_key=True)
 
-    application: "Application" = Relationship(back_populates="application_roles")
-    role: "Role" = Relationship(back_populates="application_roles")
+    application: Application = Relationship(back_populates="application_roles")
+    role: Role = Relationship(back_populates="application_roles")
 
     permissions: List["Permission"] = Relationship(back_populates="application_role")
 
@@ -146,8 +146,8 @@ class ApplicationRoleCreate(ApplicationRoleBase):
 class ApplicationRoleRead(ApplicationRoleBase):
     application_role_id: int
 
-    application: "Application"
-    role: "Role"
+    # application: Application
+    # role: Role
 
 
 class ApplicationRoleUpdate(SQLModel):
@@ -183,8 +183,8 @@ class PermissionCreate(PermissionBase):
 class PermissionRead(PermissionBase):
     permission_id: int
 
-    user: User
-    application_role: ApplicationRoleRead
+    # user: User
+    # application_role: ApplicationRoleRead
 
 
 class PermissionUpdate(SQLModel):

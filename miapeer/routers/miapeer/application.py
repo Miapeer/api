@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import select
 
-from miapeer.dependencies import get_db, is_miapeer_super_user
+from miapeer.dependencies import DbSession, is_miapeer_super_user
 from miapeer.models.miapeer import (
     Application,
     ApplicationCreate,
@@ -16,41 +16,40 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[ApplicationRead])
+@router.get("/")
 async def get_all_applications(
-    db: Session = Depends(get_db),
-) -> list[Application]:
-    applications = list(db.exec(select(Application).order_by(Application.name)).all())
-    return applications
+    db: DbSession,
+) -> list[ApplicationRead]:
+    applications = db.exec(select(Application).order_by(Application.name)).all()
+    return [ApplicationRead.model_validate(application) for application in applications]
 
 
 @router.post(
     "/",
     dependencies=[Depends(is_miapeer_super_user)],
-    response_model=ApplicationRead,
 )
 async def create_application(
+    db: DbSession,
     application: ApplicationCreate,
-    db: Session = Depends(get_db),
-) -> Application:
+) -> ApplicationRead:
     db_application = Application.model_validate(application)
     db.add(db_application)
     # TODO: Add application roles
     db.commit()
     db.refresh(db_application)
-    return db_application
+    return ApplicationRead.model_validate(db_application)
 
 
-@router.get("/{application_id}", response_model=Application)
-async def get_application(application_id: int, db: Session = Depends(get_db)) -> Application:
+@router.get("/{application_id}")
+async def get_application(db: DbSession, application_id: int) -> ApplicationRead:
     application = db.get(Application, application_id)
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")
-    return application
+    return ApplicationRead.model_validate(application)
 
 
 @router.delete("/{application_id}", dependencies=[Depends(is_miapeer_super_user)])
-async def delete_application(application_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+async def delete_application(db: DbSession, application_id: int) -> dict[str, bool]:
     application = db.get(Application, application_id)
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")
@@ -62,23 +61,21 @@ async def delete_application(application_id: int, db: Session = Depends(get_db))
 @router.patch(
     "/{application_id}",
     dependencies=[Depends(is_miapeer_super_user)],
-    response_model=ApplicationRead,
 )
 async def update_application(
+    db: DbSession,
     application_id: int,
     application: ApplicationUpdate,
-    db: Session = Depends(get_db),
-) -> Application:
+) -> ApplicationRead:
     db_application = db.get(Application, application_id)
+
     if not db_application:
         raise HTTPException(status_code=404, detail="Application not found")
 
-    application_data = application.model_dump(exclude_unset=True)
+    updated_application = Application.model_validate(db_application.model_dump(), update=application.model_dump())
 
-    for key, value in application_data.items():
-        setattr(db_application, key, value)
-
-    db.add(db_application)
+    db.add(updated_application)
     db.commit()
-    db.refresh(db_application)
-    return db_application
+    db.refresh(updated_application)
+
+    return ApplicationRead.model_validate(updated_application)

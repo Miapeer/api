@@ -26,8 +26,8 @@ def user_with_incorrect_password(user: User) -> User:
 async def test_access_token(form_data: OAuth2PasswordRequestForm, mock_db: Mock) -> None:
     response = await auth.login_for_access_token(form_data=form_data, jwk="My secret key", db=mock_db)
 
-    assert response.get("token_type") == "bearer"
-    assert len(response.get("access_token", "")) > 0
+    assert response.token_type == "bearer"
+    assert len(response.access_token) > 0
 
 
 @pytest.mark.parametrize("db_one_or_none_return_val", [None])

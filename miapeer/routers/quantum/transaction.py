@@ -1,12 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import select
 
-from miapeer.dependencies import (
-    get_current_active_user,
-    get_db,
-    is_quantum_user,
-)
-from miapeer.models.miapeer import User
+from miapeer.dependencies import CurrentActiveUser, DbSession, is_quantum_user
 from miapeer.models.quantum.account import Account
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
@@ -24,13 +19,12 @@ router = APIRouter(
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)], response_model=list[TransactionRead])
+@router.get("/", dependencies=[Depends(is_quantum_user)])
 async def get_all_transactions(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> list[Transaction]:
-
+) -> list[TransactionRead]:
     sql = (
         select(Transaction)
         .join(Account)
@@ -39,18 +33,17 @@ async def get_all_transactions(
         .where(Transaction.account_id == account_id)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
-    transactions = list(db.exec(sql).all())
+    transactions = db.exec(sql).all()
+    return [TransactionRead.model_validate(transaction) for transaction in transactions]
 
-    return transactions
 
-
-@router.post("/", dependencies=[Depends(is_quantum_user)], response_model=TransactionRead)
+@router.post("/", dependencies=[Depends(is_quantum_user)])
 async def create_transaction(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
     transaction: TransactionCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Transaction:
+) -> TransactionRead:
 
     # Get the user's account to verify access
     sql = (
@@ -68,21 +61,21 @@ async def create_transaction(
     # Create the transaction
     transaction_data = transaction.model_dump()
     transaction_data["account_id"] = account_id
-    db_transaction = Transaction(**transaction_data)
+    db_transaction = Transaction.model_validate(transaction_data)
     db.add(db_transaction)
     db.commit()
     db.refresh(db_transaction)
 
-    return db_transaction
+    return TransactionRead.model_validate(db_transaction)
 
 
-@router.get("/{transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=Transaction)
+@router.get("/{transaction_id}", dependencies=[Depends(is_quantum_user)])
 async def get_transaction(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
     transaction_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Transaction:
+) -> TransactionRead:
 
     sql = (
         select(Transaction)
@@ -98,15 +91,15 @@ async def get_transaction(
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    return transaction
+    return TransactionRead.model_validate(transaction)
 
 
 @router.delete("/{transaction_id}", dependencies=[Depends(is_quantum_user)])
 async def delete_transaction(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
     transaction_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
 ) -> dict[str, bool]:
 
     sql = (
@@ -129,14 +122,14 @@ async def delete_transaction(
     return {"ok": True}
 
 
-@router.patch("/{transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=TransactionRead)
+@router.patch("/{transaction_id}", dependencies=[Depends(is_quantum_user)])
 async def update_transaction(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
     transaction_id: int,
     transaction: TransactionUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Transaction:
+) -> TransactionRead:
 
     sql = (
         select(Transaction)
@@ -152,13 +145,10 @@ async def update_transaction(
     if not db_transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    transaction_data = transaction.model_dump(exclude_unset=True)
+    updated_transaction = Transaction.model_validate(db_transaction.model_dump(), update=transaction.model_dump())
 
-    for key, value in transaction_data.items():
-        setattr(db_transaction, key, value)
-
-    db.add(db_transaction)
+    db.add(updated_transaction)
     db.commit()
-    db.refresh(db_transaction)
+    db.refresh(updated_transaction)
 
-    return db_transaction
+    return TransactionRead.model_validate(updated_transaction)

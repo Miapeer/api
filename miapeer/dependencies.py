@@ -1,6 +1,6 @@
 from enum import Enum
 from os import environ as env
-from typing import Iterator, Optional
+from typing import Annotated, Iterator, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -37,10 +37,12 @@ permission_cache: set[str] = set()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/miapeer/v1/auth/token")
 
 
-# TODO: Make async? ...or already async?
 def get_db() -> Iterator[Session]:
     with Session(engine) as session:
         yield session
+
+
+DbSession = Annotated[Session, Depends(get_db)]
 
 
 def get_jwk() -> Optional[str]:
@@ -77,12 +79,18 @@ async def get_current_user(
     return user
 
 
+CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
 async def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+CurrentActiveUser = Annotated[User, Depends(get_current_active_user)]
 
 
 # async def is_authorized(user: str = Cookie(None)) -> None:

@@ -1,12 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import select
 
-from miapeer.dependencies import (
-    get_current_active_user,
-    get_db,
-    is_quantum_user,
-)
-from miapeer.models.miapeer import User
+from miapeer.dependencies import CurrentActiveUser, DbSession, is_quantum_user
 from miapeer.models.quantum.category import (
     Category,
     CategoryCreate,
@@ -23,24 +18,22 @@ router = APIRouter(
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)], response_model=list[CategoryRead])
+@router.get("/", dependencies=[Depends(is_quantum_user)])
 async def get_all_categories(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> list[Category]:
-
+    db: DbSession,
+    current_user: CurrentActiveUser,
+) -> list[CategoryRead]:
     sql = select(Category).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
-    categories = list(db.exec(sql).all())
+    categories = db.exec(sql).all()
+    return [CategoryRead.model_validate(category) for category in categories]
 
-    return categories
 
-
-@router.post("/", dependencies=[Depends(is_quantum_user)], response_model=CategoryRead)
+@router.post("/", dependencies=[Depends(is_quantum_user)])
 async def create_category(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     category: CategoryCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Category:
+) -> CategoryRead:
 
     # Get the user's portfolio
     sql = select(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
@@ -55,15 +48,15 @@ async def create_category(
     db.commit()
     db.refresh(db_category)
 
-    return db_category
+    return CategoryRead.model_validate(db_category)
 
 
-@router.get("/{category_id}", dependencies=[Depends(is_quantum_user)], response_model=Category)
+@router.get("/{category_id}", dependencies=[Depends(is_quantum_user)])
 async def get_category(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     category_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Category:
+) -> CategoryRead:
 
     sql = (
         select(Category)
@@ -77,14 +70,14 @@ async def get_category(
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    return category
+    return CategoryRead.model_validate(category)
 
 
 @router.delete("/{category_id}", dependencies=[Depends(is_quantum_user)])
 async def delete_category(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     category_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
 ) -> dict[str, bool]:
 
     sql = (
@@ -105,13 +98,13 @@ async def delete_category(
     return {"ok": True}
 
 
-@router.patch("/{category_id}", dependencies=[Depends(is_quantum_user)], response_model=CategoryRead)
+@router.patch("/{category_id}", dependencies=[Depends(is_quantum_user)])
 async def update_category(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     category_id: int,
     category: CategoryUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Category:
+) -> CategoryRead:
 
     sql = (
         select(Category)
@@ -134,4 +127,4 @@ async def update_category(
     db.commit()
     db.refresh(db_category)
 
-    return db_category
+    return CategoryRead.model_validate(db_category)

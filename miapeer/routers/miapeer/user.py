@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from miapeer.dependencies import (
-    get_current_user,
-    get_db,
+    CurrentUser,
+    DbSession,
     is_miapeer_admin,
     is_miapeer_super_user,
 )
@@ -17,55 +17,55 @@ router = APIRouter(
 
 
 @router.get("/me")
-async def who_am_i(current_user: User = Depends(get_current_user)) -> User:
+async def who_am_i(current_user: CurrentUser) -> User:
     return current_user
 
 
 @router.get(
     "/",
     dependencies=[Depends(is_miapeer_admin)],
-    response_model=list[UserRead],
 )
 async def get_all_users(
-    db: Session = Depends(get_db),
-) -> list[User]:
-    users = list(db.exec(select(User)).all())
-    return users
+    db: DbSession,
+) -> list[UserRead]:
+    users = db.exec(select(User)).all()
+    return [UserRead.model_validate(user) for user in users]
 
 
 @router.post(
     "/",
     dependencies=[Depends(is_miapeer_admin)],
-    response_model=UserRead,
 )
 async def create_user(
+    db: DbSession,
     user: UserCreate,
-    db: Session = Depends(get_db),
-) -> User:
+) -> UserRead:
     user_data = user.model_dump()
     user_data["password"] = ""
     user_data["disabled"] = False
-    db_user = User(**user_data)
+
+    db_user = User.model_validate(user_data)
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return db_user
+
+    return UserRead.model_validate(db_user)
 
 
 @router.get(
     "/{user_id}",
     dependencies=[Depends(is_miapeer_admin)],
-    response_model=User,
 )
-async def get_user(user_id: int, db: Session = Depends(get_db)) -> User:
+async def get_user(db: DbSession, user_id: int) -> UserRead:
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+    return UserRead.model_validate(user)
 
 
 @router.delete("/{user_id}", dependencies=[Depends(is_miapeer_super_user)])
-async def delete_user(user_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+async def delete_user(db: DbSession, user_id: int) -> dict[str, bool]:
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -77,23 +77,20 @@ async def delete_user(user_id: int, db: Session = Depends(get_db)) -> dict[str, 
 @router.patch(
     "/{user_id}",
     dependencies=[Depends(is_miapeer_super_user)],
-    response_model=UserRead,
 )
 async def update_user(
+    db: DbSession,
     user_id: int,
     user: UserUpdate,
-    db: Session = Depends(get_db),
-) -> User:
+) -> UserRead:
     db_user = db.get(User, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_data = user.model_dump(exclude_unset=True)
+    updated_user = User.model_validate(db_user.model_dump(), update=user.model_dump())
 
-    for key, value in user_data.items():
-        setattr(db_user, key, value)
-
-    db.add(db_user)
+    db.add(updated_user)
     db.commit()
-    db.refresh(db_user)
-    return db_user
+    db.refresh(updated_user)
+
+    return UserRead.model_validate(updated_user)

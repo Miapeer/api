@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import select
 
-from miapeer.dependencies import get_db, is_miapeer_super_user
+from miapeer.dependencies import DbSession, is_miapeer_super_user
 from miapeer.models.miapeer import (
     ApplicationRole,
     ApplicationRoleCreate,
@@ -17,40 +17,40 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[ApplicationRoleRead])
+@router.get("/")
 async def get_all_application_roles(
-    db: Session = Depends(get_db),
-) -> list[ApplicationRole]:
-    application_roles = list(db.exec(select(ApplicationRole)).all())
-
-    return application_roles
+    db: DbSession,
+) -> list[ApplicationRoleRead]:
+    application_roles = db.exec(select(ApplicationRole)).all()
+    return [ApplicationRoleRead.model_validate(application_role) for application_role in application_roles]
 
 
 # TODO: Should this even be exposed?
-@router.post("/", response_model=ApplicationRoleRead)
+@router.post("/")
 async def create_application_role(
+    db: DbSession,
     application_role: ApplicationRoleCreate,
-    db: Session = Depends(get_db),
-    # commons: dict = Depends(is_zomething)
-) -> ApplicationRole:
+) -> ApplicationRoleRead:
     db_application_role = ApplicationRole.model_validate(application_role)
+
     db.add(db_application_role)
     db.commit()
     db.refresh(db_application_role)
-    return db_application_role
+
+    return ApplicationRoleRead.model_validate(db_application_role)
 
 
-@router.get("/{application_role_id}", response_model=ApplicationRoleRead)
-async def get_application_role(application_role_id: int, db: Session = Depends(get_db)) -> ApplicationRole:
+@router.get("/{application_role_id}")
+async def get_application_role(db: DbSession, application_role_id: int) -> ApplicationRoleRead:
     application_role = db.get(ApplicationRole, application_role_id)
     if not application_role:
         raise HTTPException(status_code=404, detail="Application Role not found")
-    return application_role
+    return ApplicationRoleRead.model_validate(application_role)
 
 
 # TODO: Should this even be exposed?
 @router.delete("/{application_role_id}")
-async def delete_application_role(application_role_id: int, db: Session = Depends(get_db)) -> dict[str, bool]:
+async def delete_application_role(db: DbSession, application_role_id: int) -> dict[str, bool]:
     application_role = db.get(ApplicationRole, application_role_id)
     if not application_role:
         raise HTTPException(status_code=404, detail="Application Role not found")
@@ -61,14 +61,14 @@ async def delete_application_role(application_role_id: int, db: Session = Depend
 
 @router.patch(
     "/{application_role_id}",
-    response_model=ApplicationRoleRead,
 )
 async def update_application_role(
+    db: DbSession,
     application_role_id: int,
     application_role: ApplicationRoleUpdate,
-    db: Session = Depends(get_db),
-) -> ApplicationRole:
+) -> ApplicationRoleRead:
     db_application_role = db.get(ApplicationRole, application_role_id)
+
     if not db_application_role:
         raise HTTPException(status_code=404, detail="Application Role not found")
 
@@ -80,4 +80,5 @@ async def update_application_role(
     db.add(db_application_role)
     db.commit()
     db.refresh(db_application_role)
-    return db_application_role
+
+    return ApplicationRoleRead.model_validate(db_application_role)

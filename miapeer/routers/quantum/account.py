@@ -1,14 +1,9 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import select
 
-from miapeer.dependencies import (
-    get_current_active_user,
-    get_db,
-    is_quantum_user,
-)
-from miapeer.models.miapeer import User
+from miapeer.dependencies import CurrentActiveUser, DbSession, is_quantum_user
 from miapeer.models.quantum.account import (
     Account,
     AccountCreate,
@@ -26,24 +21,22 @@ router = APIRouter(
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)], response_model=list[AccountRead])
+@router.get("/", dependencies=[Depends(is_quantum_user)])
 async def get_all_accounts(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> list[Account]:
-
+    db: DbSession,
+    current_user: CurrentActiveUser,
+) -> list[AccountRead]:
     sql = select(Account).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
-    accounts = list(db.exec(sql).all())
+    accounts = db.exec(sql).all()
+    return [AccountRead.model_validate(account) for account in accounts]
 
-    return accounts
 
-
-@router.post("/", dependencies=[Depends(is_quantum_user)], response_model=AccountRead)
+@router.post("/", dependencies=[Depends(is_quantum_user)])
 async def create_account(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account: AccountCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Account:
+) -> AccountRead:
 
     # Get the user's portfolio
     sql = select(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
@@ -73,15 +66,15 @@ async def create_account(
     db.add(initial_transaction)
     db.commit()
 
-    return db_account
+    return AccountRead.model_validate(db_account)
 
 
-@router.get("/{account_id}", dependencies=[Depends(is_quantum_user)], response_model=Account)
+@router.get("/{account_id}", dependencies=[Depends(is_quantum_user)])
 async def get_account(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Account:
+) -> AccountRead:
 
     sql = (
         select(Account)
@@ -95,14 +88,14 @@ async def get_account(
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
 
-    return account
+    return AccountRead.model_validate(account)
 
 
 @router.delete("/{account_id}", dependencies=[Depends(is_quantum_user)])
 async def delete_account(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
 ) -> dict[str, bool]:
 
     sql = (
@@ -123,13 +116,13 @@ async def delete_account(
     return {"ok": True}
 
 
-@router.patch("/{account_id}", dependencies=[Depends(is_quantum_user)], response_model=AccountRead)
+@router.patch("/{account_id}", dependencies=[Depends(is_quantum_user)])
 async def update_account(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
     account: AccountUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Account:
+) -> AccountRead:
 
     sql = (
         select(Account)
@@ -143,13 +136,10 @@ async def update_account(
     if not db_account:
         raise HTTPException(status_code=404, detail="Account not found")
 
-    account_data = account.model_dump(exclude_unset=True)
+    updated_account = Account.model_validate(db_account.model_dump(), update=account.model_dump())
 
-    for key, value in account_data.items():
-        setattr(db_account, key, value)
-
-    db.add(db_account)
+    db.add(updated_account)
     db.commit()
-    db.refresh(db_account)
+    db.refresh(updated_account)
 
-    return db_account
+    return AccountRead.model_validate(updated_account)

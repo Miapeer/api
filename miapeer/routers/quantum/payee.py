@@ -1,12 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import select
 
-from miapeer.dependencies import (
-    get_current_active_user,
-    get_db,
-    is_quantum_user,
-)
-from miapeer.models.miapeer import User
+from miapeer.dependencies import CurrentActiveUser, DbSession, is_quantum_user
 from miapeer.models.quantum.payee import (
     Payee,
     PayeeCreate,
@@ -23,24 +18,22 @@ router = APIRouter(
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)], response_model=list[PayeeRead])
+@router.get("/", dependencies=[Depends(is_quantum_user)])
 async def get_all_payees(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> list[Payee]:
-
+    db: DbSession,
+    current_user: CurrentActiveUser,
+) -> list[PayeeRead]:
     sql = select(Payee).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
-    payees = list(db.exec(sql).all())
+    payees = db.exec(sql).all()
+    return [PayeeRead.model_validate(payee) for payee in payees]
 
-    return payees
 
-
-@router.post("/", dependencies=[Depends(is_quantum_user)], response_model=PayeeRead)
+@router.post("/", dependencies=[Depends(is_quantum_user)])
 async def create_payee(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     payee: PayeeCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Payee:
+) -> PayeeRead:
 
     # Get the user's portfolio
     sql = select(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
@@ -55,15 +48,15 @@ async def create_payee(
     db.commit()
     db.refresh(db_payee)
 
-    return db_payee
+    return PayeeRead.model_validate(db_payee)
 
 
-@router.get("/{payee_id}", dependencies=[Depends(is_quantum_user)], response_model=Payee)
+@router.get("/{payee_id}", dependencies=[Depends(is_quantum_user)])
 async def get_payee(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     payee_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Payee:
+) -> PayeeRead:
 
     sql = (
         select(Payee)
@@ -77,14 +70,14 @@ async def get_payee(
     if not payee:
         raise HTTPException(status_code=404, detail="Payee not found")
 
-    return payee
+    return PayeeRead.model_validate(payee)
 
 
 @router.delete("/{payee_id}", dependencies=[Depends(is_quantum_user)])
 async def delete_payee(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     payee_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
 ) -> dict[str, bool]:
 
     sql = (
@@ -105,13 +98,13 @@ async def delete_payee(
     return {"ok": True}
 
 
-@router.patch("/{payee_id}", dependencies=[Depends(is_quantum_user)], response_model=PayeeRead)
+@router.patch("/{payee_id}", dependencies=[Depends(is_quantum_user)])
 async def update_payee(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     payee_id: int,
     payee: PayeeUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> Payee:
+) -> PayeeRead:
 
     sql = (
         select(Payee)
@@ -125,13 +118,10 @@ async def update_payee(
     if not db_payee:
         raise HTTPException(status_code=404, detail="Payee not found")
 
-    payee_data = payee.model_dump(exclude_unset=True)
+    updated_payee = Payee.model_validate(db_payee.model_dump(), update=payee.model_dump())
 
-    for key, value in payee_data.items():
-        setattr(db_payee, key, value)
-
-    db.add(db_payee)
+    db.add(updated_payee)
     db.commit()
-    db.refresh(db_payee)
+    db.refresh(updated_payee)
 
-    return db_payee
+    return PayeeRead.model_validate(updated_payee)

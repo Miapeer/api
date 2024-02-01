@@ -1,12 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import select
 
-from miapeer.dependencies import (
-    get_current_active_user,
-    get_db,
-    is_quantum_user,
-)
-from miapeer.models.miapeer import User
+from miapeer.dependencies import CurrentActiveUser, DbSession, is_quantum_user
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
 from miapeer.models.quantum.transaction_type import (
@@ -23,29 +18,27 @@ router = APIRouter(
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)], response_model=list[TransactionTypeRead])
+@router.get("/", dependencies=[Depends(is_quantum_user)])
 async def get_all_transaction_types(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> list[TransactionType]:
-
+    db: DbSession,
+    current_user: CurrentActiveUser,
+) -> list[TransactionTypeRead]:
     sql = (
         select(TransactionType)
         .join(Portfolio)
         .join(PortfolioUser)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
-    transaction_types = list(db.exec(sql).all())
+    transaction_types = db.exec(sql).all()
+    return [TransactionTypeRead.model_validate(transaction_type) for transaction_type in transaction_types]
 
-    return transaction_types
 
-
-@router.post("/", dependencies=[Depends(is_quantum_user)], response_model=TransactionTypeRead)
+@router.post("/", dependencies=[Depends(is_quantum_user)])
 async def create_transaction_type(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     transaction_type: TransactionTypeCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> TransactionType:
+) -> TransactionTypeRead:
 
     # Get the user's portfolio
     sql = select(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
@@ -61,15 +54,15 @@ async def create_transaction_type(
     db.commit()
     db.refresh(db_transaction_type)
 
-    return db_transaction_type
+    return TransactionTypeRead.model_validate(db_transaction_type)
 
 
-@router.get("/{transaction_type_id}", dependencies=[Depends(is_quantum_user)], response_model=TransactionType)
+@router.get("/{transaction_type_id}", dependencies=[Depends(is_quantum_user)])
 async def get_transaction_type(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     transaction_type_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> TransactionType:
+) -> TransactionTypeRead:
 
     sql = (
         select(TransactionType)
@@ -83,14 +76,14 @@ async def get_transaction_type(
     if not transaction_type:
         raise HTTPException(status_code=404, detail="Transaction type not found")
 
-    return transaction_type
+    return TransactionTypeRead.model_validate(transaction_type)
 
 
 @router.delete("/{transaction_type_id}", dependencies=[Depends(is_quantum_user)])
 async def delete_transaction_type(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     transaction_type_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
 ) -> dict[str, bool]:
 
     sql = (
@@ -111,13 +104,13 @@ async def delete_transaction_type(
     return {"ok": True}
 
 
-@router.patch("/{transaction_type_id}", dependencies=[Depends(is_quantum_user)], response_model=TransactionTypeRead)
+@router.patch("/{transaction_type_id}", dependencies=[Depends(is_quantum_user)])
 async def update_transaction_type(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     transaction_type_id: int,
     transaction_type: TransactionTypeUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> TransactionType:
+) -> TransactionTypeRead:
 
     sql = (
         select(TransactionType)
@@ -131,13 +124,12 @@ async def update_transaction_type(
     if not db_transaction_type:
         raise HTTPException(status_code=404, detail="Transaction type not found")
 
-    transaction_type_data = transaction_type.model_dump(exclude_unset=True)
+    updated_transaction_type = TransactionType.model_validate(
+        db_transaction_type.model_dump(), update=transaction_type.model_dump()
+    )
 
-    for key, value in transaction_type_data.items():
-        setattr(db_transaction_type, key, value)
-
-    db.add(db_transaction_type)
+    db.add(updated_transaction_type)
     db.commit()
-    db.refresh(db_transaction_type)
+    db.refresh(updated_transaction_type)
 
-    return db_transaction_type
+    return TransactionTypeRead.model_validate(updated_transaction_type)

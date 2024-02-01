@@ -1,12 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import select
 
-from miapeer.dependencies import (
-    get_current_active_user,
-    get_db,
-    is_quantum_user,
-)
-from miapeer.models.miapeer import User
+from miapeer.dependencies import CurrentActiveUser, DbSession, is_quantum_user
 from miapeer.models.quantum.account import Account
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
@@ -24,13 +19,12 @@ router = APIRouter(
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)], response_model=list[ScheduledTransactionRead])
+@router.get("/", dependencies=[Depends(is_quantum_user)])
 async def get_all_scheduled_transactions(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> list[ScheduledTransaction]:
-
+) -> list[ScheduledTransactionRead]:
     sql = (
         select(ScheduledTransaction)
         .join(Account, Account.account_id == ScheduledTransaction.account_id)  # type: ignore
@@ -39,18 +33,20 @@ async def get_all_scheduled_transactions(
         .where(ScheduledTransaction.account_id == account_id)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
-    scheduled_transactions = list(db.exec(sql).all())
+    scheduled_transactions = db.exec(sql).all()
+    return [
+        ScheduledTransactionRead.model_validate(scheduled_transaction)
+        for scheduled_transaction in scheduled_transactions
+    ]
 
-    return scheduled_transactions
 
-
-@router.post("/", dependencies=[Depends(is_quantum_user)], response_model=ScheduledTransactionRead)
+@router.post("/", dependencies=[Depends(is_quantum_user)])
 async def create_scheduled_transaction(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
     scheduled_transaction: ScheduledTransactionCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> ScheduledTransaction:
+) -> ScheduledTransactionRead:
 
     # Get the user's account to verify access
     sql = (
@@ -68,23 +64,21 @@ async def create_scheduled_transaction(
     # Create the scheduled transaction
     scheduled_transaction_data = scheduled_transaction.model_dump()
     scheduled_transaction_data["account_id"] = account_id
-    db_scheduled_transaction = ScheduledTransaction(**scheduled_transaction_data)
+    db_scheduled_transaction = ScheduledTransaction.model_validate(scheduled_transaction_data)
     db.add(db_scheduled_transaction)
     db.commit()
     db.refresh(db_scheduled_transaction)
 
-    return db_scheduled_transaction
+    return ScheduledTransactionRead.model_validate(db_scheduled_transaction)
 
 
-@router.get(
-    "/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=ScheduledTransaction
-)
+@router.get("/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)])
 async def get_scheduled_transaction(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
     scheduled_transaction_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> ScheduledTransaction:
+) -> ScheduledTransactionRead:
 
     sql = (
         select(ScheduledTransaction)
@@ -100,15 +94,15 @@ async def get_scheduled_transaction(
     if not scheduled_transaction:
         raise HTTPException(status_code=404, detail="Scheduled transaction not found")
 
-    return scheduled_transaction
+    return ScheduledTransactionRead.model_validate(scheduled_transaction)
 
 
 @router.delete("/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)])
 async def delete_scheduled_transaction(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
     scheduled_transaction_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
 ) -> dict[str, bool]:
 
     sql = (
@@ -131,20 +125,18 @@ async def delete_scheduled_transaction(
     return {"ok": True}
 
 
-@router.patch(
-    "/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)], response_model=ScheduledTransactionRead
-)
+@router.patch("/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)])
 async def update_scheduled_transaction(
+    db: DbSession,
+    current_user: CurrentActiveUser,
     account_id: int,
     scheduled_transaction_id: int,
     scheduled_transaction: ScheduledTransactionUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-) -> ScheduledTransaction:
+) -> ScheduledTransactionRead:
 
     sql = (
         select(ScheduledTransaction)
-        .join(Account, ScheduledTransaction.account_id == Account.account_id)  # type: ignore
+        .join(Account, Account.account_id == ScheduledTransaction.account_id)  # type: ignore
         .join(Portfolio)
         .join(PortfolioUser)
         .where(Account.account_id == account_id)
@@ -156,13 +148,12 @@ async def update_scheduled_transaction(
     if not db_scheduled_transaction:
         raise HTTPException(status_code=404, detail="Scheduled transaction not found")
 
-    scheduled_transaction_data = scheduled_transaction.model_dump(exclude_unset=True)
+    updated_scheduled_transaction = ScheduledTransaction.model_validate(
+        db_scheduled_transaction.model_dump(), update=scheduled_transaction.model_dump()
+    )
 
-    for key, value in scheduled_transaction_data.items():
-        setattr(db_scheduled_transaction, key, value)
-
-    db.add(db_scheduled_transaction)
+    db.add(updated_scheduled_transaction)
     db.commit()
-    db.refresh(db_scheduled_transaction)
+    db.refresh(updated_scheduled_transaction)
 
-    return db_scheduled_transaction
+    return ScheduledTransactionRead.model_validate(updated_scheduled_transaction)

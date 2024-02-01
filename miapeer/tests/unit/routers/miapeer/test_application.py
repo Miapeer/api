@@ -3,10 +3,12 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import HTTPException
+from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import (
     Application,
     ApplicationCreate,
+    ApplicationRead,
     ApplicationUpdate,
 )
 from miapeer.routers.miapeer import application
@@ -14,9 +16,12 @@ from miapeer.routers.miapeer import application
 pytestmark = pytest.mark.asyncio
 
 
+raw_application_id = 12345
+
+
 @pytest.fixture
 def application_id() -> int:
-    return 12345
+    return raw_application_id
 
 
 @pytest.fixture
@@ -44,25 +49,63 @@ def application_display() -> bool:
     return True
 
 
+@pytest.fixture
+def basic_application(
+    application_name: str,
+    application_url: str,
+    application_description: str,
+    application_icon: str,
+    application_display: bool,
+) -> Application:
+    return Application(
+        application_id=None,
+        name=application_name,
+        url=application_url,
+        description=application_description,
+        icon=application_icon,
+        display=application_display,
+    )
+
+
+@pytest.fixture
+def complete_application(application_id: int, basic_application: Application) -> Application:
+    return Application.model_validate(basic_application.model_dump(), update={"application_id": application_id})
+
+
 class TestGetAll:
+    @pytest.fixture
+    def multiple_applications(self, complete_application: Application) -> list[Application]:
+        return [complete_application, complete_application]
+
+    @pytest.fixture
+    def expected_multiple_applications(self, complete_application: Application) -> list[ApplicationRead]:
+        working_application = ApplicationRead.model_validate(complete_application)
+        return [working_application, working_application]
+
     @pytest.fixture
     def expected_sql(self) -> str:
         return f"SELECT miapeer_application.name, miapeer_application.url, miapeer_application.description, miapeer_application.icon, miapeer_application.display, miapeer_application.application_id \nFROM miapeer_application ORDER BY miapeer_application.name"
 
-    @pytest.mark.parametrize("db_all_return_val", [[], "some data", 123])
-    async def test_get_all(self, mock_db: Mock, expected_sql: str, db_all_return_val: Any) -> None:
+    @pytest.mark.parametrize(
+        "db_all_return_val, expected_response",
+        [([], []), (lazy_fixture("multiple_applications"), lazy_fixture("expected_multiple_applications"))],
+    )
+    async def test_get_all(self, mock_db: Mock, expected_sql: str, expected_response: list[ApplicationRead]) -> None:
         response = await application.get_all_applications(db=mock_db)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
 
         assert sql_str == expected_sql
-        assert response == db_all_return_val
+        assert response == expected_response
 
 
 class TestCreate:
+    def db_refresh(obj) -> None:
+        obj.application_id = raw_application_id
+
     @pytest.fixture
-    def application_create(
+    def application_to_create(
         self,
         application_name: str,
         application_url: str,
@@ -78,54 +121,38 @@ class TestCreate:
             display=application_display,
         )
 
-    @pytest.fixture
-    def application_to_add(
-        self,
-        application_name: str,
-        application_url: str,
-        application_description: str,
-        application_icon: str,
-        application_display: bool,
-    ) -> Application:
-        return Application(
-            application_id=None,
-            name=application_name,
-            url=application_url,
-            description=application_description,
-            icon=application_icon,
-            display=application_display,
-        )
-
-    @pytest.mark.parametrize("db_first_return_val", ["some data"])
+    @pytest.mark.parametrize("db_first_return_val, db_refresh_patch_method", [("some data", db_refresh)])
     async def test_create(
         self,
-        application_create: ApplicationCreate,
-        application_to_add: Application,
+        application_to_create: ApplicationCreate,
+        complete_application: Application,
         mock_db: Mock,
     ) -> None:
-        await application.create_application(application=application_create, db=mock_db)
+        await application.create_application(application=application_to_create, db=mock_db)
 
-        # mock_db.add.assert_called_once_with(application_to_add)  # TODO: Try to go back to this once SQLModel can equate models again
         assert mock_db.add.call_count == 1
         add_call_param = mock_db.add.call_args[0][0]
-        assert add_call_param.model_dump() == application_to_add.model_dump()
+        assert add_call_param.model_dump() == complete_application.model_dump()
 
         mock_db.commit.assert_called_once()
 
-        # mock_db.refresh.assert_called_once_with(application_to_add)  # TODO: Try to go back to this once SQLModel can equate models again
         assert mock_db.refresh.call_count == 1
         refresh_call_param: Application = mock_db.refresh.call_args[0][0]
-        assert refresh_call_param.model_dump() == application_to_add.model_dump()
+        assert refresh_call_param.model_dump() == complete_application.model_dump()
 
         # Don't need to test the response here because it's just the updated application_to_add
 
 
 class TestGet:
-    @pytest.mark.parametrize("db_get_return_val", ["some data", 123])
-    async def test_get_with_data(self, application_id: int, mock_db: Mock, db_get_return_val: Any) -> None:
+    @pytest.fixture
+    def expected_response(self, complete_application: Application) -> ApplicationRead:
+        return ApplicationRead.model_validate(complete_application)
+
+    @pytest.mark.parametrize("db_get_return_val", [lazy_fixture("complete_application")])
+    async def test_get_with_data(self, application_id: int, mock_db: Mock, expected_response: ApplicationRead) -> None:
         response = await application.get_application(application_id=application_id, db=mock_db)
 
-        assert response == db_get_return_val
+        assert response == expected_response
 
     @pytest.mark.parametrize("db_get_return_val", [None, []])
     async def test_get_with_no_data(self, application_id: int, mock_db: Mock) -> None:
@@ -155,24 +182,7 @@ class TestDelete:
 
 class TestUpdate:
     @pytest.fixture
-    def application_to_update(
-        self,
-        application_name: str,
-        application_url: str,
-        application_description: str,
-        application_icon: str,
-        application_display: bool,
-    ) -> Application:
-        return Application(
-            name=application_name,
-            url=application_url,
-            description=application_description,
-            icon=application_icon,
-            display=application_display,
-        )
-
-    @pytest.fixture
-    def updated_application(self, application_display: bool) -> ApplicationUpdate:
+    def application_updates(self, application_display: bool) -> ApplicationUpdate:
         return ApplicationUpdate(
             name="some new name",
             url="some new url",
@@ -181,36 +191,61 @@ class TestUpdate:
             display=(not application_display),
         )
 
-    @pytest.mark.parametrize("db_get_return_val", [application_to_update])
+    @pytest.fixture
+    def updated_application(self, complete_application: Application) -> Application:
+        return Application.model_validate(
+            complete_application.model_dump(),
+            update={
+                "name": "some new name",
+                "url": "some new url",
+                "description": "some new desc",
+                "icon": "some new icon",
+                "display": (not application_display),
+            },
+        )
+
+    @pytest.fixture
+    def expected_response(self, updated_application: Application) -> ApplicationRead:
+        return ApplicationRead.model_validate(updated_application.model_dump())
+
+    @pytest.mark.parametrize("db_get_return_val", [lazy_fixture("complete_application")])
     async def test_update_with_user_found(
         self,
         application_id: int,
-        updated_application: ApplicationUpdate,
+        application_updates: ApplicationUpdate,
         mock_db: Mock,
-        db_get_return_val: Application,
+        updated_application: Application,
+        expected_response: ApplicationRead,
     ) -> None:
         response = await application.update_application(
             application_id=application_id,
-            application=updated_application,
+            application=application_updates,
             db=mock_db,
         )
 
-        mock_db.add.assert_called_once_with(db_get_return_val)
+        assert mock_db.add.call_count == 1
+        add_call_param = mock_db.add.call_args[0][0]
+        assert add_call_param.model_dump() == updated_application.model_dump()
+
         mock_db.commit.assert_called_once()
-        mock_db.refresh.assert_called_once_with(db_get_return_val)
-        assert response == db_get_return_val
+
+        assert mock_db.refresh.call_count == 1
+        refresh_call_param = mock_db.refresh.call_args[0][0]
+        assert refresh_call_param.model_dump() == updated_application.model_dump()
+
+        assert response == expected_response
 
     @pytest.mark.parametrize("db_get_return_val", [None, []])
     async def test_update_with_user_not_found(
         self,
         application_id: int,
-        updated_application: ApplicationUpdate,
+        application_updates: ApplicationUpdate,
         mock_db: Mock,
     ) -> None:
         with pytest.raises(HTTPException):
             await application.update_application(
                 application_id=application_id,
-                application=updated_application,
+                application=application_updates,
                 db=mock_db,
             )
 
