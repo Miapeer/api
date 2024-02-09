@@ -1,27 +1,35 @@
 import pytest
-from dotenv import find_dotenv, load_dotenv
 from fastapi.testclient import TestClient
 
-ENV_FILE = find_dotenv()
-if ENV_FILE:
-    load_dotenv(ENV_FILE)
 
-from miapeer.app import app
+class TestCreate:
+    @pytest.mark.usefixtures("insert_portfolio", "insert_portfolio_user")
+    def test_get_accounts(self, client: TestClient, valid_jwt: str) -> None:
+        response = client.post(
+            "/quantum/v1/accounts",
+            headers={"Authorization": "bearer " + valid_jwt},
+            json={"portfolio_id": 1, "name": "erpies", "starting_balance": 12345},
+        )
+        assert response.status_code == 200
+        assert response.json() == {"name": "erpies", "portfolio_id": 1, "account_id": 1}
 
-client = TestClient(app)
 
+# def test_create_user():
+#     response = client.post(
+#         "/users/",
+#         json={"email": "deadpool@example.com", "password": "chimichangas4life"},
+#     )
+#     assert response.status_code == 200, response.text
+#     data = response.json()
+#     assert data["email"] == "deadpool@example.com"
+#     assert "id" in data
+#     user_id = data["id"]
 
-@pytest.mark.skip
-def test_read_item() -> None:
-    response = client.get("/miapeer/v1/applications", headers={"X-Token": "coneofsilence"})
-    assert response.status_code == 200
-    print(f"\n{response.json() = }\n")  # TODO: Remove this!!!
-
-    assert response.json() == {
-        "id": "foo",
-        "title": "Foo",
-        "description": "There goes my hero",
-    }
+#     response = client.get(f"/users/{user_id}")
+#     assert response.status_code == 200, response.text
+#     data = response.json()
+#     assert data["email"] == "deadpool@example.com"
+#     assert data["id"] == user_id
 
 
 # def test_read_item_bad_token():
