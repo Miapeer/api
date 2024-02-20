@@ -1,7 +1,8 @@
-from datetime import date
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import select
+from sqlmodel import and_, desc, extract, func, or_, select
+from sqlmodel.sql.expression import SelectOfScalar
 
 from miapeer.dependencies import CurrentActiveUser, DbSession, is_quantum_user
 from miapeer.models.quantum.account import (
@@ -13,12 +14,59 @@ from miapeer.models.quantum.account import (
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
 from miapeer.models.quantum.transaction import Transaction
+from miapeer.models.quantum.transaction_summary import TransactionSummary
 
 router = APIRouter(
     prefix="/accounts",
     tags=["Quantum: Accounts"],
     responses={404: {"description": "Not found"}},
 )
+
+
+def get_account_balance(db: DbSession, account: Account) -> int:
+    # Get starting balance
+    starting_balance = account.starting_balance
+
+    # Get sum of transaction summaries
+    summarized_balances_sql = (
+        select(TransactionSummary)
+        .join(Account)
+        .join(Portfolio)
+        .join(PortfolioUser)
+        .where(Account.account_id == account.account_id)
+        .order_by(desc(TransactionSummary.year), desc(TransactionSummary.month))
+    )
+
+    summaries = db.exec(summarized_balances_sql).fetchall()
+
+    sum_of_summaries = sum([ts.balance for ts in summaries])
+
+    # Get sum of transactions that don't have summaries
+    transaction_sum_sql: SelectOfScalar[Any] = (
+        select(func.sum(Transaction.amount))
+        .join(Account)
+        .join(Portfolio)
+        .join(PortfolioUser)
+        .where(Account.account_id == account.account_id)
+    )
+
+    if len(summaries) > 0:
+        latest_summary = summaries[0]
+        transaction_sum_sql = transaction_sum_sql.where(
+            or_(
+                Transaction.clear_date == None,
+                extract("year", Transaction.clear_date) > latest_summary.year,
+                and_(
+                    extract("year", Transaction.clear_date) == latest_summary.year,
+                    extract("month", Transaction.clear_date) > latest_summary.month,
+                ),
+            )
+        )
+
+    transaction_sum: Optional[int] = db.exec(transaction_sum_sql).first()
+
+    # Put them all together
+    return starting_balance + sum_of_summaries + (transaction_sum if transaction_sum is not None else 0)
 
 
 @router.get("/", dependencies=[Depends(is_quantum_user)])
@@ -28,7 +76,11 @@ async def get_all_accounts(
 ) -> list[AccountRead]:
     sql = select(Account).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
     accounts = db.exec(sql).all()
-    return [AccountRead.model_validate(account) for account in accounts]
+
+    return [
+        AccountRead.model_validate(account.model_dump(), update={"balance": get_account_balance(db, account)})
+        for account in accounts
+    ]
 
 
 @router.post("/", dependencies=[Depends(is_quantum_user)])
@@ -51,22 +103,8 @@ async def create_account(
     db.commit()
     db.refresh(db_account)
 
-    initial_transaction = Transaction(
-        transaction_type_id=-1,
-        payee_id=None,
-        category_id=None,
-        amount=account.starting_balance,
-        transaction_date=date.today(),
-        clear_date=date.today(),
-        check_number=None,
-        exclude_from_forecast=True,
-        notes=None,
-    )
-
-    db.add(initial_transaction)
-    db.commit()
-
-    return AccountRead.model_validate(db_account)
+    account_balance = get_account_balance(db, db_account)
+    return AccountRead.model_validate(db_account.model_dump(), update={"balance": account_balance})
 
 
 @router.get("/{account_id}", dependencies=[Depends(is_quantum_user)])
@@ -88,7 +126,8 @@ async def get_account(
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
 
-    return AccountRead.model_validate(account)
+    account_balance = get_account_balance(db, account)
+    return AccountRead.model_validate(account.model_dump(), update={"balance": account_balance})
 
 
 @router.delete("/{account_id}", dependencies=[Depends(is_quantum_user)])
@@ -142,4 +181,5 @@ async def update_account(
     db.commit()
     db.refresh(updated_account)
 
-    return AccountRead.model_validate(updated_account)
+    account_balance = get_account_balance(db, updated_account)
+    return AccountRead.model_validate(updated_account.model_dump(), update={"balance": account_balance})

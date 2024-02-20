@@ -4,8 +4,9 @@ from sqlmodel import Field, SQLModel
 
 
 class AccountBase(SQLModel):
-    name: str
     portfolio_id: int = Field(foreign_key="quantum_portfolio.portfolio_id")
+    name: str
+    starting_balance: int
 
 
 class Account(AccountBase, table=True):
@@ -22,12 +23,14 @@ class Account(AccountBase, table=True):
 
 
 class AccountCreate(AccountBase):
-    starting_balance: int
+    ...
 
 
 class AccountRead(AccountBase):
     account_id: int
+    balance: int  # Calculated
 
 
 class AccountUpdate(SQLModel):
     name: Optional[str]
+    starting_balance: Optional[int]

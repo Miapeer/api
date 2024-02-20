@@ -3,15 +3,23 @@ from fastapi.testclient import TestClient
 
 
 class TestCreate:
-    @pytest.mark.usefixtures("insert_portfolio", "insert_portfolio_user")
+    @pytest.mark.usefixtures(
+        "insert_portfolio", "insert_portfolio_user", "insert_debit_transaction", "insert_transaction_summary"
+    )
     def test_get_accounts(self, client: TestClient, valid_jwt: str) -> None:
         response = client.post(
             "/quantum/v1/accounts",
             headers={"Authorization": "bearer " + valid_jwt},
-            json={"portfolio_id": 1, "name": "erpies", "starting_balance": 12345},
+            json={"portfolio_id": 1, "name": "apple pies", "starting_balance": 12345},
         )
         assert response.status_code == 200
-        assert response.json() == {"name": "erpies", "portfolio_id": 1, "account_id": 1}
+        assert response.json() == {
+            "name": "apple pies",
+            "portfolio_id": 1,
+            "account_id": 1,
+            "starting_balance": 12345,
+            "balance": 12345 + 987 - 13,
+        }
 
 
 # def test_create_user():

@@ -23,8 +23,6 @@ def valid_jwt() -> str:
 
 @pytest.fixture
 def mock_db_session() -> Iterator[Session]:
-    print("mock_db_session")
-
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},

@@ -3,6 +3,8 @@ from sqlmodel import Session
 
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
+from miapeer.models.quantum.transaction import Transaction
+from miapeer.models.quantum.transaction_summary import TransactionSummary
 
 
 @pytest.fixture
@@ -20,6 +22,26 @@ def insert_portfolio_user(mock_db_session: Session) -> None:
     mock_db_session.add_all(
         [
             PortfolioUser(portfolio_id=1, user_id=1),
+        ]
+    )
+    mock_db_session.commit()
+
+
+@pytest.fixture
+def insert_debit_transaction(mock_db_session: Session) -> None:
+    mock_db_session.add_all(
+        [
+            Transaction(account_id=1, amount=-13),
+        ]
+    )
+    mock_db_session.commit()
+
+
+@pytest.fixture
+def insert_transaction_summary(mock_db_session: Session) -> None:
+    mock_db_session.add_all(
+        [
+            TransactionSummary(account_id=1, year=1, month=1, balance=987),
         ]
     )
     mock_db_session.commit()
