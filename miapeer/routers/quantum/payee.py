@@ -14,11 +14,12 @@ from miapeer.models.quantum.portfolio_user import PortfolioUser
 router = APIRouter(
     prefix="/payees",
     tags=["Quantum: Payees"],
+    dependencies=[Depends(is_quantum_user)],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)])
+@router.get("/")
 async def get_all_payees(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -28,7 +29,7 @@ async def get_all_payees(
     return [PayeeRead.model_validate(payee) for payee in payees]
 
 
-@router.post("/", dependencies=[Depends(is_quantum_user)])
+@router.post("/")
 async def create_payee(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -51,7 +52,7 @@ async def create_payee(
     return PayeeRead.model_validate(db_payee)
 
 
-@router.get("/{payee_id}", dependencies=[Depends(is_quantum_user)])
+@router.get("/{payee_id}")
 async def get_payee(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -73,7 +74,7 @@ async def get_payee(
     return PayeeRead.model_validate(payee)
 
 
-@router.delete("/{payee_id}", dependencies=[Depends(is_quantum_user)])
+@router.delete("/{payee_id}")
 async def delete_payee(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -98,7 +99,7 @@ async def delete_payee(
     return {"ok": True}
 
 
-@router.patch("/{payee_id}", dependencies=[Depends(is_quantum_user)])
+@router.patch("/{payee_id}")
 async def update_payee(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -118,10 +119,11 @@ async def update_payee(
     if not db_payee:
         raise HTTPException(status_code=404, detail="Payee not found")
 
-    updated_payee = Payee.model_validate(db_payee.model_dump(), update=payee.model_dump())
+    if payee.name is not None:
+        db_payee.name = payee.name
 
-    db.add(updated_payee)
+    db.add(db_payee)
     db.commit()
-    db.refresh(updated_payee)
+    db.refresh(db_payee)
 
-    return PayeeRead.model_validate(updated_payee)
+    return PayeeRead.model_validate(db_payee)

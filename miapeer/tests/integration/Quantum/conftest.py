@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from miapeer.models.miapeer import User
 from miapeer.models.quantum.account import Account
+from miapeer.models.quantum.payee import Payee
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
 
@@ -41,6 +42,26 @@ def not_my_account_2(not_my_portfolio: Portfolio) -> Account:
     )
 
 
+@pytest.fixture
+def my_payee_1(my_portfolio: Portfolio) -> Payee:
+    return Payee(portfolio_id=my_portfolio.portfolio_id, payee_id=31, name="my payee 1")
+
+
+@pytest.fixture
+def my_payee_2(my_portfolio: Portfolio) -> Payee:
+    return Payee(portfolio_id=my_portfolio.portfolio_id, payee_id=32, name="my payee 2")
+
+
+@pytest.fixture
+def not_my_payee_1(not_my_portfolio: Portfolio) -> Payee:
+    return Payee(portfolio_id=not_my_portfolio.portfolio_id, payee_id=41, name="not my payee 1")
+
+
+@pytest.fixture
+def not_my_payee_2(not_my_portfolio: Portfolio) -> Payee:
+    return Payee(portfolio_id=not_my_portfolio.portfolio_id, payee_id=42, name="not my payee 2")
+
+
 # @pytest.fixture
 # def insert_debit_transaction(mock_db_session: Session, account_id: int) -> None:
 #     mock_db_session.add_all(
@@ -72,6 +93,10 @@ def create_complete_portfolio(
     my_account_2: Account,
     not_my_account_1: Account,
     not_my_account_2: Account,
+    my_payee_1: Payee,
+    my_payee_2: Payee,
+    not_my_payee_1: Payee,
+    not_my_payee_2: Payee,
 ) -> None:
     mock_db_session.add_all([me, not_me])
 
@@ -92,5 +117,7 @@ def create_complete_portfolio(
             not_my_account_2,
         ]
     )
+
+    mock_db_session.add_all([my_payee_1, my_payee_2, not_my_payee_1, not_my_payee_2])
 
     mock_db_session.commit()

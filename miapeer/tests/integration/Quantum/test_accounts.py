@@ -75,7 +75,7 @@ class TestGetOne:
         assert response.status_code == 404
         assert response.json() == {"detail": "Account not found"}
 
-    @pytest.mark.parametrize("account_id", [0, -1, -999999999999999999])
+    @pytest.mark.parametrize("account_id", [0, -1, 999999999999999999, -999999999999999999])
     def test_get_one_account_with_invalid_account_id_fails(self, client: TestClient, account_id: int) -> None:
         response = client.get(f"/quantum/v1/accounts/{account_id}")
 
@@ -109,7 +109,7 @@ class TestUpdate:
         assert response.status_code == 404
         assert response.json() == {"detail": "Account not found"}
 
-    @pytest.mark.parametrize("account_id", [0, -1, -999999999999999999])
+    @pytest.mark.parametrize("account_id", [0, -1, 999999999999999999, -999999999999999999])
     def test_update_account_with_invalid_account_id_fails(self, client: TestClient, account_id: int) -> None:
         response = client.patch(
             f"/quantum/v1/accounts/{account_id}", json={"name": "peach cobbler", "starting_balance": 543}
@@ -137,7 +137,7 @@ class TestDelete:
         assert response.status_code == 404
         assert response.json() == {"detail": "Account not found"}
 
-    @pytest.mark.parametrize("account_id", [0, -1, -999999999999999999])
+    @pytest.mark.parametrize("account_id", [0, -1, 999999999999999999, -999999999999999999])
     def test_delete_account_with_invalid_account_id_fails(self, client: TestClient, account_id: int) -> None:
         response = client.delete(f"/quantum/v1/accounts/{account_id}")
 
