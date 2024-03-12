@@ -19,6 +19,7 @@ from miapeer.models.quantum.transaction_summary import TransactionSummary
 router = APIRouter(
     prefix="/accounts",
     tags=["Quantum: Accounts"],
+    dependencies=[Depends(is_quantum_user)],
     responses={404: {"description": "Not found"}},
 )
 
@@ -69,7 +70,7 @@ def get_account_balance(db: DbSession, account: Account) -> int:
     return starting_balance + sum_of_summaries + (transaction_sum if transaction_sum is not None else 0)
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)])
+@router.get("/")
 async def get_all_accounts(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -83,7 +84,7 @@ async def get_all_accounts(
     ]
 
 
-@router.post("/", dependencies=[Depends(is_quantum_user)])
+@router.post("/")
 async def create_account(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -107,7 +108,7 @@ async def create_account(
     return AccountRead.model_validate(db_account.model_dump(), update={"balance": account_balance})
 
 
-@router.get("/{account_id}", dependencies=[Depends(is_quantum_user)])
+@router.get("/{account_id}")
 async def get_account(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -130,7 +131,7 @@ async def get_account(
     return AccountRead.model_validate(account.model_dump(), update={"balance": account_balance})
 
 
-@router.delete("/{account_id}", dependencies=[Depends(is_quantum_user)])
+@router.delete("/{account_id}")
 async def delete_account(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -155,7 +156,7 @@ async def delete_account(
     return {"ok": True}
 
 
-@router.patch("/{account_id}", dependencies=[Depends(is_quantum_user)])
+@router.patch("/{account_id}")
 async def update_account(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -175,11 +176,15 @@ async def update_account(
     if not db_account:
         raise HTTPException(status_code=404, detail="Account not found")
 
-    updated_account = Account.model_validate(db_account.model_dump(), update=account.model_dump())
+    if account.name is not None:
+        db_account.name = account.name
 
-    db.add(updated_account)
+    if account.starting_balance is not None:
+        db_account.starting_balance = account.starting_balance
+
+    db.add(db_account)
     db.commit()
-    db.refresh(updated_account)
+    db.refresh(db_account)
 
-    account_balance = get_account_balance(db, updated_account)
-    return AccountRead.model_validate(updated_account.model_dump(), update={"balance": account_balance})
+    account_balance = get_account_balance(db, db_account)
+    return AccountRead.model_validate(db_account.model_dump(), update={"balance": account_balance})

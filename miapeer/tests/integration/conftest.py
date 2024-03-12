@@ -24,6 +24,16 @@ from miapeer.models.miapeer import User
 
 
 @pytest.fixture
+def me() -> User:
+    return User(user_id=91, email="its@me.com", password="", disabled=False)
+
+
+@pytest.fixture
+def not_me() -> User:
+    return User(user_id=92, email="not@me.com", password="", disabled=False)
+
+
+@pytest.fixture
 def mock_db_session() -> Iterator[Session]:
     engine = create_engine(
         "sqlite://",
@@ -68,9 +78,15 @@ def quantum_super_user() -> bool:
     return True
 
 
+@pytest.fixture
+def returned_current_user(me: User) -> User:
+    return me
+
+
 @pytest.fixture(name="client")
 def client_fixture(
     mock_db_session: Session,
+    returned_current_user: User,
     miapeer_user: bool,
     miapeer_admin: bool,
     miapeer_super_user: bool,
@@ -111,10 +127,10 @@ def client_fixture(
             raise HTTPException(status_code=400, detail="Unauthorized")
 
     def override_get_current_user() -> User:
-        return User(user_id=1)
+        return User(user_id=returned_current_user.user_id)
 
     def override_get_current_active_user() -> User:
-        return User(user_id=1)
+        return User(user_id=returned_current_user.user_id)
 
     app.dependency_overrides[get_jwk] = get_jwk_override
     app.dependency_overrides[get_db] = override_get_db
