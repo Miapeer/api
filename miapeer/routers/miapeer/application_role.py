@@ -72,10 +72,8 @@ async def update_application_role(
     if not db_application_role:
         raise HTTPException(status_code=404, detail="Application Role not found")
 
-    application_role_data = application_role.model_dump(exclude_unset=True)
-
-    for key, value in application_role_data.items():
-        setattr(db_application_role, key, value)
+    if application_role.description is not None:
+        db_application_role.description = application_role.description
 
     db.add(db_application_role)
     db.commit()
