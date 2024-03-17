@@ -326,7 +326,7 @@ class TestUpdate:
 
     @pytest.fixture
     def expected_sql(self, user_id: int, account_id: int, transaction_id: int) -> str:
-        return f"SELECT quantum_transaction.account_id, quantum_transaction.transaction_type_id, quantum_transaction.payee_id, quantum_transaction.category_id, quantum_transaction.amount, quantum_transaction.transaction_date, quantum_transaction.clear_date, quantum_transaction.check_number, quantum_transaction.exclude_from_forecast, quantum_transaction.notes, quantum_transaction.transaction_id \nFROM quantum_transaction JOIN quantum_account ON quantum_account.account_id = quantum_transaction.account_id JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_transaction.transaction_id = {transaction_id} AND quantum_portfolio_user.user_id = {user_id}"
+        return f"SELECT quantum_transaction.transaction_type_id, quantum_transaction.payee_id, quantum_transaction.category_id, quantum_transaction.amount, quantum_transaction.transaction_date, quantum_transaction.clear_date, quantum_transaction.check_number, quantum_transaction.exclude_from_forecast, quantum_transaction.notes, quantum_transaction.account_id, quantum_transaction.transaction_id \nFROM quantum_transaction JOIN quantum_account ON quantum_account.account_id = quantum_transaction.account_id JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_transaction.transaction_id = {transaction_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
     def updated_transaction(self, complete_transaction: Transaction) -> Transaction:
@@ -372,6 +372,9 @@ class TestUpdate:
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
 
+        print(f"{sql_str=}\n")  # TODO: Remove this!!!
+        print(f"{expected_sql=}\n")  # TODO: Remove this!!!
+
         assert sql_str == expected_sql
 
         assert mock_db.add.call_count == 1
@@ -407,6 +410,7 @@ class TestUpdate:
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
+        print(f"{sql_str=}\n")  # TODO: Remove this!!!
 
         assert sql_str == expected_sql
         mock_db.add.assert_not_called()

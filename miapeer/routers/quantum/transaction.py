@@ -3,6 +3,8 @@ from sqlmodel import select
 
 from miapeer.dependencies import CurrentActiveUser, DbSession, is_quantum_user
 from miapeer.models.quantum.account import Account
+from miapeer.models.quantum.category import Category
+from miapeer.models.quantum.payee import Payee
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
 from miapeer.models.quantum.transaction import (
@@ -11,15 +13,17 @@ from miapeer.models.quantum.transaction import (
     TransactionRead,
     TransactionUpdate,
 )
+from miapeer.models.quantum.transaction_type import TransactionType
 
 router = APIRouter(
     prefix="/accounts/{account_id}/transactions",
     tags=["Quantum: Transactions"],
+    dependencies=[Depends(is_quantum_user)],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)])
+@router.get("/")
 async def get_all_transactions(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -37,7 +41,7 @@ async def get_all_transactions(
     return [TransactionRead.model_validate(transaction) for transaction in transactions]
 
 
-@router.post("/", dependencies=[Depends(is_quantum_user)])
+@router.post("/")
 async def create_transaction(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -45,7 +49,7 @@ async def create_transaction(
     transaction: TransactionCreate,
 ) -> TransactionRead:
 
-    # Get the user's account to verify access
+    # Get the user's data to verify access
     sql = (
         select(Account)
         .join(Portfolio)
@@ -53,10 +57,45 @@ async def create_transaction(
         .where(Account.account_id == account_id)
         .where(PortfolioUser.user_id == current_user.user_id)
     )
-    account = db.exec(sql).first()
-
-    if not account:
+    thing_is_valid = db.exec(sql).first()
+    if not thing_is_valid:
         raise HTTPException(status_code=404, detail="Account not found")
+
+    if transaction.transaction_type_id is not None:
+        sql = (
+            select(TransactionType)
+            .join(Portfolio)
+            .join(PortfolioUser)
+            .where(TransactionType.transaction_type_id == transaction.transaction_type_id)
+            .where(PortfolioUser.user_id == current_user.user_id)
+        )
+        thing_is_valid = db.exec(sql).first()
+        if not thing_is_valid:
+            raise HTTPException(status_code=404, detail="Transaction type not found")
+
+    if transaction.payee_id is not None:
+        sql = (
+            select(Payee)
+            .join(Portfolio)
+            .join(PortfolioUser)
+            .where(Payee.payee_id == transaction.payee_id)
+            .where(PortfolioUser.user_id == current_user.user_id)
+        )
+        thing_is_valid = db.exec(sql).first()
+        if not thing_is_valid:
+            raise HTTPException(status_code=404, detail="Payee not found")
+
+    if transaction.category_id is not None:
+        sql = (
+            select(Category)
+            .join(Portfolio)
+            .join(PortfolioUser)
+            .where(Category.category_id == transaction.category_id)
+            .where(PortfolioUser.user_id == current_user.user_id)
+        )
+        thing_is_valid = db.exec(sql).first()
+        if not thing_is_valid:
+            raise HTTPException(status_code=404, detail="Category not found")
 
     # Create the transaction
     transaction_data = transaction.model_dump()
@@ -69,7 +108,7 @@ async def create_transaction(
     return TransactionRead.model_validate(db_transaction)
 
 
-@router.get("/{transaction_id}", dependencies=[Depends(is_quantum_user)])
+@router.get("/{transaction_id}")
 async def get_transaction(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -94,7 +133,7 @@ async def get_transaction(
     return TransactionRead.model_validate(transaction)
 
 
-@router.delete("/{transaction_id}", dependencies=[Depends(is_quantum_user)])
+@router.delete("/{transaction_id}")
 async def delete_transaction(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -122,7 +161,7 @@ async def delete_transaction(
     return {"ok": True}
 
 
-@router.patch("/{transaction_id}", dependencies=[Depends(is_quantum_user)])
+@router.patch("/{transaction_id}")
 async def update_transaction(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -130,6 +169,8 @@ async def update_transaction(
     transaction_id: int,
     transaction: TransactionUpdate,
 ) -> TransactionRead:
+
+    new_data = transaction.model_dump(exclude_unset=True)
 
     sql = (
         select(Transaction)
@@ -141,14 +182,67 @@ async def update_transaction(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     db_transaction = db.exec(sql).one_or_none()
-
     if not db_transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    updated_transaction = Transaction.model_validate(db_transaction.model_dump(), update=transaction.model_dump())
+    if "transaction_type_id" in new_data:
+        if new_data["transaction_type_id"] is not None:
+            sql = (
+                select(TransactionType)
+                .join(Portfolio)
+                .join(PortfolioUser)
+                .where(TransactionType.transaction_type_id == transaction.transaction_type_id)
+                .where(PortfolioUser.user_id == current_user.user_id)
+            )
+            thing_is_valid = db.exec(sql).one_or_none()
+            if not thing_is_valid:
+                raise HTTPException(status_code=404, detail="Transaction type not found")
+            else:
+                db_transaction.transaction_type_id = transaction.transaction_type_id
+        else:
+            db_transaction.transaction_type_id = None
 
-    db.add(updated_transaction)
+    if transaction.payee_id is not None:
+        sql = (
+            select(Payee)
+            .join(Portfolio)
+            .join(PortfolioUser)
+            .where(Payee.payee_id == transaction.payee_id)
+            .where(PortfolioUser.user_id == current_user.user_id)
+        )
+        thing_is_valid = db.exec(sql).one_or_none()
+        if not thing_is_valid:
+            raise HTTPException(status_code=404, detail="Payee not found")
+        else:
+            db_transaction.payee_id = transaction.payee_id
+    else:
+        db_transaction.payee_id = None
+
+    if transaction.category_id is not None:
+        sql = (
+            select(Category)
+            .join(Portfolio)
+            .join(PortfolioUser)
+            .where(Category.category_id == transaction.category_id)
+            .where(PortfolioUser.user_id == current_user.user_id)
+        )
+        thing_is_valid = db.exec(sql).one_or_none()
+        if not thing_is_valid:
+            raise HTTPException(status_code=404, detail="Category not found")
+        else:
+            db_transaction.category_id = transaction.category_id
+    else:
+        db_transaction.category_id = None
+
+    db_transaction.amount = transaction.amount
+    db_transaction.transaction_date = transaction.transaction_date
+    db_transaction.clear_date = transaction.clear_date
+    db_transaction.check_number = transaction.check_number
+    db_transaction.exclude_from_forecast = transaction.exclude_from_forecast
+    db_transaction.notes = transaction.notes
+
+    db.add(db_transaction)
     db.commit()
-    db.refresh(updated_transaction)
+    db.refresh(db_transaction)
 
-    return TransactionRead.model_validate(updated_transaction)
+    return TransactionRead.model_validate(db_transaction)

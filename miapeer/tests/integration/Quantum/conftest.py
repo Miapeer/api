@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from sqlmodel import Session
 
@@ -7,6 +9,7 @@ from miapeer.models.quantum.category import Category
 from miapeer.models.quantum.payee import Payee
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
+from miapeer.models.quantum.transaction import Transaction
 from miapeer.models.quantum.transaction_type import TransactionType
 
 
@@ -112,24 +115,108 @@ def not_my_transaction_type_2(not_my_portfolio: Portfolio) -> TransactionType:
     )
 
 
-# @pytest.fixture
-# def insert_debit_transaction(mock_db_session: Session, account_id: int) -> None:
-#     mock_db_session.add_all(
-#         [
-#             Transaction(account_id=account_id, amount=-13),
-#         ]
-#     )
-#     mock_db_session.commit()
+@pytest.fixture
+def my_minimal_transaction(my_account_1: Account) -> Transaction:
+    return Transaction(
+        account_id=my_account_1.account_id,
+        transaction_id=100,
+        transaction_type_id=None,
+        payee_id=None,
+        category_id=None,
+        amount=-0,
+        transaction_date=date.today(),
+        clear_date=date.today(),
+        check_number=None,
+        exclude_from_forecast=True,
+        notes=None,
+    )
+
+
+@pytest.fixture
+def my_debit_transaction(
+    my_account_1: Account, my_transaction_type_1: TransactionType, my_payee_2: Payee, my_category_1: Category
+) -> Transaction:
+    return Transaction(
+        account_id=my_account_1.account_id,
+        transaction_id=101,
+        transaction_type_id=my_transaction_type_1.transaction_type_id,
+        payee_id=my_payee_2.payee_id,
+        category_id=my_category_1.category_id,
+        amount=-13,
+        transaction_date=date.today(),
+        clear_date=date.today(),
+        check_number="123",
+        exclude_from_forecast=True,
+        notes="transaction note 1",
+    )
+
+
+@pytest.fixture
+def my_credit_transaction(
+    my_account_1: Account, my_transaction_type_2: TransactionType, my_payee_1: Payee, my_category_2: Category
+) -> Transaction:
+    return Transaction(
+        account_id=my_account_1.account_id,
+        transaction_id=102,
+        transaction_type_id=my_transaction_type_2.transaction_type_id,
+        payee_id=my_payee_1.payee_id,
+        category_id=my_category_2.category_id,
+        amount=864,
+        transaction_date=date.today(),
+        clear_date=None,
+        check_number=None,
+        exclude_from_forecast=False,
+        notes="transaction note 2",
+    )
+
+
+@pytest.fixture
+def not_my_debit_transaction(
+    not_my_account_1: Account,
+    not_my_transaction_type_1: TransactionType,
+    not_my_payee_2: Payee,
+    not_my_category_1: Category,
+) -> Transaction:
+    return Transaction(
+        account_id=not_my_account_1.account_id,
+        transaction_id=111,
+        transaction_type_id=not_my_transaction_type_1.transaction_type_id,
+        payee_id=not_my_payee_2.payee_id,
+        category_id=not_my_category_1.category_id,
+        amount=-999,
+        transaction_date=date.today(),
+        clear_date=date.today(),
+        check_number=None,
+        exclude_from_forecast=True,
+        notes="not my transaction note 1",
+    )
+
+
+@pytest.fixture
+def not_my_credit_transaction(
+    not_my_account_1: Account,
+    not_my_transaction_type_2: TransactionType,
+    not_my_payee_1: Payee,
+    not_my_category_2: Category,
+) -> Transaction:
+    return Transaction(
+        account_id=not_my_account_1.account_id,
+        transaction_id=112,
+        transaction_type_id=not_my_transaction_type_2.transaction_type_id,
+        payee_id=not_my_payee_1.payee_id,
+        category_id=not_my_category_2.category_id,
+        amount=98347,
+        transaction_date=date.today(),
+        clear_date=None,
+        check_number="456",
+        exclude_from_forecast=False,
+        notes="not my transaction note 2",
+    )
 
 
 # @pytest.fixture
 # def insert_transaction_summary(mock_db_session: Session, account_id: int) -> None:
-#     mock_db_session.add_all(
-#         [
-#             TransactionSummary(account_id=account_id, year=1, month=1, balance=987),
-#         ]
-#     )
-#     mock_db_session.commit()
+#     TransactionSummary(account_id=account_id, year=1, month=1, balance=987),
 
 
 @pytest.fixture
@@ -155,6 +242,11 @@ def create_complete_portfolio(
     my_transaction_type_2: TransactionType,
     not_my_transaction_type_1: TransactionType,
     not_my_transaction_type_2: TransactionType,
+    my_minimal_transaction: Transaction,
+    my_debit_transaction: Transaction,
+    my_credit_transaction: Transaction,
+    not_my_debit_transaction: Transaction,
+    not_my_credit_transaction: Transaction,
 ) -> None:
     mock_db_session.add_all([me, not_me])
 
@@ -182,6 +274,16 @@ def create_complete_portfolio(
 
     mock_db_session.add_all(
         [my_transaction_type_1, my_transaction_type_2, not_my_transaction_type_1, not_my_transaction_type_2]
+    )
+
+    mock_db_session.add_all(
+        [
+            my_minimal_transaction,
+            my_debit_transaction,
+            my_credit_transaction,
+            not_my_debit_transaction,
+            not_my_credit_transaction,
+        ]
     )
 
     mock_db_session.commit()

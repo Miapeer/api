@@ -15,11 +15,12 @@ from miapeer.models.quantum.scheduled_transaction import (
 router = APIRouter(
     prefix="/accounts/{account_id}/scheduled-transactions",
     tags=["Quantum: Scheduled Transactions"],
+    dependencies=[Depends(is_quantum_user)],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)])
+@router.get("/")
 async def get_all_scheduled_transactions(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -40,7 +41,7 @@ async def get_all_scheduled_transactions(
     ]
 
 
-@router.post("/", dependencies=[Depends(is_quantum_user)])
+@router.post("/")
 async def create_scheduled_transaction(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -72,7 +73,7 @@ async def create_scheduled_transaction(
     return ScheduledTransactionRead.model_validate(db_scheduled_transaction)
 
 
-@router.get("/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)])
+@router.get("/{scheduled_transaction_id}")
 async def get_scheduled_transaction(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -97,7 +98,7 @@ async def get_scheduled_transaction(
     return ScheduledTransactionRead.model_validate(scheduled_transaction)
 
 
-@router.delete("/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)])
+@router.delete("/{scheduled_transaction_id}")
 async def delete_scheduled_transaction(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -125,7 +126,7 @@ async def delete_scheduled_transaction(
     return {"ok": True}
 
 
-@router.patch("/{scheduled_transaction_id}", dependencies=[Depends(is_quantum_user)])
+@router.patch("/{scheduled_transaction_id}")
 async def update_scheduled_transaction(
     db: DbSession,
     current_user: CurrentActiveUser,
