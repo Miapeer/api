@@ -402,9 +402,7 @@ class TestUpdate:
     ) -> None:
         response = client.patch(
             f"/quantum/v1/accounts/{my_account_1. account_id}/transactions/{not_my_debit_transaction.transaction_id}",
-            json={
-                "notes": None,
-            },
+            json={"amount": 0, "transaction_date": "2000-01-01", "exclude_from_forecast": False},
         )
 
         assert response.status_code == 404
@@ -415,7 +413,8 @@ class TestUpdate:
         self, client: TestClient, my_account_1: Account, transaction_id: int
     ) -> None:
         response = client.patch(
-            f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{transaction_id}", json={}
+            f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{transaction_id}",
+            json={"amount": 0, "transaction_date": "2000-01-01", "exclude_from_forecast": False},
         )
 
         assert response.status_code == 404
