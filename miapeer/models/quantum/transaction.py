@@ -47,9 +47,9 @@ class TransactionUpdate(SQLModel):
     transaction_type_id: Optional[int] = None
     payee_id: Optional[int] = None
     category_id: Optional[int] = None
-    amount: Optional[int] = None
-    transaction_date: Optional[date] = None
+    amount: int
+    transaction_date: date
     clear_date: Optional[date] = None
     check_number: Optional[str] = None
-    exclude_from_forecast: Optional[bool] = None
+    exclude_from_forecast: bool
     notes: Optional[str] = None

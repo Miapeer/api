@@ -125,7 +125,7 @@ def my_minimal_transaction(my_account_1: Account) -> Transaction:
         category_id=None,
         amount=-0,
         transaction_date=date.today(),
-        clear_date=date.today(),
+        clear_date=None,
         check_number=None,
         exclude_from_forecast=True,
         notes=None,

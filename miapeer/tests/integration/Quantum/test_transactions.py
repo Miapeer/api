@@ -18,6 +18,7 @@ class TestGetAll:
         self,
         client: TestClient,
         my_account_1: Account,
+        my_minimal_transaction: Transaction,
         my_debit_transaction: Transaction,
         my_credit_transaction: Transaction,
     ) -> None:
@@ -26,7 +27,21 @@ class TestGetAll:
         )
 
         assert response.status_code == 200
-        assert response.json() == [
+
+        expected = [
+            {
+                "account_id": my_minimal_transaction.account_id,
+                "transaction_id": my_minimal_transaction.transaction_id,
+                "transaction_type_id": None,
+                "payee_id": None,
+                "category_id": None,
+                "amount": my_minimal_transaction.amount,
+                "transaction_date": my_minimal_transaction.transaction_date.strftime("%Y-%m-%d"),
+                "clear_date": None,
+                "check_number": None,
+                "exclude_from_forecast": my_minimal_transaction.exclude_from_forecast,
+                "notes": None,
+            },
             {
                 "account_id": my_debit_transaction.account_id,
                 "transaction_id": my_debit_transaction.transaction_id,
@@ -34,12 +49,10 @@ class TestGetAll:
                 "payee_id": my_debit_transaction.payee_id,
                 "category_id": my_debit_transaction.category_id,
                 "amount": my_debit_transaction.amount,
-                "transaction_date": None
-                if my_debit_transaction.transaction_date is None
-                else my_debit_transaction.transaction_date.strftime("%Y-%m-%d"),
-                "clear_date": None
-                if my_debit_transaction.clear_date is None
-                else my_debit_transaction.clear_date.strftime("%Y-%m-%d"),
+                "transaction_date": my_debit_transaction.transaction_date.strftime("%Y-%m-%d"),
+                "clear_date": my_debit_transaction.clear_date.strftime("%Y-%m-%d")
+                if my_debit_transaction.clear_date is not None
+                else None,
                 "check_number": my_debit_transaction.check_number,
                 "exclude_from_forecast": my_debit_transaction.exclude_from_forecast,
                 "notes": my_debit_transaction.notes,
@@ -51,17 +64,14 @@ class TestGetAll:
                 "payee_id": my_credit_transaction.payee_id,
                 "category_id": my_credit_transaction.category_id,
                 "amount": my_credit_transaction.amount,
-                "transaction_date": None
-                if my_credit_transaction.transaction_date is None
-                else my_credit_transaction.transaction_date.strftime("%Y-%m-%d"),
-                "clear_date": None
-                if my_credit_transaction.clear_date is None
-                else my_credit_transaction.clear_date.strftime("%Y-%m-%d"),
+                "transaction_date": my_credit_transaction.transaction_date.strftime("%Y-%m-%d"),
+                "clear_date": None,
                 "check_number": my_credit_transaction.check_number,
                 "exclude_from_forecast": my_credit_transaction.exclude_from_forecast,
                 "notes": my_credit_transaction.notes,
             },
         ]
+        assert response.json() == expected
 
 
 @pytest.mark.usefixtures("create_complete_portfolio")
@@ -278,7 +288,9 @@ class TestGetOne:
             "category_id": getattr(my_debit_transaction, "category_id", None),
             "amount": my_debit_transaction.amount,
             "transaction_date": my_debit_transaction.transaction_date.strftime("%Y-%m-%d"),
-            "clear_date": my_debit_transaction.clear_date.strftime("%Y-%m-%d"),
+            "clear_date": my_debit_transaction.clear_date.strftime("%Y-%m-%d")
+            if my_debit_transaction.clear_date is not None
+            else None,
             "check_number": my_debit_transaction.check_number,
             "exclude_from_forecast": my_debit_transaction.exclude_from_forecast,
             "notes": my_debit_transaction.notes,
@@ -379,7 +391,7 @@ class TestUpdate:
             "category_id": getattr(category, "category_id", None),
             "amount": amount,
             "transaction_date": transaction_date.strftime("%Y-%m-%d") if transaction_date is not None else None,
-            "clear_date": clear_date.strftime("%Y-%m-%d") if clear_date is not None else clear_date,
+            "clear_date": clear_date.strftime("%Y-%m-%d") if clear_date is not None else None,
             "check_number": check_number,
             "exclude_from_forecast": exclude_from_forecast,
             "notes": notes,
