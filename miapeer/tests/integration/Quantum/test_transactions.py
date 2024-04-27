@@ -77,7 +77,7 @@ class TestGetAll:
 @pytest.mark.usefixtures("create_complete_portfolio")
 class TestCreate:
     @pytest.mark.parametrize(
-        "account, transaction, payee, category, amount, transaction_date, clear_date, check_number, exclude_from_forecast, notes",
+        "account, transaction_type, payee, category, amount, transaction_date, clear_date, check_number, exclude_from_forecast, notes",
         [
             (
                 lazy_fixture("my_account_1"),
@@ -121,7 +121,7 @@ class TestCreate:
         self,
         client: TestClient,
         account: Account,
-        transaction: TransactionType,
+        transaction_type: TransactionType,
         payee: Payee,
         category: Category,
         amount: int,
@@ -135,7 +135,7 @@ class TestCreate:
         response = client.post(
             f"/quantum/v1/accounts/{account.account_id}/transactions",
             json={
-                "transaction_type_id": getattr(transaction, "transaction_type_id", None),
+                "transaction_type_id": getattr(transaction_type, "transaction_type_id", None),
                 "payee_id": getattr(payee, "payee_id", None),
                 "category_id": getattr(category, "category_id", None),
                 "amount": amount,
@@ -154,8 +154,8 @@ class TestCreate:
         assert response.status_code == 200
         assert response.json() == {
             "account_id": account.account_id,
-            "transaction_id": (transaction_id + 1),  # Increment by 1, the last account ID inserted
-            "transaction_type_id": getattr(transaction, "transaction_type_id", None),
+            "transaction_id": (transaction_id + 1),  # Increment by 1, the last transaction ID inserted
+            "transaction_type_id": getattr(transaction_type, "transaction_type_id", None),
             "payee_id": getattr(payee, "payee_id", None),
             "category_id": getattr(category, "category_id", None),
             "amount": amount,

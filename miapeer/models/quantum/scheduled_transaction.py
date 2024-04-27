@@ -5,19 +5,19 @@ from sqlmodel import Field, SQLModel
 
 
 class ScheduledTransactionBase(SQLModel):
-    transaction_type_id: int = Field(foreign_key="quantum_transaction_type.transaction_type_id")
-    payee_id: int = Field(foreign_key="quantum_payee.payee_id")
-    category_id: int = Field(foreign_key="quantum_category.category_id")
-    fixed_amount: int
-    estimate_occurrences: int
-    prompt_days: int
+    transaction_type_id: Optional[int] = Field(foreign_key="quantum_transaction_type.transaction_type_id")
+    payee_id: Optional[int] = Field(foreign_key="quantum_payee.payee_id")
+    category_id: Optional[int] = Field(foreign_key="quantum_category.category_id")
+    fixed_amount: Optional[int]
+    estimate_occurrences: Optional[int]
+    prompt_days: Optional[int]
     start_date: date
-    end_date: date
-    limit_occurrences: int
-    repeat_option_id: int = Field(foreign_key="quantum_repeat_option.repeat_option_id")
+    end_date: Optional[date]
+    limit_occurrences: Optional[int]
+    repeat_option_id: Optional[int] = Field(foreign_key="quantum_repeat_option.repeat_option_id")
     # linked_account_id: int = Field(foreign_key="quantum_account.account_id")
     # linked_account_cycle_end_offset: int
-    notes: str
+    notes: Optional[str]
     on_autopay: bool
 
 
@@ -47,17 +47,17 @@ class ScheduledTransactionRead(ScheduledTransactionBase):
 
 
 class ScheduledTransactionUpdate(SQLModel):
-    transaction_type_id: Optional[int]
-    payee_id: Optional[int]
-    category_id: Optional[int]
-    fixed_amount: Optional[int]
-    estimate_occurrences: Optional[int]
-    prompt_days: Optional[int]
-    start_date: Optional[date]
-    end_date: Optional[date]
-    limit_occurrences: Optional[int]
-    repeat_option_id: Optional[int]
+    transaction_type_id: Optional[int] = None
+    payee_id: Optional[int] = None
+    category_id: Optional[int] = None
+    fixed_amount: Optional[int] = None
+    estimate_occurrences: Optional[int] = None
+    prompt_days: Optional[int] = None
+    start_date: date
+    end_date: Optional[date] = None
+    limit_occurrences: Optional[int] = None
+    repeat_option_id: Optional[int] = None
     # linked_account_id: Optional[int]
     # linked_account_cycle_end_offset: Optional[int]
-    notes: Optional[str]
-    on_autopay: Optional[bool]
+    notes: Optional[str] = None
+    on_autopay: bool
