@@ -206,8 +206,8 @@ class TestDelete:
 
 class TestUpdate:
     @pytest.fixture
-    def category_updates(self) -> CategoryUpdate:
-        return CategoryUpdate(name="some new name")
+    def category_updates(self, parent_category_id: int) -> CategoryUpdate:
+        return CategoryUpdate(name="some new name", parent_category_id=parent_category_id)
 
     @pytest.fixture
     def expected_sql(self, user_id: int, category_id: int) -> str:

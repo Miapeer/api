@@ -105,7 +105,6 @@ def client_fixture(
             raise HTTPException(status_code=400, detail="Unauthorized")
 
     def override_is_miapeer_admin() -> None:
-        print(f"{override_is_miapeer_admin=}\n")  # TODO: Remove this!!!
         if not miapeer_admin:
             print("nope")
             raise HTTPException(status_code=400, detail="Unauthorized")

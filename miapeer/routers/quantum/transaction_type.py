@@ -14,11 +14,12 @@ from miapeer.models.quantum.transaction_type import (
 router = APIRouter(
     prefix="/transaction-types",
     tags=["Quantum: Transaction Types"],
+    dependencies=[Depends(is_quantum_user)],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)])
+@router.get("/")
 async def get_all_transaction_types(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -33,7 +34,7 @@ async def get_all_transaction_types(
     return [TransactionTypeRead.model_validate(transaction_type) for transaction_type in transaction_types]
 
 
-@router.post("/", dependencies=[Depends(is_quantum_user)])
+@router.post("/")
 async def create_transaction_type(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -57,7 +58,7 @@ async def create_transaction_type(
     return TransactionTypeRead.model_validate(db_transaction_type)
 
 
-@router.get("/{transaction_type_id}", dependencies=[Depends(is_quantum_user)])
+@router.get("/{transaction_type_id}")
 async def get_transaction_type(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -79,7 +80,7 @@ async def get_transaction_type(
     return TransactionTypeRead.model_validate(transaction_type)
 
 
-@router.delete("/{transaction_type_id}", dependencies=[Depends(is_quantum_user)])
+@router.delete("/{transaction_type_id}")
 async def delete_transaction_type(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -104,7 +105,7 @@ async def delete_transaction_type(
     return {"ok": True}
 
 
-@router.patch("/{transaction_type_id}", dependencies=[Depends(is_quantum_user)])
+@router.patch("/{transaction_type_id}")
 async def update_transaction_type(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -124,12 +125,11 @@ async def update_transaction_type(
     if not db_transaction_type:
         raise HTTPException(status_code=404, detail="Transaction type not found")
 
-    updated_transaction_type = TransactionType.model_validate(
-        db_transaction_type.model_dump(), update=transaction_type.model_dump()
-    )
+    if transaction_type.name is not None:
+        db_transaction_type.name = transaction_type.name
 
-    db.add(updated_transaction_type)
+    db.add(db_transaction_type)
     db.commit()
-    db.refresh(updated_transaction_type)
+    db.refresh(db_transaction_type)
 
-    return TransactionTypeRead.model_validate(updated_transaction_type)
+    return TransactionTypeRead.model_validate(db_transaction_type)

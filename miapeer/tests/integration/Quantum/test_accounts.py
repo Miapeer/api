@@ -15,22 +15,27 @@ class TestGetAll:
         )
 
         assert response.status_code == 200
-        assert response.json() == [
+
+        expected = [
             {
                 "portfolio_id": my_account_1.portfolio_id,
                 "account_id": my_account_1.account_id,
                 "name": my_account_1.name,
                 "starting_balance": my_account_1.starting_balance,
-                "balance": my_account_1.starting_balance,
+                "balance": 864
+                - 13
+                - 0
+                + my_account_1.starting_balance,  # The existing 3 transactions' amounts, plus the starting balance
             },
             {
                 "portfolio_id": my_account_2.portfolio_id,
                 "account_id": my_account_2.account_id,
                 "name": my_account_2.name,
                 "starting_balance": my_account_2.starting_balance,
-                "balance": my_account_2.starting_balance,
+                "balance": my_account_2.starting_balance,  # This account doesn't have any transactions
             },
         ]
+        assert response.json() == expected
 
 
 @pytest.mark.usefixtures("create_complete_portfolio")
@@ -61,13 +66,18 @@ class TestGetOne:
         response = client.get(f"/quantum/v1/accounts/{my_account_1.account_id}")
 
         assert response.status_code == 200
-        assert response.json() == {
+
+        expected = {
             "portfolio_id": my_account_1.portfolio_id,
             "account_id": my_account_1.account_id,
             "name": my_account_1.name,
             "starting_balance": my_account_1.starting_balance,
-            "balance": my_account_1.starting_balance,
+            "balance": 864
+            - 13
+            - 0
+            + my_account_1.starting_balance,  # The existing 3 transactions' amounts, plus the starting balance
         }
+        assert response.json() == expected
 
     def test_get_one_account_in_wrong_portfolio_fails(self, client: TestClient, not_my_account_1: Account) -> None:
         response = client.get(f"/quantum/v1/accounts/{not_my_account_1.account_id}")
@@ -92,13 +102,15 @@ class TestUpdate:
         )
 
         assert response.status_code == 200
-        assert response.json() == {
+
+        expected = {
             "portfolio_id": my_account_1.portfolio_id,
             "account_id": my_account_1.account_id,
             "name": "peach cobbler",
             "starting_balance": 543,
-            "balance": 543,
+            "balance": 864 - 13 - 0 + 543,  # The existing 3 transactions' amounts, plus the starting balance
         }
+        assert response.json() == expected
 
     def test_update_account_in_wrong_portfolio_fails(self, client: TestClient, not_my_account_1: Account) -> None:
         response = client.patch(

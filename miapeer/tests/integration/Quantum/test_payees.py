@@ -32,7 +32,7 @@ class TestCreate:
     def test_create_payee(self, client: TestClient, my_portfolio: Portfolio, not_my_payee_2: Payee) -> None:
         response = client.post(
             "/quantum/v1/payees",
-            json={"portfolio_id": my_portfolio.portfolio_id, "name": "godzilla"},
+            json={"portfolio_id": my_portfolio.portfolio_id, "name": "Godzilla"},
         )
 
         payee_id = 0
@@ -43,7 +43,7 @@ class TestCreate:
         assert response.json() == {
             "portfolio_id": my_portfolio.portfolio_id,
             "payee_id": (payee_id + 1),  # Increment by 1, the last account ID inserted
-            "name": "godzilla",
+            "name": "Godzilla",
         }
 
 
@@ -78,20 +78,20 @@ class TestUpdate:
     def test_update_payee_succeeds(self, client: TestClient, my_payee_1: Payee) -> None:
         response = client.patch(
             f"/quantum/v1/payees/{my_payee_1.payee_id}",
-            json={"name": "Coffee"},
+            json={"name": "Godzilla"},
         )
 
         assert response.status_code == 200
         assert response.json() == {
             "portfolio_id": my_payee_1.portfolio_id,
             "payee_id": my_payee_1.payee_id,
-            "name": "Coffee",
+            "name": "Godzilla",
         }
 
     def test_update_payee_in_wrong_portfolio_fails(self, client: TestClient, not_my_payee_1: Payee) -> None:
         response = client.patch(
             f"/quantum/v1/payees/{not_my_payee_1.payee_id}",
-            json={"name": "Coffee"},
+            json={"name": "Godzilla"},
         )
 
         assert response.status_code == 404
@@ -99,7 +99,7 @@ class TestUpdate:
 
     @pytest.mark.parametrize("payee_id", [0, -1, 999999999999999999, -999999999999999999])
     def test_update_payee_with_invalid_payee_id_fails(self, client: TestClient, payee_id: int) -> None:
-        response = client.patch(f"/quantum/v1/payees/{payee_id}", json={"name": "Coffee"})
+        response = client.patch(f"/quantum/v1/payees/{payee_id}", json={"name": "Godzilla"})
 
         assert response.status_code == 404
         assert response.json() == {"detail": "Payee not found"}

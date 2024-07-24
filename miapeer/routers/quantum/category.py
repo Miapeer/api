@@ -14,11 +14,12 @@ from miapeer.models.quantum.portfolio_user import PortfolioUser
 router = APIRouter(
     prefix="/categories",
     tags=["Quantum: Categories"],
+    dependencies=[Depends(is_quantum_user)],
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)])
+@router.get("/")
 async def get_all_categories(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -28,7 +29,7 @@ async def get_all_categories(
     return [CategoryRead.model_validate(category) for category in categories]
 
 
-@router.post("/", dependencies=[Depends(is_quantum_user)])
+@router.post("/")
 async def create_category(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -51,7 +52,7 @@ async def create_category(
     return CategoryRead.model_validate(db_category)
 
 
-@router.get("/{category_id}", dependencies=[Depends(is_quantum_user)])
+@router.get("/{category_id}")
 async def get_category(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -73,7 +74,7 @@ async def get_category(
     return CategoryRead.model_validate(category)
 
 
-@router.delete("/{category_id}", dependencies=[Depends(is_quantum_user)])
+@router.delete("/{category_id}")
 async def delete_category(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -98,7 +99,7 @@ async def delete_category(
     return {"ok": True}
 
 
-@router.patch("/{category_id}", dependencies=[Depends(is_quantum_user)])
+@router.patch("/{category_id}")
 async def update_category(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -118,10 +119,10 @@ async def update_category(
     if not db_category:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    category_data = category.model_dump(exclude_unset=True)
+    if category.name is not None:
+        db_category.name = category.name
 
-    for key, value in category_data.items():
-        setattr(db_category, key, value)
+    db_category.parent_category_id = category.parent_category_id
 
     db.add(db_category)
     db.commit()
