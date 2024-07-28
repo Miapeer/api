@@ -5,19 +5,21 @@ from sqlmodel import Field, SQLModel
 
 
 class ScheduledTransactionBase(SQLModel):
-    transaction_type_id: Optional[int] = Field(foreign_key="quantum_transaction_type.transaction_type_id")
-    payee_id: Optional[int] = Field(foreign_key="quantum_payee.payee_id")
-    category_id: Optional[int] = Field(foreign_key="quantum_category.category_id")
-    fixed_amount: Optional[int]
-    estimate_occurrences: Optional[int]
-    prompt_days: Optional[int]
-    start_date: date
-    end_date: Optional[date]
-    limit_occurrences: Optional[int]
-    repeat_option_id: Optional[int] = Field(foreign_key="quantum_repeat_option.repeat_option_id")
+    transaction_type_id: Optional[int] = Field(
+        default=None, foreign_key="quantum_transaction_type.transaction_type_id"
+    )
+    payee_id: Optional[int] = Field(default=None, foreign_key="quantum_payee.payee_id")
+    category_id: Optional[int] = Field(default=None, foreign_key="quantum_category.category_id")
+    fixed_amount: Optional[int] = None
+    estimate_occurrences: Optional[int] = None
+    prompt_days: Optional[int] = None
+    start_date: date = date.today()
+    end_date: Optional[date] = None
+    limit_occurrences: Optional[int] = None
+    repeat_option_id: Optional[int] = Field(default=None, foreign_key="quantum_repeat_option.repeat_option_id")
     # linked_account_id: int = Field(foreign_key="quantum_account.account_id")
     # linked_account_cycle_end_offset: int
-    notes: Optional[str]
+    notes: Optional[str] = None
     on_autopay: bool
 
 
