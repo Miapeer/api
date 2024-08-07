@@ -142,17 +142,17 @@ def has_permission(db: Session, email: str, application: Applications, role: Rol
 
 def is_miapeer_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
     if not has_permission(db, user.email, Applications.MIAPEER, Roles.USER):
-        raise HTTPException(status_code=400, detail="Unauthorized")
+        raise HTTPException(status_code=400, detail="Unauthorized: is_miapeer_user")
 
 
 def is_miapeer_admin(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
     if not has_permission(db, user.email, Applications.MIAPEER, Roles.ADMIN):
-        raise HTTPException(status_code=400, detail="Unauthorized")
+        raise HTTPException(status_code=400, detail="Unauthorized: is_miapeer_admin")
 
 
 def is_miapeer_super_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
     if not has_permission(db, user.email, Applications.MIAPEER, Roles.SUPER_USER):
-        raise HTTPException(status_code=400, detail="Unauthorized")
+        raise HTTPException(status_code=400, detail="Unauthorized: is_miapeer_super_user")
 
 
 # Dependencies are "and"s not "or"s. Need a separate function for each combo
@@ -162,14 +162,14 @@ def is_miapeer_super_user(db: Session = Depends(get_db), user: User = Depends(ge
 
 def is_quantum_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
     if not has_permission(db, user.email, Applications.QUANTUM, Roles.USER):
-        raise HTTPException(status_code=400, detail="Unauthorized")
+        raise HTTPException(status_code=400, detail="Unauthorized: is_quantum_user")
 
 
 def is_quantum_admin(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
     if not has_permission(db, user.email, Applications.QUANTUM, Roles.ADMIN):
-        raise HTTPException(status_code=400, detail="Unauthorized")
+        raise HTTPException(status_code=400, detail="Unauthorized: is_quantum_admin")
 
 
 def is_quantum_super_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
     if not has_permission(db, user.email, Applications.QUANTUM, Roles.SUPER_USER):
-        raise HTTPException(status_code=400, detail="Unauthorized")
+        raise HTTPException(status_code=400, detail="Unauthorized: is_quantum_super_user")
