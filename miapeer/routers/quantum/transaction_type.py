@@ -19,7 +19,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("")
 async def get_all_transaction_types(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -34,7 +34,7 @@ async def get_all_transaction_types(
     return [TransactionTypeRead.model_validate(transaction_type) for transaction_type in transaction_types]
 
 
-@router.post("/")
+@router.post("")
 async def create_transaction_type(
     db: DbSession,
     current_user: CurrentActiveUser,
