@@ -19,7 +19,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("")
 async def get_all_categories(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -29,7 +29,7 @@ async def get_all_categories(
     return [CategoryRead.model_validate(category) for category in categories]
 
 
-@router.post("/")
+@router.post("")
 async def create_category(
     db: DbSession,
     current_user: CurrentActiveUser,

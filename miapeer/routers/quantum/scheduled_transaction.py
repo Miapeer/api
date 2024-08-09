@@ -23,7 +23,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("")
 async def get_all_scheduled_transactions(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -44,7 +44,7 @@ async def get_all_scheduled_transactions(
     ]
 
 
-@router.post("/")
+@router.post("")
 async def create_scheduled_transaction(
     db: DbSession,
     current_user: CurrentActiveUser,

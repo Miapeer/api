@@ -21,7 +21,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", dependencies=[Depends(is_quantum_user)])
+@router.get("", dependencies=[Depends(is_quantum_user)])
 async def get_all_portfolios(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -31,7 +31,7 @@ async def get_all_portfolios(
     return [PortfolioRead.model_validate(portfolio) for portfolio in portfolios]
 
 
-@router.post("/", dependencies=[Depends(is_quantum_user)])
+@router.post("", dependencies=[Depends(is_quantum_user)])
 async def create_portfolio(
     db: DbSession,
     current_user: CurrentActiveUser,

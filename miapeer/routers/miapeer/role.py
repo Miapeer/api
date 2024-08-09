@@ -16,7 +16,7 @@ router = APIRouter(
 
 
 @router.get(
-    "/",
+    "",
     dependencies=[Depends(is_miapeer_admin)],
 )
 async def get_all_roles(
@@ -27,7 +27,7 @@ async def get_all_roles(
 
 
 @router.post(
-    "/",
+    "",
     dependencies=[Depends(is_miapeer_super_user)],
 )
 async def create_role(

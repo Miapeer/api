@@ -12,7 +12,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("")
 async def get_all_permissions(
     db: DbSession,
 ) -> list[PermissionRead]:
@@ -21,7 +21,7 @@ async def get_all_permissions(
 
 
 # TODO: Should only be able to modify permissions lower than your level
-@router.post("/")
+@router.post("")
 async def create_permission(
     db: DbSession,
     permission: PermissionCreate,

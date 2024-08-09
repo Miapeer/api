@@ -23,7 +23,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("")
 async def get_all_transactions(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -41,7 +41,7 @@ async def get_all_transactions(
     return [TransactionRead.model_validate(transaction) for transaction in transactions]
 
 
-@router.post("/")
+@router.post("")
 async def create_transaction(
     db: DbSession,
     current_user: CurrentActiveUser,

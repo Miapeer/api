@@ -19,7 +19,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("")
 async def get_all_payees(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -29,7 +29,7 @@ async def get_all_payees(
     return [PayeeRead.model_validate(payee) for payee in payees]
 
 
-@router.post("/")
+@router.post("")
 async def create_payee(
     db: DbSession,
     current_user: CurrentActiveUser,

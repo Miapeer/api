@@ -36,7 +36,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("")
 async def get_last_publish_date() -> HTMLResponse:
     update_str = None
     try:

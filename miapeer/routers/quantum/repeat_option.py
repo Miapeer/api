@@ -12,7 +12,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("")
 async def get_all_repeat_options(
     db: DbSession,
 ) -> list[RepeatOptionRead]:
