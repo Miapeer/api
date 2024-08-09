@@ -17,7 +17,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("")
 async def get_all_application_roles(
     db: DbSession,
 ) -> list[ApplicationRoleRead]:
@@ -26,7 +26,7 @@ async def get_all_application_roles(
 
 
 # TODO: Should this even be exposed?
-@router.post("/")
+@router.post("")
 async def create_application_role(
     db: DbSession,
     application_role: ApplicationRoleCreate,

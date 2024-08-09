@@ -16,7 +16,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("")
 async def get_all_applications(
     db: DbSession,
 ) -> list[ApplicationRead]:
@@ -25,7 +25,7 @@ async def get_all_applications(
 
 
 @router.post(
-    "/",
+    "",
     dependencies=[Depends(is_miapeer_super_user)],
 )
 async def create_application(

@@ -22,7 +22,7 @@ async def who_am_i(current_user: CurrentUser) -> User:
 
 
 @router.get(
-    "/",
+    "",
     dependencies=[Depends(is_miapeer_admin)],
 )
 async def get_all_users(
@@ -33,7 +33,7 @@ async def get_all_users(
 
 
 @router.post(
-    "/",
+    "",
     dependencies=[Depends(is_miapeer_admin)],
 )
 async def create_user(

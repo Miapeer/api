@@ -70,7 +70,7 @@ def get_account_balance(db: DbSession, account: Account) -> int:
     return starting_balance + sum_of_summaries + (transaction_sum if transaction_sum is not None else 0)
 
 
-@router.get("/")
+@router.get("")
 async def get_all_accounts(
     db: DbSession,
     current_user: CurrentActiveUser,
@@ -84,7 +84,7 @@ async def get_all_accounts(
     ]
 
 
-@router.post("/")
+@router.post("")
 async def create_account(
     db: DbSession,
     current_user: CurrentActiveUser,
