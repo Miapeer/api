@@ -29,87 +29,90 @@ authorized_tests = [
     ParamTestCase(method="POST", route="/miapeer/v1/auth/token"),
 
     # Miapeer: Applications
-    ParamTestCase(method="GET", route="/miapeer/v1/applications/"),
-    ParamTestCase(method="POST", route="/miapeer/v1/applications/", miapeer_super_user=True),
+    ParamTestCase(method="GET", route="/miapeer/v1/applications"),
+    ParamTestCase(method="POST", route="/miapeer/v1/applications", miapeer_super_user=True),
     ParamTestCase(method="GET", route="/miapeer/v1/applications/{application_id}"),
     ParamTestCase(method="DELETE", route="/miapeer/v1/applications/{application_id}", miapeer_super_user=True),
     ParamTestCase(method="PATCH", route="/miapeer/v1/applications/{application_id}", miapeer_super_user=True),
 
     # Miapeer: Roles
-    ParamTestCase(method="GET", route="/miapeer/v1/roles/", miapeer_admin=True),
-    ParamTestCase(method="POST", route="/miapeer/v1/roles/", miapeer_super_user=True),
+    ParamTestCase(method="GET", route="/miapeer/v1/roles", miapeer_admin=True),
+    ParamTestCase(method="POST", route="/miapeer/v1/roles", miapeer_super_user=True),
     ParamTestCase(method="GET", route="/miapeer/v1/roles/{role_id}", miapeer_admin=True),
     ParamTestCase(method="DELETE", route="/miapeer/v1/roles/{role_id}", miapeer_super_user=True),
     ParamTestCase(method="PATCH", route="/miapeer/v1/roles/{role_id}", miapeer_super_user=True),
 
     # Miapeer: ApplicationRoles
-    ParamTestCase(method="GET", route="/miapeer/v1/application-roles/", miapeer_super_user=True),
-    ParamTestCase(method="POST", route="/miapeer/v1/application-roles/", miapeer_super_user=True),
+    ParamTestCase(method="GET", route="/miapeer/v1/application-roles", miapeer_super_user=True),
+    ParamTestCase(method="POST", route="/miapeer/v1/application-roles", miapeer_super_user=True),
     ParamTestCase(method="GET", route="/miapeer/v1/application-roles/{application_role_id}", miapeer_super_user=True),
     ParamTestCase(method="DELETE", route="/miapeer/v1/application-roles/{application_role_id}", miapeer_super_user=True),
     ParamTestCase(method="PATCH", route="/miapeer/v1/application-roles/{application_role_id}", miapeer_super_user=True),
 
     # Miapeer: Users
     ParamTestCase(method="GET", route="/miapeer/v1/users/me"),
-    ParamTestCase(method="GET", route="/miapeer/v1/users/", miapeer_admin=True),
-    ParamTestCase(method="POST", route="/miapeer/v1/users/", miapeer_admin=True),
+    ParamTestCase(method="GET", route="/miapeer/v1/users", miapeer_admin=True),
+    ParamTestCase(method="POST", route="/miapeer/v1/users", miapeer_admin=True),
     ParamTestCase(method="GET", route="/miapeer/v1/users/{user_id}", miapeer_admin=True),
     ParamTestCase(method="DELETE", route="/miapeer/v1/users/{user_id}", miapeer_super_user=True),
     ParamTestCase(method="PATCH", route="/miapeer/v1/users/{user_id}", miapeer_super_user=True),
 
     # Miapeer: Permissions
-    ParamTestCase(method="GET", route="/miapeer/v1/permissions/", miapeer_admin=True),
-    ParamTestCase(method="POST", route="/miapeer/v1/permissions/", miapeer_admin=True),
+    ParamTestCase(method="GET", route="/miapeer/v1/permissions", miapeer_admin=True),
+    ParamTestCase(method="POST", route="/miapeer/v1/permissions", miapeer_admin=True),
     ParamTestCase(method="GET", route="/miapeer/v1/permissions/{permission_id}", miapeer_admin=True),
     ParamTestCase(method="DELETE", route="/miapeer/v1/permissions/{permission_id}", miapeer_admin=True),
 
     # Quantum: Portfolios
-    ParamTestCase(method="GET", route="/quantum/v1/portfolios/", quantum_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/portfolios/", quantum_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/portfolios", quantum_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/portfolios", quantum_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/portfolios/{portfolio_id}", quantum_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/portfolios/{portfolio_id}", quantum_super_user=True),
 
     # Quantum: Accounts
-    ParamTestCase(method="GET", route="/quantum/v1/accounts/", quantum_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/accounts/", quantum_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/accounts", quantum_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/accounts", quantum_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}", quantum_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/accounts/{account_id}", quantum_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/accounts/{account_id}", quantum_user=True),
 
     # Quantum: Payees
-    ParamTestCase(method="GET", route="/quantum/v1/payees/", quantum_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/payees/", quantum_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/payees", quantum_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/payees", quantum_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/payees/{payee_id}", quantum_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/payees/{payee_id}", quantum_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/payees/{payee_id}", quantum_user=True),
 
     # Quantum: TransactionTypes
-    ParamTestCase(method="GET", route="/quantum/v1/transaction-types/", quantum_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/transaction-types/", quantum_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/transaction-types", quantum_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/transaction-types", quantum_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/transaction-types/{transaction_type_id}", quantum_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/transaction-types/{transaction_type_id}", quantum_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/transaction-types/{transaction_type_id}", quantum_user=True),
 
     # Quantum: Categories
-    ParamTestCase(method="GET", route="/quantum/v1/categories/", quantum_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/categories/", quantum_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/categories", quantum_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/categories", quantum_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/categories/{category_id}", quantum_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/categories/{category_id}", quantum_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/categories/{category_id}", quantum_user=True),
 
     # Quantum: Transactions
-    ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/transactions/", quantum_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/transactions/", quantum_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/transactions", quantum_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/transactions", quantum_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/transactions/{transaction_id}", quantum_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/accounts/{account_id}/transactions/{transaction_id}", quantum_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/accounts/{account_id}/transactions/{transaction_id}", quantum_user=True),
 
     # Quantum: ScheduledTransactions
-    ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/", quantum_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/", quantum_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/scheduled-transactions", quantum_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/scheduled-transactions", quantum_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", quantum_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", quantum_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", quantum_user=True),
+
+    # Quantum: RepeatOptions
+    ParamTestCase(method="GET", route="/quantum/v1/repeat-options", quantum_user=True),
 ]
 
 unauthorized_tests = [
@@ -122,87 +125,90 @@ unauthorized_tests = [
     ParamTestCase(method="POST", route="/miapeer/v1/auth/token", allow_all=True),
 
     # Miapeer: Applications
-    ParamTestCase(method="GET", route="/miapeer/v1/applications/", allow_all=True),
-    ParamTestCase(method="POST", route="/miapeer/v1/applications/", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/miapeer/v1/applications", allow_all=True),
+    ParamTestCase(method="POST", route="/miapeer/v1/applications", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/miapeer/v1/applications/{application_id}", allow_all=True),
     ParamTestCase(method="DELETE", route="/miapeer/v1/applications/{application_id}", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/miapeer/v1/applications/{application_id}", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Miapeer: Roles
-    ParamTestCase(method="GET", route="/miapeer/v1/roles/", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
-    ParamTestCase(method="POST", route="/miapeer/v1/roles/", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/miapeer/v1/roles", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/miapeer/v1/roles", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/miapeer/v1/roles/{role_id}", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/miapeer/v1/roles/{role_id}", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/miapeer/v1/roles/{role_id}", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Miapeer: ApplicationRoles
-    ParamTestCase(method="GET", route="/miapeer/v1/application-roles/", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
-    ParamTestCase(method="POST", route="/miapeer/v1/application-roles/", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/miapeer/v1/application-roles", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/miapeer/v1/application-roles", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/miapeer/v1/application-roles/{application_role_id}", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/miapeer/v1/application-roles/{application_role_id}", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/miapeer/v1/application-roles/{application_role_id}", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Miapeer: Users
     ParamTestCase(method="GET", route="/miapeer/v1/users/me", allow_all=True),
-    ParamTestCase(method="GET", route="/miapeer/v1/users/", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
-    ParamTestCase(method="POST", route="/miapeer/v1/users/", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/miapeer/v1/users", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/miapeer/v1/users", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/miapeer/v1/users/{user_id}", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/miapeer/v1/users/{user_id}", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/miapeer/v1/users/{user_id}", miapeer_user=True, miapeer_admin=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Miapeer: Permissions
-    ParamTestCase(method="GET", route="/miapeer/v1/permissions/", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
-    ParamTestCase(method="POST", route="/miapeer/v1/permissions/", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/miapeer/v1/permissions", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/miapeer/v1/permissions", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/miapeer/v1/permissions/{permission_id}", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/miapeer/v1/permissions/{permission_id}", miapeer_user=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Quantum: Portfolios
-    ParamTestCase(method="GET", route="/quantum/v1/portfolios/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/portfolios/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/portfolios", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/portfolios", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/portfolios/{portfolio_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/portfolios/{portfolio_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_user=True, quantum_admin=True),
 
     # Quantum: Accounts
-    ParamTestCase(method="GET", route="/quantum/v1/accounts/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/accounts/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/accounts", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/accounts", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/accounts/{account_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/accounts/{account_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Quantum: Payees
-    ParamTestCase(method="GET", route="/quantum/v1/payees/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/payees/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/payees", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/payees", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/payees/{payee_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/payees/{payee_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/payees/{payee_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Quantum: TransactionTypes
-    ParamTestCase(method="GET", route="/quantum/v1/transaction-types/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/transaction-types/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/transaction-types", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/transaction-types", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/transaction-types/{transaction_type_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/transaction-types/{transaction_type_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/transaction-types/{transaction_type_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Quantum: Categories
-    ParamTestCase(method="GET", route="/quantum/v1/categories/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/categories/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/categories", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/categories", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/categories/{category_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/categories/{category_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/categories/{category_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Quantum: Transactions
-    ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/transactions/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/transactions/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/transactions", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/transactions", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/transactions/{transaction_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/accounts/{account_id}/transactions/{transaction_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/accounts/{account_id}/transactions/{transaction_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Quantum: ScheduledTransactions
-    ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
-    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/scheduled-transactions", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/scheduled-transactions", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+
+    # Quantum: RepeatOptions
+    ParamTestCase(method="GET", route="/quantum/v1/repeat-options", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
 ]
 # fmt: on
 
@@ -219,12 +225,16 @@ class TestPermissions:
 
                     # Exists in "authorized" test set
                     print("  authorized")
-                    assert [t for t in authorized_tests if t.route == route.path and t.method == method]
+                    assert [
+                        t for t in authorized_tests if t.route == route.path and t.method == method
+                    ], f'"Authorized" test missing for route "{route.path}"'
                     print("    success")
 
                     # Exists in "unauthorized" test set
                     print("  unauthorized")
-                    assert [t for t in unauthorized_tests if t.route == route.path and t.method == method]
+                    assert [
+                        t for t in unauthorized_tests if t.route == route.path and t.method == method
+                    ], f'"Unauthorized" test missing for route "{route.path}"'
                     print("    success")
 
     @pytest.mark.parametrize(
