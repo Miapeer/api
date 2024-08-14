@@ -1,12 +1,14 @@
+import random
 from datetime import date
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
 from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import User
+from miapeer.models.quantum.account import Account
 from miapeer.models.quantum.transaction import (
     Transaction,
     TransactionCreate,
@@ -47,7 +49,7 @@ def category_id() -> int:
 
 @pytest.fixture
 def amount() -> int:
-    return 444
+    return 0
 
 
 @pytest.fixture
@@ -115,7 +117,7 @@ class TestGetAll:
 
     @pytest.fixture
     def expected_multiple_transactions(self, complete_transaction: Transaction) -> list[TransactionRead]:
-        working_transaction = TransactionRead.model_validate(complete_transaction)
+        working_transaction = TransactionRead.model_validate(complete_transaction.model_dump(), update={"balance": 0})
         return [working_transaction, working_transaction]
 
     @pytest.fixture
@@ -126,9 +128,18 @@ class TestGetAll:
         "db_all_return_val, expected_response",
         [([], []), (lazy_fixture("multiple_transactions"), lazy_fixture("expected_multiple_transactions"))],
     )
+    @patch("miapeer.routers.quantum.account.get_account")
     async def test_get_all(
-        self, user: User, account_id: int, mock_db: Mock, expected_sql: str, expected_response: list[TransactionRead]
+        self,
+        get_account_patch: AsyncMock,
+        user: User,
+        account_id: int,
+        mock_db: Mock,
+        expected_sql: str,
+        expected_response: list[TransactionRead],
     ) -> None:
+        get_account_patch.return_value = Account(starting_balance=0)
+
         response = await transaction.get_all_transactions(account_id=account_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
@@ -469,3 +480,60 @@ class TestUpdate:
         mock_db.add.assert_not_called()
         mock_db.commit.assert_not_called()
         mock_db.refresh.assert_not_called()
+
+
+class TestRunningBalance:
+    @pytest.fixture
+    def starting_balance(self) -> int:
+        return random.randint(-9999, 9999)
+
+    @pytest.fixture
+    def transaction_amounts(self) -> list[int]:
+        return [random.randint(-9999, 9999) for _ in range(10)]
+
+    def create_transaction(self, base_transaction: Transaction, amount: int) -> Transaction:
+        transaction_data = base_transaction.model_dump()
+        transaction_data["amount"] = amount
+        return Transaction.model_validate(transaction_data)
+
+    @pytest.fixture
+    def db_all_return_val(
+        self, transaction_amounts: list[int], complete_transaction: Transaction
+    ) -> list[Transaction]:
+        return [
+            self.create_transaction(base_transaction=complete_transaction, amount=amount)
+            for amount in transaction_amounts
+        ]
+
+    @pytest.fixture
+    def expected_transactions(
+        self, starting_balance: int, transaction_amounts: list[int], complete_transaction: Transaction
+    ) -> list[TransactionRead]:
+        running_balance = starting_balance
+        working_transactions = []
+
+        for transaction_amount in transaction_amounts:
+            running_balance += transaction_amount
+
+            transaction_data = complete_transaction.model_dump()
+            transaction_data["amount"] = transaction_amount
+            transaction_data["balance"] = running_balance
+            working_transactions.append(TransactionRead.model_validate(transaction_data))
+
+        return working_transactions
+
+    @pytest.mark.usefixtures("db_all_return_val")
+    @patch("miapeer.routers.quantum.account.get_account")
+    async def test_transaction_running_balance(
+        self,
+        get_account_patch: AsyncMock,
+        starting_balance: int,
+        user: User,
+        account_id: int,
+        mock_db: Mock,
+        expected_transactions: list[TransactionRead],
+    ) -> None:
+        get_account_patch.return_value = Account(starting_balance=starting_balance)
+
+        response = await transaction.get_all_transactions(account_id=account_id, db=mock_db, current_user=user)
+        assert response == expected_transactions
