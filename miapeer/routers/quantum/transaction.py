@@ -46,14 +46,14 @@ async def get_all_transactions(
         a = await account.get_account(db, current_user, account_id)
         running_balance = a.starting_balance
 
-    modified_transaction_data = []
+    modified_transactions = []
     for transaction in transactions:
         running_balance += transaction.amount
-        transaction_data = transaction.model_dump()
-        transaction_data["balance"] = running_balance
-        modified_transaction_data.append(transaction_data)
+        modified_transactions.append(
+            TransactionRead.model_validate(transaction.model_dump(), update={"balance": running_balance})
+        )
 
-    return [TransactionRead.model_validate(modified_transaction) for modified_transaction in modified_transaction_data]
+    return modified_transactions
 
 
 @router.post("")
@@ -113,9 +113,7 @@ async def create_transaction(
             raise HTTPException(status_code=404, detail="Category not found")
 
     # Create the transaction
-    transaction_data = transaction.model_dump()
-    transaction_data["account_id"] = account_id
-    db_transaction = Transaction.model_validate(transaction_data)
+    db_transaction = Transaction.model_validate(transaction.model_dump(), update={"account_id": account_id})
     db.add(db_transaction)
     db.commit()
     db.refresh(db_transaction)

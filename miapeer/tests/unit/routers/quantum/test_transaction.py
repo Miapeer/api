@@ -492,9 +492,7 @@ class TestRunningBalance:
         return [random.randint(-9999, 9999) for _ in range(10)]
 
     def create_transaction(self, base_transaction: Transaction, amount: int) -> Transaction:
-        transaction_data = base_transaction.model_dump()
-        transaction_data["amount"] = amount
-        return Transaction.model_validate(transaction_data)
+        return Transaction.model_validate(base_transaction.model_dump(), update={"amount": amount})
 
     @pytest.fixture
     def db_all_return_val(
@@ -514,11 +512,12 @@ class TestRunningBalance:
 
         for transaction_amount in transaction_amounts:
             running_balance += transaction_amount
-
-            transaction_data = complete_transaction.model_dump()
-            transaction_data["amount"] = transaction_amount
-            transaction_data["balance"] = running_balance
-            working_transactions.append(TransactionRead.model_validate(transaction_data))
+            working_transactions.append(
+                TransactionRead.model_validate(
+                    complete_transaction.model_dump(),
+                    update={"amount": transaction_amount, "balance": running_balance},
+                )
+            )
 
         return working_transactions
 

@@ -40,11 +40,7 @@ async def create_user(
     db: DbSession,
     user: UserCreate,
 ) -> UserRead:
-    user_data = user.model_dump()
-    user_data["password"] = ""
-    user_data["disabled"] = False
-
-    db_user = User.model_validate(user_data)
+    db_user = User.model_validate(user.model_dump(), update={"password": "", "disabled": False})
 
     db.add(db_user)
     db.commit()
