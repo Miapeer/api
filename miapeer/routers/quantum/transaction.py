@@ -14,6 +14,7 @@ from miapeer.models.quantum.transaction import (
     TransactionUpdate,
 )
 from miapeer.models.quantum.transaction_type import TransactionType
+from miapeer.routers.quantum import account
 
 router = APIRouter(
     prefix="/accounts/{account_id}/transactions",
@@ -38,7 +39,21 @@ async def get_all_transactions(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     transactions = db.exec(sql).all()
-    return [TransactionRead.model_validate(transaction) for transaction in transactions]
+
+    running_balance = 0
+
+    if transactions:
+        a = await account.get_account(db, current_user, account_id)
+        running_balance = a.starting_balance
+
+    modified_transaction_data = []
+    for transaction in transactions:
+        running_balance += transaction.amount
+        transaction_data = transaction.model_dump()
+        transaction_data["balance"] = running_balance
+        modified_transaction_data.append(transaction_data)
+
+    return [TransactionRead.model_validate(modified_transaction) for modified_transaction in modified_transaction_data]
 
 
 @router.post("")
