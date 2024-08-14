@@ -41,6 +41,7 @@ class TestGetAll:
                 "check_number": None,
                 "exclude_from_forecast": my_minimal_transaction.exclude_from_forecast,
                 "notes": None,
+                "balance": my_account_1.starting_balance + my_minimal_transaction.amount,
             },
             {
                 "account_id": my_debit_transaction.account_id,
@@ -56,6 +57,7 @@ class TestGetAll:
                 "check_number": my_debit_transaction.check_number,
                 "exclude_from_forecast": my_debit_transaction.exclude_from_forecast,
                 "notes": my_debit_transaction.notes,
+                "balance": my_account_1.starting_balance + my_minimal_transaction.amount + my_debit_transaction.amount,
             },
             {
                 "account_id": my_credit_transaction.account_id,
@@ -69,8 +71,13 @@ class TestGetAll:
                 "check_number": my_credit_transaction.check_number,
                 "exclude_from_forecast": my_credit_transaction.exclude_from_forecast,
                 "notes": my_credit_transaction.notes,
+                "balance": my_account_1.starting_balance
+                + my_minimal_transaction.amount
+                + my_debit_transaction.amount
+                + my_credit_transaction.amount,
             },
         ]
+
         assert response.json() == expected
 
 
@@ -164,6 +171,7 @@ class TestCreate:
             "check_number": check_number,
             "exclude_from_forecast": exclude_from_forecast,
             "notes": notes,
+            "balance": None,
         }
 
     @pytest.mark.parametrize(
@@ -294,6 +302,7 @@ class TestGetOne:
             "check_number": my_debit_transaction.check_number,
             "exclude_from_forecast": my_debit_transaction.exclude_from_forecast,
             "notes": my_debit_transaction.notes,
+            "balance": None,
         }
 
     def test_get_one_transaction_in_wrong_portfolio_fails(
@@ -381,8 +390,7 @@ class TestUpdate:
             },
         )
 
-        assert response.status_code == 200
-        assert response.json() == {
+        expected_response = {
             # Trying to change the account_id isn't allowed
             "account_id": transaction.account_id,
             "transaction_id": transaction.transaction_id,
@@ -395,7 +403,11 @@ class TestUpdate:
             "check_number": check_number,
             "exclude_from_forecast": exclude_from_forecast,
             "notes": notes,
+            "balance": None,
         }
+
+        assert response.status_code == 200
+        assert response.json() == expected_response
 
     def test_update_someone_elses_transaction_fails(
         self, client: TestClient, my_account_1: Account, not_my_debit_transaction: Transaction

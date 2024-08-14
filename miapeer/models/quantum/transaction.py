@@ -41,6 +41,7 @@ class TransactionCreate(TransactionBase):
 class TransactionRead(TransactionBase):
     transaction_id: int
     account_id: int
+    balance: Optional[int] = None
 
 
 class TransactionUpdate(SQLModel):

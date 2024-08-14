@@ -101,9 +101,9 @@ async def create_scheduled_transaction(
             raise HTTPException(status_code=404, detail="Category not found")
 
     # Create the scheduled transaction
-    scheduled_transaction_data = scheduled_transaction.model_dump()
-    scheduled_transaction_data["account_id"] = account_id
-    db_scheduled_transaction = ScheduledTransaction.model_validate(scheduled_transaction_data)
+    db_scheduled_transaction = ScheduledTransaction.model_validate(
+        scheduled_transaction.model_dump(), update={"account_id": account_id}
+    )
     db.add(db_scheduled_transaction)
     db.commit()
     db.refresh(db_scheduled_transaction)

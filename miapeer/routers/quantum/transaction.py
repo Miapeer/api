@@ -14,6 +14,7 @@ from miapeer.models.quantum.transaction import (
     TransactionUpdate,
 )
 from miapeer.models.quantum.transaction_type import TransactionType
+from miapeer.routers.quantum import account
 
 router = APIRouter(
     prefix="/accounts/{account_id}/transactions",
@@ -38,7 +39,21 @@ async def get_all_transactions(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     transactions = db.exec(sql).all()
-    return [TransactionRead.model_validate(transaction) for transaction in transactions]
+
+    running_balance = 0
+
+    if transactions:
+        a = await account.get_account(db, current_user, account_id)
+        running_balance = a.starting_balance
+
+    modified_transactions = []
+    for transaction in transactions:
+        running_balance += transaction.amount
+        modified_transactions.append(
+            TransactionRead.model_validate(transaction.model_dump(), update={"balance": running_balance})
+        )
+
+    return modified_transactions
 
 
 @router.post("")
@@ -98,9 +113,7 @@ async def create_transaction(
             raise HTTPException(status_code=404, detail="Category not found")
 
     # Create the transaction
-    transaction_data = transaction.model_dump()
-    transaction_data["account_id"] = account_id
-    db_transaction = Transaction.model_validate(transaction_data)
+    db_transaction = Transaction.model_validate(transaction.model_dump(), update={"account_id": account_id})
     db.add(db_transaction)
     db.commit()
     db.refresh(db_transaction)
