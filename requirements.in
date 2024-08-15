@@ -11,6 +11,7 @@ pytest-cov
 pytest-lazy-fixture
 pytest-only
 pytest_watch
+python-dateutil
 python-jose[cryptography]
 python-multipart
 rich
