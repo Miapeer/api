@@ -175,6 +175,7 @@ def seed_db() -> None:  # pragma: no cover
             db.add_all(
                 [
                     day := RepeatUnit(name="Day"),
+                    semi_month := RepeatUnit(name="Semi-Month"),
                     month := RepeatUnit(name="Month"),
                     year := RepeatUnit(name="Year"),
                 ]
@@ -190,10 +191,16 @@ def seed_db() -> None:  # pragma: no cover
                 [
                     RepeatOption(name="Weekly", repeat_unit_id=day.repeat_unit_id, quantity=7, order_index=1),
                     RepeatOption(name="Bi-Weekly", repeat_unit_id=day.repeat_unit_id, quantity=14, order_index=2),
-                    RepeatOption(name="Monthly", repeat_unit_id=month.repeat_unit_id, quantity=1, order_index=3),
-                    RepeatOption(name="Quarterly", repeat_unit_id=month.repeat_unit_id, quantity=3, order_index=4),
-                    RepeatOption(name="Semi-Anually", repeat_unit_id=month.repeat_unit_id, quantity=6, order_index=5),
-                    RepeatOption(name="Anually", repeat_unit_id=year.repeat_unit_id, quantity=1, order_index=6),
+                    RepeatOption(
+                        name="Semi-Monthly (1st and 16th)",
+                        repeat_unit_id=semi_month.repeat_unit_id,
+                        quantity=0,
+                        order_index=3,
+                    ),
+                    RepeatOption(name="Monthly", repeat_unit_id=month.repeat_unit_id, quantity=1, order_index=4),
+                    RepeatOption(name="Quarterly", repeat_unit_id=month.repeat_unit_id, quantity=3, order_index=5),
+                    RepeatOption(name="Semi-Anually", repeat_unit_id=month.repeat_unit_id, quantity=6, order_index=6),
+                    RepeatOption(name="Anually", repeat_unit_id=year.repeat_unit_id, quantity=1, order_index=7),
                 ]
             )
 
