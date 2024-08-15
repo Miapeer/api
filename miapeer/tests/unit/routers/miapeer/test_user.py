@@ -74,7 +74,7 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:
+    def db_refresh(obj) -> None:  # type: ignore
         obj.user_id = raw_user_id
 
     @pytest.fixture

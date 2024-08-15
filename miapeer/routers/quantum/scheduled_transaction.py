@@ -1,3 +1,7 @@
+from datetime import date
+from typing import Optional
+
+from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 
@@ -7,13 +11,17 @@ from miapeer.models.quantum.category import Category
 from miapeer.models.quantum.payee import Payee
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
+from miapeer.models.quantum.repeat_option import RepeatOptionRead
+from miapeer.models.quantum.repeat_unit import RepeatUnitRead
 from miapeer.models.quantum.scheduled_transaction import (
     ScheduledTransaction,
     ScheduledTransactionCreate,
     ScheduledTransactionRead,
     ScheduledTransactionUpdate,
 )
+from miapeer.models.quantum.transaction import Transaction
 from miapeer.models.quantum.transaction_type import TransactionType
+from miapeer.routers.quantum import repeat_option
 
 router = APIRouter(
     prefix="/accounts/{account_id}/scheduled-transactions",
@@ -38,10 +46,7 @@ async def get_all_scheduled_transactions(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     scheduled_transactions = db.exec(sql).all()
-    return [
-        ScheduledTransactionRead.model_validate(scheduled_transaction)
-        for scheduled_transaction in scheduled_transactions
-    ]
+    return [ScheduledTransactionRead.model_validate(scheduled_transaction) for scheduled_transaction in scheduled_transactions]
 
 
 @router.post("")
@@ -101,9 +106,7 @@ async def create_scheduled_transaction(
             raise HTTPException(status_code=404, detail="Category not found")
 
     # Create the scheduled transaction
-    db_scheduled_transaction = ScheduledTransaction.model_validate(
-        scheduled_transaction.model_dump(), update={"account_id": account_id}
-    )
+    db_scheduled_transaction = ScheduledTransaction.model_validate(scheduled_transaction.model_dump(), update={"account_id": account_id})
     db.add(db_scheduled_transaction)
     db.commit()
     db.refresh(db_scheduled_transaction)
@@ -252,3 +255,38 @@ async def update_scheduled_transaction(
     db.refresh(db_scheduled_transaction)
 
     return ScheduledTransactionRead.model_validate(db_scheduled_transaction)
+
+
+async def get_next_iterations(db: DbSession, scheduled_transaction: ScheduledTransaction, end_date: Optional[date], limit: int = 100):
+    # TODO: Use sqlalchemy relationships/backpopulates
+    rpt_option: Optional[RepeatOptionRead] = None
+    rpt_unit: Optional[RepeatUnitRead] = None
+    if scheduled_transaction.repeat_option_id:
+        rpt_option = await repeat_option.get_repeat_option(db=db, repeat_option_id=scheduled_transaction.repeat_option_id)
+
+    if rpt_option and rpt_option.repeat_unit_id:
+        rpt_unit = await repeat_option.get_repeat_unit(db=db, repeat_unit_id=rpt_option.repeat_unit_id)
+
+    transactions = []
+    active_date = scheduled_transaction.start_date
+
+    if rpt_option and rpt_unit:
+        while not end_date or active_date <= end_date:
+            # Special handling for invalid start_dates. Don't add a transaction unless valid.
+            if rpt_unit.name != "Semi-Month" or (active_date.day == 1 or active_date.day == 16):
+                transactions.append(Transaction.model_validate(scheduled_transaction.model_dump(), update={"transaction_date": active_date}))
+
+            if rpt_unit.name == "Day":
+                active_date += relativedelta(days=rpt_option.quantity)
+            elif rpt_unit.name == "Semi-Month":
+                if active_date.day < 16:
+                    active_date = date(year=active_date.year, month=active_date.month, day=16)
+                else:
+                    active_date += relativedelta(months=1)
+                    active_date = date(year=active_date.year, month=active_date.month, day=1)
+            elif rpt_unit.name == "Month":
+                active_date += relativedelta(months=rpt_option.quantity)
+            elif rpt_unit.name == "Year":
+                active_date += relativedelta(years=rpt_option.quantity)
+
+    return transactions

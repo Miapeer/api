@@ -126,10 +126,20 @@ def client_fixture(
             raise HTTPException(status_code=400, detail="Unauthorized")
 
     def override_get_current_user() -> User:
-        return User(user_id=returned_current_user.user_id)
+        return User(
+            user_id=returned_current_user.user_id,
+            email=returned_current_user.email,
+            password=returned_current_user.password,
+            disabled=returned_current_user.disabled,
+        )
 
     def override_get_current_active_user() -> User:
-        return User(user_id=returned_current_user.user_id)
+        return User(
+            user_id=returned_current_user.user_id,
+            email=returned_current_user.email,
+            password=returned_current_user.password,
+            disabled=returned_current_user.disabled,
+        )
 
     app.dependency_overrides[get_jwk] = get_jwk_override
     app.dependency_overrides[get_db] = override_get_db

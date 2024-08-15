@@ -86,7 +86,7 @@ def basic_transaction(
     amount: int,
     transaction_date: date,
     clear_date: date,
-    check_number: int,
+    check_number: str,
     exclude_from_forecast: bool,
     notes: str,
 ) -> Transaction:
@@ -138,7 +138,7 @@ class TestGetAll:
         expected_sql: str,
         expected_response: list[TransactionRead],
     ) -> None:
-        get_account_patch.return_value = Account(starting_balance=0)
+        get_account_patch.return_value = Account(portfolio_id=0, name="", starting_balance=0)
 
         response = await transaction.get_all_transactions(account_id=account_id, db=mock_db, current_user=user)
 
@@ -150,7 +150,7 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:
+    def db_refresh(obj) -> None:  # type: ignore
         obj.transaction_id = raw_transaction_id
 
     @pytest.fixture
@@ -162,7 +162,7 @@ class TestCreate:
         amount: int,
         transaction_date: date,
         clear_date: date,
-        check_number: int,
+        check_number: str,
         exclude_from_forecast: bool,
         notes: str,
     ) -> TransactionCreate:
@@ -207,9 +207,7 @@ class TestCreate:
         expected_payee_sql: str,
         expected_category_sql: str,
     ) -> None:
-        await transaction.create_transaction(
-            account_id=account_id, transaction=transaction_to_create, db=mock_db, current_user=user
-        )
+        await transaction.create_transaction(account_id=account_id, transaction=transaction_to_create, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args_list[0].args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -249,9 +247,7 @@ class TestCreate:
         expected_transaction_sql: str,
     ) -> None:
         with pytest.raises(HTTPException):
-            await transaction.create_transaction(
-                account_id=account_id, transaction=transaction_to_create, db=mock_db, current_user=user
-            )
+            await transaction.create_transaction(account_id=account_id, transaction=transaction_to_create, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -281,9 +277,7 @@ class TestGet:
         expected_sql: str,
         expected_response: TransactionRead,
     ) -> None:
-        response = await transaction.get_transaction(
-            account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user
-        )
+        response = await transaction.get_transaction(account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -292,13 +286,9 @@ class TestGet:
         assert response == expected_response
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
-    async def test_get_no_data(
-        self, user: User, account_id: int, transaction_id: int, mock_db: Mock, expected_sql: str
-    ) -> None:
+    async def test_get_no_data(self, user: User, account_id: int, transaction_id: int, mock_db: Mock, expected_sql: str) -> None:
         with pytest.raises(HTTPException):
-            await transaction.get_transaction(
-                account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user
-            )
+            await transaction.get_transaction(account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -321,9 +311,7 @@ class TestDelete:
         expected_sql: str,
         db_one_or_none_return_val: Any,
     ) -> None:
-        response = await transaction.delete_transaction(
-            account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user
-        )
+        response = await transaction.delete_transaction(account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -338,9 +326,7 @@ class TestDelete:
         self, user: User, account_id: int, transaction_id: int, mock_db: Mock, expected_sql: str
     ) -> None:
         with pytest.raises(HTTPException):
-            await transaction.delete_transaction(
-                account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user
-            )
+            await transaction.delete_transaction(account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -354,7 +340,6 @@ class TestUpdate:
     @pytest.fixture
     def transaction_updates(self, exclude_from_forecast: bool) -> TransactionUpdate:
         return TransactionUpdate(
-            transaction_id=None,
             transaction_type_id=8881,
             payee_id=8882,
             category_id=8883,
@@ -495,13 +480,8 @@ class TestRunningBalance:
         return Transaction.model_validate(base_transaction.model_dump(), update={"amount": amount})
 
     @pytest.fixture
-    def db_all_return_val(
-        self, transaction_amounts: list[int], complete_transaction: Transaction
-    ) -> list[Transaction]:
-        return [
-            self.create_transaction(base_transaction=complete_transaction, amount=amount)
-            for amount in transaction_amounts
-        ]
+    def db_all_return_val(self, transaction_amounts: list[int], complete_transaction: Transaction) -> list[Transaction]:
+        return [self.create_transaction(base_transaction=complete_transaction, amount=amount) for amount in transaction_amounts]
 
     @pytest.fixture
     def expected_transactions(
@@ -532,7 +512,7 @@ class TestRunningBalance:
         mock_db: Mock,
         expected_transactions: list[TransactionRead],
     ) -> None:
-        get_account_patch.return_value = Account(starting_balance=starting_balance)
+        get_account_patch.return_value = Account(portfolio_id=0, name="", starting_balance=starting_balance)
 
         response = await transaction.get_all_transactions(account_id=account_id, db=mock_db, current_user=user)
         assert response == expected_transactions

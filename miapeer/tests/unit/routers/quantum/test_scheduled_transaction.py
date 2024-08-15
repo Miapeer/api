@@ -1,12 +1,14 @@
 from datetime import date
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
 from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import User
+from miapeer.models.quantum.repeat_option import RepeatOption
+from miapeer.models.quantum.repeat_unit import RepeatUnit
 from miapeer.models.quantum.scheduled_transaction import (
     ScheduledTransaction,
     ScheduledTransactionCreate,
@@ -126,9 +128,7 @@ def basic_scheduled_transaction(
 
 
 @pytest.fixture
-def complete_scheduled_transaction(
-    scheduled_transaction_id: int, basic_scheduled_transaction: ScheduledTransaction
-) -> ScheduledTransaction:
+def complete_scheduled_transaction(scheduled_transaction_id: int, basic_scheduled_transaction: ScheduledTransaction) -> ScheduledTransaction:
     return ScheduledTransaction.model_validate(
         basic_scheduled_transaction.model_dump(), update={"scheduled_transaction_id": scheduled_transaction_id}
     )
@@ -136,15 +136,11 @@ def complete_scheduled_transaction(
 
 class TestGetAll:
     @pytest.fixture
-    def multiple_scheduled_transactions(
-        self, complete_scheduled_transaction: ScheduledTransaction
-    ) -> list[ScheduledTransaction]:
+    def multiple_scheduled_transactions(self, complete_scheduled_transaction: ScheduledTransaction) -> list[ScheduledTransaction]:
         return [complete_scheduled_transaction, complete_scheduled_transaction]
 
     @pytest.fixture
-    def expected_multiple_scheduled_transactions(
-        self, complete_scheduled_transaction: ScheduledTransaction
-    ) -> list[ScheduledTransactionRead]:
+    def expected_multiple_scheduled_transactions(self, complete_scheduled_transaction: ScheduledTransaction) -> list[ScheduledTransactionRead]:
         working_scheduled_transaction = ScheduledTransactionRead.model_validate(complete_scheduled_transaction)
         return [working_scheduled_transaction, working_scheduled_transaction]
 
@@ -170,9 +166,7 @@ class TestGetAll:
         expected_sql: str,
         expected_response: list[ScheduledTransactionRead],
     ) -> None:
-        response = await scheduled_transaction.get_all_scheduled_transactions(
-            account_id=account_id, db=mock_db, current_user=user
-        )
+        response = await scheduled_transaction.get_all_scheduled_transactions(account_id=account_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -182,7 +176,7 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:
+    def db_refresh(obj) -> None:  # type: ignore
         obj.scheduled_transaction_id = raw_scheduled_transaction_id
 
     @pytest.fixture
@@ -333,9 +327,7 @@ class TestGet:
         assert response == expected_response
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
-    async def test_get_no_data(
-        self, user: User, account_id: int, scheduled_transaction_id: int, mock_db: Mock, expected_sql: str
-    ) -> None:
+    async def test_get_no_data(self, user: User, account_id: int, scheduled_transaction_id: int, mock_db: Mock, expected_sql: str) -> None:
         with pytest.raises(HTTPException):
             await scheduled_transaction.get_scheduled_transaction(
                 account_id=account_id, scheduled_transaction_id=scheduled_transaction_id, db=mock_db, current_user=user
@@ -395,7 +387,6 @@ class TestUpdate:
     @pytest.fixture
     def scheduled_transaction_updates(self, on_autopay: bool) -> ScheduledTransactionUpdate:
         return ScheduledTransactionUpdate(
-            scheduled_transaction_id=None,
             transaction_type_id=8881,
             payee_id=8882,
             category_id=8883,
@@ -415,9 +406,7 @@ class TestUpdate:
         return f"SELECT quantum_scheduled_transaction.transaction_type_id, quantum_scheduled_transaction.payee_id, quantum_scheduled_transaction.category_id, quantum_scheduled_transaction.fixed_amount, quantum_scheduled_transaction.estimate_occurrences, quantum_scheduled_transaction.prompt_days, quantum_scheduled_transaction.start_date, quantum_scheduled_transaction.end_date, quantum_scheduled_transaction.limit_occurrences, quantum_scheduled_transaction.repeat_option_id, quantum_scheduled_transaction.notes, quantum_scheduled_transaction.on_autopay, quantum_scheduled_transaction.scheduled_transaction_id, quantum_scheduled_transaction.account_id \nFROM quantum_scheduled_transaction JOIN quantum_account ON quantum_account.account_id = quantum_scheduled_transaction.account_id JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_scheduled_transaction.scheduled_transaction_id = {scheduled_transaction_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
-    def expected_transaction_type_sql(
-        self, user_id: int, scheduled_transaction_updates: ScheduledTransactionUpdate
-    ) -> str:
+    def expected_transaction_type_sql(self, user_id: int, scheduled_transaction_updates: ScheduledTransactionUpdate) -> str:
         return f"SELECT quantum_transaction_type.name, quantum_transaction_type.portfolio_id, quantum_transaction_type.transaction_type_id \nFROM quantum_transaction_type JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_transaction_type.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_transaction_type.transaction_type_id = {scheduled_transaction_updates.transaction_type_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
@@ -429,9 +418,7 @@ class TestUpdate:
         return f"SELECT quantum_category.name, quantum_category.parent_category_id, quantum_category.portfolio_id, quantum_category.category_id \nFROM quantum_category JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_category.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_category.category_id = {scheduled_transaction_updates.category_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
-    def updated_scheduled_transaction(
-        self, complete_scheduled_transaction: ScheduledTransaction
-    ) -> ScheduledTransaction:
+    def updated_scheduled_transaction(self, complete_scheduled_transaction: ScheduledTransaction) -> ScheduledTransaction:
         return ScheduledTransaction.model_validate(
             complete_scheduled_transaction.model_dump(),
             update={
@@ -531,3 +518,127 @@ class TestUpdate:
         mock_db.add.assert_not_called()
         mock_db.commit.assert_not_called()
         mock_db.refresh.assert_not_called()
+
+
+class TestNextIteration:
+    @pytest.mark.parametrize(
+        "start_date, end_date, repeat_option, repeat_unit, expected_transaction_dates",
+        [
+            (
+                date(year=2001, month=2, day=3),
+                date(year=2001, month=3, day=20),
+                RepeatOption(name="Weekly", quantity=7, repeat_unit_id=0, order_index=0),
+                RepeatUnit(name="Day"),
+                [
+                    date(year=2001, month=2, day=3),
+                    date(year=2001, month=2, day=10),
+                    date(year=2001, month=2, day=17),
+                    date(year=2001, month=2, day=24),
+                    date(year=2001, month=3, day=3),
+                    date(year=2001, month=3, day=10),
+                    date(year=2001, month=3, day=17),
+                ],
+            ),
+            (
+                date(year=2001, month=2, day=3),
+                date(year=2001, month=3, day=20),
+                RepeatOption(name="Bi-Weekly", quantity=14, repeat_unit_id=0, order_index=0),
+                RepeatUnit(name="Day"),
+                [
+                    date(year=2001, month=2, day=3),
+                    date(year=2001, month=2, day=17),
+                    date(year=2001, month=3, day=3),
+                    date(year=2001, month=3, day=17),
+                ],
+            ),
+            (
+                date(year=2001, month=2, day=3),
+                date(year=2001, month=4, day=20),
+                RepeatOption(name="Semi-Monthly", quantity=0, repeat_unit_id=0, order_index=0),
+                RepeatUnit(name="Semi-Month"),
+                [
+                    date(year=2001, month=2, day=16),
+                    date(year=2001, month=3, day=1),
+                    date(year=2001, month=3, day=16),
+                    date(year=2001, month=4, day=1),
+                    date(year=2001, month=4, day=16),
+                ],
+            ),
+            (
+                date(year=1999, month=12, day=31),
+                date(year=2000, month=4, day=30),
+                RepeatOption(name="Monthly", quantity=1, repeat_unit_id=0, order_index=0),
+                RepeatUnit(name="Month"),
+                [
+                    date(year=1999, month=12, day=31),
+                    date(year=2000, month=1, day=31),
+                    date(year=2000, month=2, day=29),
+                    date(year=2000, month=3, day=29),
+                    date(year=2000, month=4, day=29),
+                ],
+            ),
+            (
+                date(year=2001, month=2, day=3),
+                date(year=2002, month=7, day=20),
+                RepeatOption(name="Quarterly", quantity=3, repeat_unit_id=0, order_index=0),
+                RepeatUnit(name="Month"),
+                [
+                    date(year=2001, month=2, day=3),
+                    date(year=2001, month=5, day=3),
+                    date(year=2001, month=8, day=3),
+                    date(year=2001, month=11, day=3),
+                    date(year=2002, month=2, day=3),
+                    date(year=2002, month=5, day=3),
+                ],
+            ),
+            (
+                date(year=2001, month=2, day=3),
+                date(year=2003, month=7, day=20),
+                RepeatOption(name="Semi-Anually", quantity=6, repeat_unit_id=0, order_index=0),
+                RepeatUnit(name="Month"),
+                [
+                    date(year=2001, month=2, day=3),
+                    date(year=2001, month=8, day=3),
+                    date(year=2002, month=2, day=3),
+                    date(year=2002, month=8, day=3),
+                    date(year=2003, month=2, day=3),
+                ],
+            ),
+            (
+                date(year=2000, month=2, day=29),
+                date(year=2002, month=2, day=28),
+                RepeatOption(name="Anually", quantity=1, repeat_unit_id=0, order_index=0),
+                RepeatUnit(name="Year"),
+                [date(year=2000, month=2, day=29), date(year=2001, month=2, day=28), date(year=2002, month=2, day=28)],
+            ),
+        ],
+    )
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_unit")
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
+    async def test_next_iterations_with_reasonable_end_date(
+        self,
+        get_repeat_option_patch: AsyncMock,
+        get_repeat_unit_patch: AsyncMock,
+        mock_db: Mock,
+        complete_scheduled_transaction: ScheduledTransaction,
+        start_date: date,
+        end_date: date,
+        repeat_option: RepeatOption,
+        repeat_unit: RepeatUnit,
+        expected_transaction_dates: list[date],
+    ) -> None:
+        get_repeat_option_patch.return_value = repeat_option
+        get_repeat_unit_patch.return_value = repeat_unit
+
+        results = await scheduled_transaction.get_next_iterations(
+            db=mock_db,
+            scheduled_transaction=ScheduledTransaction.model_validate(complete_scheduled_transaction.model_dump(), update={"start_date": start_date}),
+            end_date=end_date,
+        )
+
+        for index, result in enumerate(results):
+            print(f"{result.transaction_date=}\n")  # TODO: Remove this!!!
+            assert result.transaction_date == expected_transaction_dates[index]
+
+    # TODO: Limits
+    # TODO: No repeat

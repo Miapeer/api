@@ -9,10 +9,13 @@ from miapeer.routers import auth, miapeer, quantum
 
 app = FastAPI()
 
-if env.get("APP_SECRET_KEY") is None or env.get("JWT_SECRET_KEY") is None:
+app_secret_key = env.get("APP_SECRET_KEY")
+jwt_secret_key = env.get("JWT_SECRET_KEY")
+
+if not app_secret_key or not jwt_secret_key:
     raise LookupError("Secrets not found")
 
-app.add_middleware(SessionMiddleware, secret_key=env.get("APP_SECRET_KEY"))
+app.add_middleware(SessionMiddleware, secret_key=app_secret_key)
 
 # TODO: Update these for prod/dev? Also, Azure WebApp config helps with this.
 origins = [

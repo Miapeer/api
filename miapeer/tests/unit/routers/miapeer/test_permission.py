@@ -46,7 +46,9 @@ class TestGetAll:
 
     @pytest.fixture
     def expected_sql(self) -> str:
-        return f"SELECT miapeer_permission.user_id, miapeer_permission.application_role_id, miapeer_permission.permission_id \nFROM miapeer_permission"
+        return (
+            f"SELECT miapeer_permission.user_id, miapeer_permission.application_role_id, miapeer_permission.permission_id \nFROM miapeer_permission"
+        )
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
@@ -63,7 +65,7 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:
+    def db_refresh(obj) -> None:  # type: ignore
         obj.permission_id = raw_permission_id
 
     @pytest.fixture
@@ -111,9 +113,7 @@ class TestGet:
 
 class TestDelete:
     @pytest.mark.parametrize("db_get_return_val", ["some data", 123])
-    async def test_delete_with_permission_found(
-        self, permission_id: int, mock_db: Mock, db_get_return_val: Any
-    ) -> None:
+    async def test_delete_with_permission_found(self, permission_id: int, mock_db: Mock, db_get_return_val: Any) -> None:
         response = await permission.delete_permission(permission_id=permission_id, db=mock_db)
 
         mock_db.delete.assert_called_once_with(db_get_return_val)

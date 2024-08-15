@@ -31,7 +31,7 @@ def portfolio_id() -> int:
 
 @pytest.fixture
 def basic_role(role_name: str) -> Role:
-    return Role(role_id=None, name=role_name, password="", disabled=False)
+    return Role(role_id=None, name=role_name)
 
 
 @pytest.fixture
@@ -68,7 +68,7 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:
+    def db_refresh(obj) -> None:  # type: ignore
         obj.role_id = raw_role_id
 
     @pytest.fixture

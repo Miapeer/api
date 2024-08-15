@@ -101,7 +101,7 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:
+    def db_refresh(obj) -> None:  # type: ignore
         obj.application_id = raw_application_id
 
     @pytest.fixture
@@ -162,9 +162,7 @@ class TestGet:
 
 class TestDelete:
     @pytest.mark.parametrize("db_get_return_val", ["some data", 123])
-    async def test_delete_with_application_found(
-        self, application_id: int, mock_db: Mock, db_get_return_val: Any
-    ) -> None:
+    async def test_delete_with_application_found(self, application_id: int, mock_db: Mock, db_get_return_val: Any) -> None:
         response = await application.delete_application(application_id=application_id, db=mock_db)
 
         mock_db.delete.assert_called_once_with(db_get_return_val)

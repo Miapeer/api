@@ -51,9 +51,7 @@ class TestGetAll:
                 "category_id": my_debit_transaction.category_id,
                 "amount": my_debit_transaction.amount,
                 "transaction_date": my_debit_transaction.transaction_date.strftime("%Y-%m-%d"),
-                "clear_date": my_debit_transaction.clear_date.strftime("%Y-%m-%d")
-                if my_debit_transaction.clear_date is not None
-                else None,
+                "clear_date": my_debit_transaction.clear_date.strftime("%Y-%m-%d") if my_debit_transaction.clear_date is not None else None,
                 "check_number": my_debit_transaction.check_number,
                 "exclude_from_forecast": my_debit_transaction.exclude_from_forecast,
                 "notes": my_debit_transaction.notes,
@@ -71,10 +69,7 @@ class TestGetAll:
                 "check_number": my_credit_transaction.check_number,
                 "exclude_from_forecast": my_credit_transaction.exclude_from_forecast,
                 "notes": my_credit_transaction.notes,
-                "balance": my_account_1.starting_balance
-                + my_minimal_transaction.amount
-                + my_debit_transaction.amount
-                + my_credit_transaction.amount,
+                "balance": my_account_1.starting_balance + my_minimal_transaction.amount + my_debit_transaction.amount + my_credit_transaction.amount,
             },
         ]
 
@@ -191,7 +186,7 @@ class TestCreate:
                 {"detail": "Account not found"},
             ),
             (
-                Account(account_id=999999),
+                Account(portfolio_id=0, account_id=999999, name="", starting_balance=0),
                 lazy_fixture("my_transaction_type_2"),
                 lazy_fixture("my_payee_1"),
                 lazy_fixture("my_category_2"),
@@ -280,12 +275,8 @@ class TestCreate:
 
 @pytest.mark.usefixtures("create_complete_portfolio")
 class TestGetOne:
-    def test_get_one_transaction_in_portfolio_succeeds(
-        self, client: TestClient, my_debit_transaction: Transaction
-    ) -> None:
-        response = client.get(
-            f"/quantum/v1/accounts/{my_debit_transaction.account_id}/transactions/{my_debit_transaction.transaction_id}"
-        )
+    def test_get_one_transaction_in_portfolio_succeeds(self, client: TestClient, my_debit_transaction: Transaction) -> None:
+        response = client.get(f"/quantum/v1/accounts/{my_debit_transaction.account_id}/transactions/{my_debit_transaction.transaction_id}")
 
         assert response.status_code == 200
         assert response.json() == {
@@ -296,9 +287,7 @@ class TestGetOne:
             "category_id": getattr(my_debit_transaction, "category_id", None),
             "amount": my_debit_transaction.amount,
             "transaction_date": my_debit_transaction.transaction_date.strftime("%Y-%m-%d"),
-            "clear_date": my_debit_transaction.clear_date.strftime("%Y-%m-%d")
-            if my_debit_transaction.clear_date is not None
-            else None,
+            "clear_date": my_debit_transaction.clear_date.strftime("%Y-%m-%d") if my_debit_transaction.clear_date is not None else None,
             "check_number": my_debit_transaction.check_number,
             "exclude_from_forecast": my_debit_transaction.exclude_from_forecast,
             "notes": my_debit_transaction.notes,
@@ -308,17 +297,13 @@ class TestGetOne:
     def test_get_one_transaction_in_wrong_portfolio_fails(
         self, client: TestClient, my_account_1: Account, not_my_debit_transaction: Transaction
     ) -> None:
-        response = client.get(
-            f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{not_my_debit_transaction.transaction_id}"
-        )
+        response = client.get(f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{not_my_debit_transaction.transaction_id}")
 
         assert response.status_code == 404
         assert response.json() == {"detail": "Transaction not found"}
 
     @pytest.mark.parametrize("transaction_id", [0, -1, 999999999999999999, -999999999999999999])
-    def test_get_one_transaction_with_invalid_transaction_id_fails(
-        self, client: TestClient, my_account_1: Account, transaction_id: int
-    ) -> None:
+    def test_get_one_transaction_with_invalid_transaction_id_fails(self, client: TestClient, my_account_1: Account, transaction_id: int) -> None:
         response = client.get(f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{transaction_id}")
 
         assert response.status_code == 404
@@ -409,9 +394,7 @@ class TestUpdate:
         assert response.status_code == 200
         assert response.json() == expected_response
 
-    def test_update_someone_elses_transaction_fails(
-        self, client: TestClient, my_account_1: Account, not_my_debit_transaction: Transaction
-    ) -> None:
+    def test_update_someone_elses_transaction_fails(self, client: TestClient, my_account_1: Account, not_my_debit_transaction: Transaction) -> None:
         response = client.patch(
             f"/quantum/v1/accounts/{my_account_1. account_id}/transactions/{not_my_debit_transaction.transaction_id}",
             json={"amount": 0, "transaction_date": "2000-01-01", "exclude_from_forecast": False},
@@ -421,9 +404,7 @@ class TestUpdate:
         assert response.json() == {"detail": "Transaction not found"}
 
     @pytest.mark.parametrize("transaction_id", [0, -1, 999999999999999999, -999999999999999999])
-    def test_update_transaction_with_invalid_transaction_id_fails(
-        self, client: TestClient, my_account_1: Account, transaction_id: int
-    ) -> None:
+    def test_update_transaction_with_invalid_transaction_id_fails(self, client: TestClient, my_account_1: Account, transaction_id: int) -> None:
         response = client.patch(
             f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{transaction_id}",
             json={"amount": 0, "transaction_date": "2000-01-01", "exclude_from_forecast": False},
@@ -450,7 +431,7 @@ class TestUpdate:
                 {"detail": "Transaction not found"},
             ),
             (
-                Account(account_id=999999),
+                Account(portfolio_id=0, account_id=999999, name="", starting_balance=0),
                 lazy_fixture("my_debit_transaction"),
                 lazy_fixture("my_transaction_type_2"),
                 lazy_fixture("my_payee_1"),
@@ -562,9 +543,7 @@ class TestDelete:
         assert response.status_code == 404
         assert response.json() == {"detail": "Transaction not found"}
 
-    def test_delete_someone_elses_transaction_fails(
-        self, client: TestClient, my_account_1: Account, not_my_debit_transaction: Transaction
-    ) -> None:
+    def test_delete_someone_elses_transaction_fails(self, client: TestClient, my_account_1: Account, not_my_debit_transaction: Transaction) -> None:
         response = client.delete(
             f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{not_my_debit_transaction.transaction_id}",
         )
@@ -573,9 +552,7 @@ class TestDelete:
         assert response.json() == {"detail": "Transaction not found"}
 
     @pytest.mark.parametrize("transaction_id", [0, -1, 999999999999999999, -999999999999999999])
-    def test_delete_transaction_with_invalid_transaction_id_fails(
-        self, client: TestClient, my_account_1: Account, transaction_id: int
-    ) -> None:
+    def test_delete_transaction_with_invalid_transaction_id_fails(self, client: TestClient, my_account_1: Account, transaction_id: int) -> None:
         response = client.delete(f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{transaction_id}")
 
         assert response.status_code == 404
