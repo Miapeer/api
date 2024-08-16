@@ -15,6 +15,7 @@ from miapeer.models.quantum.scheduled_transaction import (
     ScheduledTransactionRead,
     ScheduledTransactionUpdate,
 )
+from miapeer.models.quantum.transaction import Transaction
 from miapeer.routers.quantum import scheduled_transaction
 
 pytestmark = pytest.mark.asyncio
@@ -527,7 +528,7 @@ class TestNextIteration:
             (
                 date(year=2001, month=2, day=3),
                 date(year=2001, month=3, day=20),
-                RepeatOption(name="Weekly", quantity=7, repeat_unit_id=0, order_index=0),
+                RepeatOption(name="Weekly", quantity=7, repeat_unit_id=1, order_index=0),
                 RepeatUnit(name="Day"),
                 [
                     date(year=2001, month=2, day=3),
@@ -542,7 +543,7 @@ class TestNextIteration:
             (
                 date(year=2001, month=2, day=3),
                 date(year=2001, month=3, day=20),
-                RepeatOption(name="Bi-Weekly", quantity=14, repeat_unit_id=0, order_index=0),
+                RepeatOption(name="Bi-Weekly", quantity=14, repeat_unit_id=1, order_index=0),
                 RepeatUnit(name="Day"),
                 [
                     date(year=2001, month=2, day=3),
@@ -554,7 +555,7 @@ class TestNextIteration:
             (
                 date(year=2001, month=2, day=3),
                 date(year=2001, month=4, day=20),
-                RepeatOption(name="Semi-Monthly", quantity=0, repeat_unit_id=0, order_index=0),
+                RepeatOption(name="Semi-Monthly", quantity=0, repeat_unit_id=1, order_index=0),
                 RepeatUnit(name="Semi-Month"),
                 [
                     date(year=2001, month=2, day=16),
@@ -567,7 +568,7 @@ class TestNextIteration:
             (
                 date(year=1999, month=12, day=31),
                 date(year=2000, month=4, day=30),
-                RepeatOption(name="Monthly", quantity=1, repeat_unit_id=0, order_index=0),
+                RepeatOption(name="Monthly", quantity=1, repeat_unit_id=1, order_index=0),
                 RepeatUnit(name="Month"),
                 [
                     date(year=1999, month=12, day=31),
@@ -580,7 +581,7 @@ class TestNextIteration:
             (
                 date(year=2001, month=2, day=3),
                 date(year=2002, month=7, day=20),
-                RepeatOption(name="Quarterly", quantity=3, repeat_unit_id=0, order_index=0),
+                RepeatOption(name="Quarterly", quantity=3, repeat_unit_id=1, order_index=0),
                 RepeatUnit(name="Month"),
                 [
                     date(year=2001, month=2, day=3),
@@ -594,7 +595,7 @@ class TestNextIteration:
             (
                 date(year=2001, month=2, day=3),
                 date(year=2003, month=7, day=20),
-                RepeatOption(name="Semi-Anually", quantity=6, repeat_unit_id=0, order_index=0),
+                RepeatOption(name="Semi-Anually", quantity=6, repeat_unit_id=1, order_index=0),
                 RepeatUnit(name="Month"),
                 [
                     date(year=2001, month=2, day=3),
@@ -607,7 +608,7 @@ class TestNextIteration:
             (
                 date(year=2000, month=2, day=29),
                 date(year=2002, month=2, day=28),
-                RepeatOption(name="Anually", quantity=1, repeat_unit_id=0, order_index=0),
+                RepeatOption(name="Anually", quantity=1, repeat_unit_id=1, order_index=0),
                 RepeatUnit(name="Year"),
                 [date(year=2000, month=2, day=29), date(year=2001, month=2, day=28), date(year=2002, month=2, day=28)],
             ),
@@ -636,9 +637,60 @@ class TestNextIteration:
             end_date=end_date,
         )
 
+        assert len(results) == len(expected_transaction_dates)
+
         for index, result in enumerate(results):
-            print(f"{result.transaction_date=}\n")  # TODO: Remove this!!!
             assert result.transaction_date == expected_transaction_dates[index]
 
-    # TODO: Limits
-    # TODO: No repeat
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_unit")
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
+    async def test_next_iterations_with_limit(
+        self,
+        get_repeat_option_patch: AsyncMock,
+        get_repeat_unit_patch: AsyncMock,
+        mock_db: Mock,
+        complete_scheduled_transaction: ScheduledTransaction,
+    ) -> None:
+        get_repeat_option_patch.return_value = RepeatOption(name="Anually", quantity=10, repeat_unit_id=1, order_index=0)
+        get_repeat_unit_patch.return_value = RepeatUnit(name="Year")
+
+        set_limit = 10
+
+        results = await scheduled_transaction.get_next_iterations(
+            db=mock_db,
+            scheduled_transaction=ScheduledTransaction.model_validate(
+                complete_scheduled_transaction.model_dump(), update={"start_date": date(year=2001, month=1, day=1)}
+            ),
+            end_date=date(year=3000, month=1, day=1),
+            limit=set_limit,
+        )
+
+        assert len(results) == set_limit
+
+    async def test_next_iterations_with_no_repeat(
+        self,
+        mock_db: Mock,
+        complete_scheduled_transaction: ScheduledTransaction,
+    ) -> None:
+        results = await scheduled_transaction.get_next_iterations(
+            db=mock_db,
+            scheduled_transaction=ScheduledTransaction.model_validate(complete_scheduled_transaction.model_dump(), update={"repeat_option_id": None}),
+            end_date=date(year=3000, month=1, day=1),
+        )
+
+        expected = Transaction(
+            transaction_type_id=complete_scheduled_transaction.transaction_type_id,
+            payee_id=complete_scheduled_transaction.payee_id,
+            category_id=complete_scheduled_transaction.category_id,
+            amount=complete_scheduled_transaction.fixed_amount if complete_scheduled_transaction.fixed_amount else 0,
+            transaction_date=complete_scheduled_transaction.start_date,
+            clear_date=None,
+            check_number=None,
+            exclude_from_forecast=False,
+            notes=complete_scheduled_transaction.notes,
+            account_id=complete_scheduled_transaction.account_id,
+            transaction_id=None,
+        )
+
+        assert len(results) == 1
+        assert results[0].model_dump() == expected.model_dump()
