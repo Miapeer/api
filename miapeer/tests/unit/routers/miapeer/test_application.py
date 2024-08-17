@@ -84,7 +84,7 @@ class TestGetAll:
 
     @pytest.fixture
     def expected_sql(self) -> str:
-        return f"SELECT miapeer_application.name, miapeer_application.url, miapeer_application.description, miapeer_application.icon, miapeer_application.display, miapeer_application.application_id \nFROM miapeer_application ORDER BY miapeer_application.name"
+        return f"SELECT miapeer_application.name, miapeer_application.url, miapeer_application.description, miapeer_application.icon, miapeer_application.display, miapeer_application.application_id \nFROM miapeer_application ORDER BY miapeer_application.name ASC"
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
