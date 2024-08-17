@@ -15,7 +15,7 @@ from miapeer.models.quantum.scheduled_transaction import (
     ScheduledTransactionRead,
     ScheduledTransactionUpdate,
 )
-from miapeer.models.quantum.transaction import Transaction
+from miapeer.models.quantum.transaction import Transaction, TransactionRead
 from miapeer.routers.quantum import scheduled_transaction
 
 pytestmark = pytest.mark.asyncio
@@ -301,15 +301,33 @@ class TestCreate:
 class TestGet:
     @pytest.fixture
     def expected_response(self, complete_scheduled_transaction: ScheduledTransaction) -> ScheduledTransactionRead:
-        return ScheduledTransactionRead.model_validate(complete_scheduled_transaction)
+        transaction = TransactionRead(
+            transaction_type_id=complete_scheduled_transaction.transaction_type_id,
+            payee_id=complete_scheduled_transaction.payee_id,
+            category_id=complete_scheduled_transaction.category_id,
+            amount=complete_scheduled_transaction.fixed_amount if complete_scheduled_transaction.fixed_amount else 0,
+            transaction_date=date(2001, 2, 3),
+            clear_date=None,
+            check_number=None,
+            exclude_from_forecast=False,
+            notes=complete_scheduled_transaction.notes,
+            transaction_id=0,
+            account_id=complete_scheduled_transaction.account_id,
+            balance=None,
+        )
+        return ScheduledTransactionRead.model_validate(complete_scheduled_transaction.model_dump(), update={"next_transaction": transaction})
 
     @pytest.fixture
     def expected_sql(self, user_id: int, account_id: int, scheduled_transaction_id: int) -> str:
         return f"SELECT quantum_scheduled_transaction.transaction_type_id, quantum_scheduled_transaction.payee_id, quantum_scheduled_transaction.category_id, quantum_scheduled_transaction.fixed_amount, quantum_scheduled_transaction.estimate_occurrences, quantum_scheduled_transaction.prompt_days, quantum_scheduled_transaction.start_date, quantum_scheduled_transaction.end_date, quantum_scheduled_transaction.limit_occurrences, quantum_scheduled_transaction.repeat_option_id, quantum_scheduled_transaction.notes, quantum_scheduled_transaction.on_autopay, quantum_scheduled_transaction.scheduled_transaction_id, quantum_scheduled_transaction.account_id \nFROM quantum_scheduled_transaction JOIN quantum_account ON quantum_account.account_id = quantum_scheduled_transaction.account_id JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_scheduled_transaction.scheduled_transaction_id = {scheduled_transaction_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_scheduled_transaction")])
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_unit")
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
     async def test_get_with_data(
         self,
+        get_repeat_option_patch: AsyncMock,
+        get_repeat_unit_patch: AsyncMock,
         user: User,
         account_id: int,
         scheduled_transaction_id: int,
@@ -317,6 +335,9 @@ class TestGet:
         expected_sql: str,
         expected_response: ScheduledTransactionRead,
     ) -> None:
+        get_repeat_option_patch.return_value = RepeatOption(name="Anually", quantity=1, repeat_unit_id=1, order_index=0)
+        get_repeat_unit_patch.return_value = RepeatUnit(name="Year")
+
         response = await scheduled_transaction.get_scheduled_transaction(
             account_id=account_id, scheduled_transaction_id=scheduled_transaction_id, db=mock_db, current_user=user
         )
@@ -633,8 +654,9 @@ class TestNextIteration:
 
         results = await scheduled_transaction.get_next_iterations(
             db=mock_db,
-            scheduled_transaction=ScheduledTransaction.model_validate(complete_scheduled_transaction.model_dump(), update={"start_date": start_date}),
-            end_date=end_date,
+            scheduled_transaction=ScheduledTransaction.model_validate(
+                complete_scheduled_transaction.model_dump(), update={"start_date": start_date, "end_date": end_date}
+            ),
         )
 
         assert len(results) == len(expected_transaction_dates)
@@ -659,10 +681,10 @@ class TestNextIteration:
         results = await scheduled_transaction.get_next_iterations(
             db=mock_db,
             scheduled_transaction=ScheduledTransaction.model_validate(
-                complete_scheduled_transaction.model_dump(), update={"start_date": date(year=2001, month=1, day=1)}
+                complete_scheduled_transaction.model_dump(),
+                update={"start_date": date(year=2001, month=1, day=1), "end_date": date(year=3000, month=1, day=1)},
             ),
-            end_date=date(year=3000, month=1, day=1),
-            limit=set_limit,
+            override_limit=set_limit,
         )
 
         assert len(results) == set_limit
@@ -674,8 +696,9 @@ class TestNextIteration:
     ) -> None:
         results = await scheduled_transaction.get_next_iterations(
             db=mock_db,
-            scheduled_transaction=ScheduledTransaction.model_validate(complete_scheduled_transaction.model_dump(), update={"repeat_option_id": None}),
-            end_date=date(year=3000, month=1, day=1),
+            scheduled_transaction=ScheduledTransaction.model_validate(
+                complete_scheduled_transaction.model_dump(), update={"repeat_option_id": None, "end_date": date(year=3000, month=1, day=1)}
+            ),
         )
 
         expected = Transaction(

@@ -3,11 +3,11 @@ from typing import Optional
 
 from sqlmodel import Field, SQLModel
 
+from miapeer.models.quantum.transaction import TransactionRead
+
 
 class ScheduledTransactionBase(SQLModel):
-    transaction_type_id: Optional[int] = Field(
-        default=None, foreign_key="quantum_transaction_type.transaction_type_id"
-    )
+    transaction_type_id: Optional[int] = Field(default=None, foreign_key="quantum_transaction_type.transaction_type_id")
     payee_id: Optional[int] = Field(default=None, foreign_key="quantum_payee.payee_id")
     category_id: Optional[int] = Field(default=None, foreign_key="quantum_category.category_id")
     fixed_amount: Optional[int] = None
@@ -46,6 +46,7 @@ class ScheduledTransactionCreate(ScheduledTransactionBase):
 class ScheduledTransactionRead(ScheduledTransactionBase):
     scheduled_transaction_id: int
     account_id: int
+    next_transaction: Optional[TransactionRead] = None
 
 
 class ScheduledTransactionUpdate(SQLModel):

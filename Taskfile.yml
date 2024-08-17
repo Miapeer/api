@@ -55,4 +55,4 @@ tasks:
 
   type-check:
     cmds:
-      - pyright
+      - pyright -w

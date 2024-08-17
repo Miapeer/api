@@ -19,7 +19,7 @@ from miapeer.models.quantum.scheduled_transaction import (
     ScheduledTransactionRead,
     ScheduledTransactionUpdate,
 )
-from miapeer.models.quantum.transaction import Transaction
+from miapeer.models.quantum.transaction import Transaction, TransactionRead
 from miapeer.models.quantum.transaction_type import TransactionType
 from miapeer.routers.quantum import repeat_option
 
@@ -136,7 +136,13 @@ async def get_scheduled_transaction(
     if not scheduled_transaction:
         raise HTTPException(status_code=404, detail="Scheduled transaction not found")
 
-    return ScheduledTransactionRead.model_validate(scheduled_transaction)
+    next_transactions = await get_next_iterations(db=db, scheduled_transaction=scheduled_transaction, override_limit=1)
+
+    next_transaction = None
+    if next_transactions:
+        next_transaction = TransactionRead.model_validate(next_transactions[0].model_dump(), update={"transaction_id": 0})
+
+    return ScheduledTransactionRead.model_validate(scheduled_transaction.model_dump(), update={"next_transaction": next_transaction})
 
 
 @router.delete("/{scheduled_transaction_id}")
@@ -257,7 +263,28 @@ async def update_scheduled_transaction(
     return ScheduledTransactionRead.model_validate(db_scheduled_transaction)
 
 
-async def get_next_iterations(db: DbSession, scheduled_transaction: ScheduledTransaction, end_date: Optional[date], limit: int = 100):
+async def get_next_iterations(
+    db: DbSession, scheduled_transaction: ScheduledTransaction, override_end_date: Optional[date] = None, override_limit: int = 100
+):
+    MAX_LIMIT = 100
+    MAX_END_DATE = date(year=9999, month=1, day=1)
+
+    limit = MAX_LIMIT
+    if override_limit and scheduled_transaction.limit_occurrences:
+        limit = min(override_limit, scheduled_transaction.limit_occurrences)
+    elif override_limit:
+        limit = override_limit
+    elif scheduled_transaction.limit_occurrences:
+        limit = scheduled_transaction.limit_occurrences
+
+    end_date: date = MAX_END_DATE
+    if override_end_date and scheduled_transaction.end_date:
+        end_date = min(override_end_date, scheduled_transaction.end_date)
+    elif override_end_date:
+        end_date = override_end_date
+    elif scheduled_transaction.end_date:
+        end_date = scheduled_transaction.end_date
+
     # TODO: Use sqlalchemy relationships/backpopulates
     rpt_option: Optional[RepeatOptionRead] = None
     rpt_unit: Optional[RepeatUnitRead] = None
@@ -272,10 +299,18 @@ async def get_next_iterations(db: DbSession, scheduled_transaction: ScheduledTra
     active_date = scheduled_transaction.start_date
 
     if rpt_option and rpt_unit:
-        while len(transactions) < limit and (not end_date or active_date <= end_date):
+        while (len(transactions) < limit) and (active_date <= end_date):
             # Special handling for invalid start_dates. Don't add a transaction unless valid.
             if rpt_unit.name != "Semi-Month" or (active_date.day == 1 or active_date.day == 16):
-                transactions.append(Transaction.model_validate(scheduled_transaction.model_dump(), update={"transaction_date": active_date}))
+                transactions.append(
+                    Transaction.model_validate(
+                        scheduled_transaction.model_dump(),
+                        update={
+                            "transaction_date": active_date,
+                            "amount": scheduled_transaction.fixed_amount if scheduled_transaction.fixed_amount else 0,
+                        },
+                    )
+                )
 
             if rpt_unit.name == "Day":
                 active_date += relativedelta(days=rpt_option.quantity)

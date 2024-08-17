@@ -9,9 +9,23 @@ from miapeer.models.quantum.category import Category
 from miapeer.models.quantum.payee import Payee
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
+from miapeer.models.quantum.repeat_option import RepeatOption
+from miapeer.models.quantum.repeat_unit import RepeatUnit
 from miapeer.models.quantum.scheduled_transaction import ScheduledTransaction
 from miapeer.models.quantum.transaction import Transaction
 from miapeer.models.quantum.transaction_type import TransactionType
+
+
+@pytest.fixture
+def repeat_unit() -> RepeatUnit:
+    return RepeatUnit(name="Year", repeat_unit_id=0)
+
+
+@pytest.fixture
+def repeat_option(repeat_unit: RepeatUnit) -> RepeatOption:
+    return RepeatOption(
+        repeat_option_id=2, name="Annual", repeat_unit_id=repeat_unit.repeat_unit_id if repeat_unit.repeat_unit_id else 0, quantity=1, order_index=0
+    )
 
 
 @pytest.fixture
@@ -334,6 +348,7 @@ def not_my_scheduled_transaction(
 @pytest.fixture
 def create_complete_portfolio(
     mock_db_session: Session,
+    repeat_option: RepeatOption,
     my_portfolio: Portfolio,
     not_my_portfolio: Portfolio,
     me: User,
@@ -363,6 +378,8 @@ def create_complete_portfolio(
     my_scheduled_transaction: ScheduledTransaction,
     not_my_scheduled_transaction: ScheduledTransaction,
 ) -> None:
+    mock_db_session.add_all([repeat_option])
+
     mock_db_session.add_all([me, not_me])
 
     mock_db_session.add_all([my_portfolio, not_my_portfolio])
