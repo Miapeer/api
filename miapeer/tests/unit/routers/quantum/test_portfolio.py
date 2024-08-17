@@ -53,9 +53,7 @@ class TestGetAll:
         "db_all_return_val, expected_response",
         [([], []), (lazy_fixture("multiple_portfolios"), lazy_fixture("expected_multiple_portfolios"))],
     )
-    async def test_get_all(
-        self, user: User, mock_db: Mock, expected_sql: str, expected_response: list[PortfolioRead]
-    ) -> None:
+    async def test_get_all(self, user: User, mock_db: Mock, expected_sql: str, expected_response: list[PortfolioRead]) -> None:
         response = await portfolio.get_all_portfolios(db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
@@ -66,7 +64,7 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:
+    def db_refresh(obj) -> None:  # type: ignore
         obj.portfolio_id = raw_portfolio_id
 
     @pytest.fixture
@@ -124,9 +122,7 @@ class TestGet:
         return f"SELECT quantum_portfolio.portfolio_id \nFROM quantum_portfolio JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_portfolio.portfolio_id = {portfolio_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_portfolio")])
-    async def test_get_with_data(
-        self, user: User, portfolio_id: int, mock_db: Mock, expected_sql: str, expected_response: PortfolioRead
-    ) -> None:
+    async def test_get_with_data(self, user: User, portfolio_id: int, mock_db: Mock, expected_sql: str, expected_response: PortfolioRead) -> None:
         response = await portfolio.get_portfolio(portfolio_id=portfolio_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
@@ -151,9 +147,7 @@ class TestDelete:
     def expected_sql(self, portfolio_id: int) -> str:
         return f"SELECT quantum_portfolio_user.portfolio_id, quantum_portfolio_user.user_id, quantum_portfolio_user.portfolio_user_id \nFROM quantum_portfolio_user \nWHERE quantum_portfolio_user.portfolio_id = {portfolio_id}"
 
-    @pytest.mark.parametrize(
-        "db_get_return_val, db_all_return_val", [("a portfolio", ["some data"]), ("a portfolio", [123, 456])]
-    )
+    @pytest.mark.parametrize("db_get_return_val, db_all_return_val", [("a portfolio", ["some data"]), ("a portfolio", [123, 456])])
     async def test_delete_with_portfolio_found(
         self, portfolio_id: int, mock_db: Mock, expected_sql: str, db_get_return_val: Any, db_all_return_val: Any
     ) -> None:
@@ -176,9 +170,7 @@ class TestDelete:
         assert response == {"ok": True}
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
-    async def test_delete_with_portfolio_not_found(
-        self, user: User, portfolio_id: int, mock_db: Mock, expected_sql: str
-    ) -> None:
+    async def test_delete_with_portfolio_not_found(self, user: User, portfolio_id: int, mock_db: Mock, expected_sql: str) -> None:
         with pytest.raises(HTTPException):
             await portfolio.delete_portfolio(portfolio_id=portfolio_id, db=mock_db)
 

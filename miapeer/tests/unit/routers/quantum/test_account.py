@@ -43,14 +43,12 @@ def portfolio_id() -> int:
 
 @pytest.fixture
 def basic_account(account_name: str, portfolio_id: int) -> Account:
-    return Account(account_id=None, name=account_name, portfolio_id=portfolio_id)
+    return Account(account_id=None, name=account_name, portfolio_id=portfolio_id, starting_balance=0)
 
 
 @pytest.fixture
 def complete_account(account_id: int, basic_account: Account, starting_balance: int) -> Account:
-    return Account.model_validate(
-        basic_account.model_dump(), update={"account_id": account_id, "starting_balance": starting_balance}
-    )
+    return Account.model_validate(basic_account.model_dump(), update={"account_id": account_id, "starting_balance": starting_balance})
 
 
 class TestGetAll:
@@ -60,9 +58,7 @@ class TestGetAll:
 
     @pytest.fixture
     def expected_multiple_accounts(self, complete_account: Account, starting_balance: int) -> list[AccountRead]:
-        working_account = AccountRead.model_validate(
-            complete_account.model_dump(), update={"balance": starting_balance}
-        )
+        working_account = AccountRead.model_validate(complete_account.model_dump(), update={"balance": starting_balance})
         return [working_account, working_account]
 
     @pytest.fixture
@@ -73,9 +69,7 @@ class TestGetAll:
         "db_all_return_val, expected_response",
         [([], []), (lazy_fixture("multiple_accounts"), lazy_fixture("expected_multiple_accounts"))],
     )
-    async def test_get_all(
-        self, user: User, mock_db: Mock, expected_sql: str, expected_response: list[AccountRead], starting_balance: int
-    ) -> None:
+    async def test_get_all(self, user: User, mock_db: Mock, expected_sql: str, expected_response: list[AccountRead], starting_balance: int) -> None:
         with patch("miapeer.routers.quantum.account.get_account_balance", lambda x, y: starting_balance):
             response = await account.get_all_accounts(db=mock_db, current_user=user)
 
@@ -87,7 +81,7 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:
+    def db_refresh(obj) -> None:  # type: ignore
         obj.account_id = raw_account_id
 
     @pytest.fixture
@@ -135,9 +129,7 @@ class TestCreate:
         # Don't need to test the response here because it's just the updated account_to_add
 
     @pytest.mark.parametrize("db_first_return_val", [None, ""])
-    async def test_create_with_portfolio_not_found(
-        self, user: User, account_to_create: AccountCreate, mock_db: Mock, expected_sql: str
-    ) -> None:
+    async def test_create_with_portfolio_not_found(self, user: User, account_to_create: AccountCreate, mock_db: Mock, expected_sql: str) -> None:
         with pytest.raises(HTTPException):
             await account.create_account(account=account_to_create, db=mock_db, current_user=user)
 
@@ -209,9 +201,7 @@ class TestDelete:
         assert response == {"ok": True}
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
-    async def test_delete_with_account_not_found(
-        self, user: User, account_id: int, mock_db: Mock, expected_sql: str
-    ) -> None:
+    async def test_delete_with_account_not_found(self, user: User, account_id: int, mock_db: Mock, expected_sql: str) -> None:
         with pytest.raises(HTTPException):
             await account.delete_account(account_id=account_id, db=mock_db, current_user=user)
 
@@ -225,10 +215,8 @@ class TestDelete:
 
 class TestUpdate:
     @pytest.fixture
-    def account_updates(self, portfolio_id: int, account_id: int, starting_balance: int) -> AccountUpdate:
-        return AccountUpdate(
-            portfolio_id=portfolio_id, account_id=account_id, name="some new name", starting_balance=starting_balance
-        )
+    def account_updates(self, starting_balance: int) -> AccountUpdate:
+        return AccountUpdate(name="some new name", starting_balance=starting_balance)
 
     @pytest.fixture
     def expected_sql(self, user_id: int, account_id: int) -> str:
@@ -240,9 +228,7 @@ class TestUpdate:
 
     @pytest.fixture
     def expected_response(self, updated_account: Account, starting_balance: int) -> AccountRead:
-        return AccountRead.model_validate(
-            updated_account.model_dump(), update={"starting_balance": starting_balance, "balance": starting_balance}
-        )
+        return AccountRead.model_validate(updated_account.model_dump(), update={"starting_balance": starting_balance, "balance": starting_balance})
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_account")])
     async def test_update_with_account_found(

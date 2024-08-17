@@ -9,9 +9,23 @@ from miapeer.models.quantum.category import Category
 from miapeer.models.quantum.payee import Payee
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
+from miapeer.models.quantum.repeat_option import RepeatOption
+from miapeer.models.quantum.repeat_unit import RepeatUnit
 from miapeer.models.quantum.scheduled_transaction import ScheduledTransaction
 from miapeer.models.quantum.transaction import Transaction
 from miapeer.models.quantum.transaction_type import TransactionType
+
+
+@pytest.fixture
+def repeat_unit() -> RepeatUnit:
+    return RepeatUnit(name="Year", repeat_unit_id=0)
+
+
+@pytest.fixture
+def repeat_option(repeat_unit: RepeatUnit) -> RepeatOption:
+    return RepeatOption(
+        repeat_option_id=2, name="Annual", repeat_unit_id=repeat_unit.repeat_unit_id if repeat_unit.repeat_unit_id else 0, quantity=1, order_index=0
+    )
 
 
 @pytest.fixture
@@ -26,93 +40,141 @@ def not_my_portfolio() -> Portfolio:
 
 @pytest.fixture
 def my_account_1(my_portfolio: Portfolio) -> Account:
-    return Account(portfolio_id=my_portfolio.portfolio_id, account_id=11, name="my acct 1", starting_balance=101)
+    return Account(
+        portfolio_id=my_portfolio.portfolio_id if my_portfolio.portfolio_id else 0,
+        account_id=11,
+        name="my acct 1",
+        starting_balance=101,
+    )
 
 
 @pytest.fixture
 def my_account_2(my_portfolio: Portfolio) -> Account:
-    return Account(portfolio_id=my_portfolio.portfolio_id, account_id=12, name="my acct 2", starting_balance=102)
+    return Account(
+        portfolio_id=my_portfolio.portfolio_id if my_portfolio.portfolio_id else 0,
+        account_id=12,
+        name="my acct 2",
+        starting_balance=102,
+    )
 
 
 @pytest.fixture
 def not_my_account_1(not_my_portfolio: Portfolio) -> Account:
     return Account(
-        portfolio_id=not_my_portfolio.portfolio_id, account_id=21, name="not my acct 1", starting_balance=201
+        portfolio_id=not_my_portfolio.portfolio_id if not_my_portfolio.portfolio_id else 0,
+        account_id=21,
+        name="not my acct 1",
+        starting_balance=201,
     )
 
 
 @pytest.fixture
 def not_my_account_2(not_my_portfolio: Portfolio) -> Account:
     return Account(
-        portfolio_id=not_my_portfolio.portfolio_id, account_id=22, name="not my acct 2", starting_balance=202
+        portfolio_id=not_my_portfolio.portfolio_id if not_my_portfolio.portfolio_id else 0,
+        account_id=22,
+        name="not my acct 2",
+        starting_balance=202,
     )
 
 
 @pytest.fixture
 def my_payee_1(my_portfolio: Portfolio) -> Payee:
-    return Payee(portfolio_id=my_portfolio.portfolio_id, payee_id=31, name="my payee 1")
+    return Payee(portfolio_id=my_portfolio.portfolio_id if my_portfolio.portfolio_id else 0, payee_id=31, name="my payee 1")
 
 
 @pytest.fixture
 def my_payee_2(my_portfolio: Portfolio) -> Payee:
-    return Payee(portfolio_id=my_portfolio.portfolio_id, payee_id=32, name="my payee 2")
+    return Payee(portfolio_id=my_portfolio.portfolio_id if my_portfolio.portfolio_id else 0, payee_id=32, name="my payee 2")
 
 
 @pytest.fixture
 def not_my_payee_1(not_my_portfolio: Portfolio) -> Payee:
-    return Payee(portfolio_id=not_my_portfolio.portfolio_id, payee_id=41, name="not my payee 1")
+    return Payee(
+        portfolio_id=not_my_portfolio.portfolio_id if not_my_portfolio.portfolio_id else 0,
+        payee_id=41,
+        name="not my payee 1",
+    )
 
 
 @pytest.fixture
 def not_my_payee_2(not_my_portfolio: Portfolio) -> Payee:
-    return Payee(portfolio_id=not_my_portfolio.portfolio_id, payee_id=42, name="not my payee 2")
+    return Payee(
+        portfolio_id=not_my_portfolio.portfolio_id if not_my_portfolio.portfolio_id else 0,
+        payee_id=42,
+        name="not my payee 2",
+    )
 
 
 @pytest.fixture
 def my_category_1(my_portfolio: Portfolio) -> Category:
-    return Category(portfolio_id=my_portfolio.portfolio_id, category_id=51, name="my category 1")
+    return Category(
+        portfolio_id=my_portfolio.portfolio_id if my_portfolio.portfolio_id else 0,
+        category_id=51,
+        name="my category 1",
+    )
 
 
 @pytest.fixture
 def my_category_2(my_portfolio: Portfolio) -> Category:
-    return Category(portfolio_id=my_portfolio.portfolio_id, category_id=52, name="my category 2")
+    return Category(
+        portfolio_id=my_portfolio.portfolio_id if my_portfolio.portfolio_id else 0,
+        category_id=52,
+        name="my category 2",
+    )
 
 
 @pytest.fixture
 def not_my_category_1(not_my_portfolio: Portfolio) -> Category:
-    return Category(portfolio_id=not_my_portfolio.portfolio_id, category_id=61, name="not my category 1")
+    return Category(
+        portfolio_id=not_my_portfolio.portfolio_id if not_my_portfolio.portfolio_id else 0,
+        category_id=61,
+        name="not my category 1",
+    )
 
 
 @pytest.fixture
 def not_my_category_2(not_my_portfolio: Portfolio) -> Category:
-    return Category(portfolio_id=not_my_portfolio.portfolio_id, category_id=62, name="not my category 2")
+    return Category(
+        portfolio_id=not_my_portfolio.portfolio_id if not_my_portfolio.portfolio_id else 0,
+        category_id=62,
+        name="not my category 2",
+    )
 
 
 @pytest.fixture
 def my_transaction_type_1(my_portfolio: Portfolio) -> TransactionType:
     return TransactionType(
-        portfolio_id=my_portfolio.portfolio_id, transaction_type_id=71, name="my transaction type 1"
+        portfolio_id=my_portfolio.portfolio_id if my_portfolio.portfolio_id else 0,
+        transaction_type_id=71,
+        name="my transaction type 1",
     )
 
 
 @pytest.fixture
 def my_transaction_type_2(my_portfolio: Portfolio) -> TransactionType:
     return TransactionType(
-        portfolio_id=my_portfolio.portfolio_id, transaction_type_id=72, name="my transaction type 2"
+        portfolio_id=my_portfolio.portfolio_id if my_portfolio.portfolio_id else 0,
+        transaction_type_id=72,
+        name="my transaction type 2",
     )
 
 
 @pytest.fixture
 def not_my_transaction_type_1(not_my_portfolio: Portfolio) -> TransactionType:
     return TransactionType(
-        portfolio_id=not_my_portfolio.portfolio_id, transaction_type_id=81, name="not my transaction type 1"
+        portfolio_id=not_my_portfolio.portfolio_id if not_my_portfolio.portfolio_id else 0,
+        transaction_type_id=81,
+        name="not my transaction type 1",
     )
 
 
 @pytest.fixture
 def not_my_transaction_type_2(not_my_portfolio: Portfolio) -> TransactionType:
     return TransactionType(
-        portfolio_id=not_my_portfolio.portfolio_id, transaction_type_id=82, name="not my transaction type 2"
+        portfolio_id=not_my_portfolio.portfolio_id if not_my_portfolio.portfolio_id else 0,
+        transaction_type_id=82,
+        name="not my transaction type 2",
     )
 
 
@@ -134,9 +196,7 @@ def my_minimal_transaction(my_account_1: Account) -> Transaction:
 
 
 @pytest.fixture
-def my_debit_transaction(
-    my_account_1: Account, my_transaction_type_1: TransactionType, my_payee_2: Payee, my_category_1: Category
-) -> Transaction:
+def my_debit_transaction(my_account_1: Account, my_transaction_type_1: TransactionType, my_payee_2: Payee, my_category_1: Category) -> Transaction:
     return Transaction(
         account_id=my_account_1.account_id,
         transaction_id=101,
@@ -153,11 +213,9 @@ def my_debit_transaction(
 
 
 @pytest.fixture
-def my_credit_transaction(
-    my_account_1: Account, my_transaction_type_2: TransactionType, my_payee_1: Payee, my_category_2: Category
-) -> Transaction:
+def my_credit_transaction(my_account_1: Account, my_transaction_type_2: TransactionType, my_payee_1: Payee, my_category_2: Category) -> Transaction:
     return Transaction(
-        account_id=my_account_1.account_id,
+        account_id=my_account_1.account_id if my_account_1.account_id else 0,
         transaction_id=102,
         transaction_type_id=my_transaction_type_2.transaction_type_id,
         payee_id=my_payee_1.payee_id,
@@ -179,7 +237,7 @@ def not_my_debit_transaction(
     not_my_category_1: Category,
 ) -> Transaction:
     return Transaction(
-        account_id=not_my_account_1.account_id,
+        account_id=not_my_account_1.account_id if not_my_account_1.account_id else 0,
         transaction_id=111,
         transaction_type_id=not_my_transaction_type_1.transaction_type_id,
         payee_id=not_my_payee_2.payee_id,
@@ -201,7 +259,7 @@ def not_my_credit_transaction(
     not_my_category_2: Category,
 ) -> Transaction:
     return Transaction(
-        account_id=not_my_account_1.account_id,
+        account_id=not_my_account_1.account_id if not_my_account_1.account_id else 0,
         transaction_id=112,
         transaction_type_id=not_my_transaction_type_2.transaction_type_id,
         payee_id=not_my_payee_1.payee_id,
@@ -218,7 +276,7 @@ def not_my_credit_transaction(
 @pytest.fixture
 def my_minimal_scheduled_transaction(my_account_1: Account) -> ScheduledTransaction:
     return ScheduledTransaction(
-        account_id=my_account_1.account_id,
+        account_id=my_account_1.account_id if my_account_1.account_id else 0,
         scheduled_transaction_id=981,
         transaction_type_id=None,
         payee_id=None,
@@ -240,7 +298,7 @@ def my_scheduled_transaction(
     my_account_1: Account, my_transaction_type_1: TransactionType, my_payee_2: Payee, my_category_1: Category
 ) -> ScheduledTransaction:
     return ScheduledTransaction(
-        account_id=my_account_1.account_id,
+        account_id=my_account_1.account_id if my_account_1.account_id else 0,
         scheduled_transaction_id=982,
         transaction_type_id=my_transaction_type_1.transaction_type_id,
         payee_id=my_payee_2.payee_id,
@@ -265,7 +323,7 @@ def not_my_scheduled_transaction(
     not_my_category_2: Category,
 ) -> ScheduledTransaction:
     return ScheduledTransaction(
-        account_id=not_my_account_1.account_id,
+        account_id=not_my_account_1.account_id if not_my_account_1.account_id else 0,
         scheduled_transaction_id=983,
         transaction_type_id=not_my_transaction_type_2.transaction_type_id,
         payee_id=not_my_payee_1.payee_id,
@@ -290,6 +348,7 @@ def not_my_scheduled_transaction(
 @pytest.fixture
 def create_complete_portfolio(
     mock_db_session: Session,
+    repeat_option: RepeatOption,
     my_portfolio: Portfolio,
     not_my_portfolio: Portfolio,
     me: User,
@@ -319,14 +378,22 @@ def create_complete_portfolio(
     my_scheduled_transaction: ScheduledTransaction,
     not_my_scheduled_transaction: ScheduledTransaction,
 ) -> None:
+    mock_db_session.add_all([repeat_option])
+
     mock_db_session.add_all([me, not_me])
 
     mock_db_session.add_all([my_portfolio, not_my_portfolio])
 
     mock_db_session.add_all(
         [
-            PortfolioUser(portfolio_id=my_portfolio.portfolio_id, user_id=me.user_id),
-            PortfolioUser(portfolio_id=not_my_portfolio.portfolio_id, user_id=not_me.user_id),
+            PortfolioUser(
+                portfolio_id=my_portfolio.portfolio_id if my_portfolio.portfolio_id else 0,
+                user_id=me.user_id if me.user_id else 0,
+            ),
+            PortfolioUser(
+                portfolio_id=not_my_portfolio.portfolio_id if not_my_portfolio.portfolio_id else 0,
+                user_id=not_me.user_id if not_me.user_id else 0,
+            ),
         ]
     )
 
@@ -343,9 +410,7 @@ def create_complete_portfolio(
 
     mock_db_session.add_all([my_category_1, my_category_2, not_my_category_1, not_my_category_2])
 
-    mock_db_session.add_all(
-        [my_transaction_type_1, my_transaction_type_2, not_my_transaction_type_1, not_my_transaction_type_2]
-    )
+    mock_db_session.add_all([my_transaction_type_1, my_transaction_type_2, not_my_transaction_type_1, not_my_transaction_type_2])
 
     mock_db_session.add_all(
         [

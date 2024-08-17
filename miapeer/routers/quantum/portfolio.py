@@ -44,6 +44,12 @@ async def create_portfolio(
     db.commit()
     db.refresh(db_portfolio)
 
+    if not db_portfolio.portfolio_id:
+        raise HTTPException(status_code=404, detail="Invalid portfolio ID")
+
+    if not current_user.user_id:
+        raise HTTPException(status_code=404, detail="Invalid user ID")
+
     # Assign the current user to the portfolio
     new_portfolio_user = PortfolioUser(portfolio_id=db_portfolio.portfolio_id, user_id=current_user.user_id)
     db.add(new_portfolio_user)
@@ -59,12 +65,7 @@ async def get_portfolio(
     portfolio_id: int,
 ) -> PortfolioRead:
 
-    sql = (
-        select(Portfolio)
-        .join(PortfolioUser)
-        .where(Portfolio.portfolio_id == portfolio_id)
-        .where(PortfolioUser.user_id == current_user.user_id)
-    )
+    sql = select(Portfolio).join(PortfolioUser).where(Portfolio.portfolio_id == portfolio_id).where(PortfolioUser.user_id == current_user.user_id)
     portfolio = db.exec(sql).one_or_none()
 
     if not portfolio:

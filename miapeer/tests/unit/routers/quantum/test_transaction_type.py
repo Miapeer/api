@@ -41,9 +41,7 @@ def basic_transaction_type(transaction_type_name: str, portfolio_id: int) -> Tra
 
 @pytest.fixture
 def complete_transaction_type(transaction_type_id: int, basic_transaction_type: TransactionType) -> TransactionType:
-    return TransactionType.model_validate(
-        basic_transaction_type.model_dump(), update={"transaction_type_id": transaction_type_id}
-    )
+    return TransactionType.model_validate(basic_transaction_type.model_dump(), update={"transaction_type_id": transaction_type_id})
 
 
 class TestGetAll:
@@ -52,9 +50,7 @@ class TestGetAll:
         return [complete_transaction_type, complete_transaction_type]
 
     @pytest.fixture
-    def expected_multiple_transaction_types(
-        self, complete_transaction_type: TransactionType
-    ) -> list[TransactionTypeRead]:
+    def expected_multiple_transaction_types(self, complete_transaction_type: TransactionType) -> list[TransactionTypeRead]:
         working_transaction_type = TransactionTypeRead.model_validate(complete_transaction_type)
         return [working_transaction_type, working_transaction_type]
 
@@ -66,9 +62,7 @@ class TestGetAll:
         "db_all_return_val, expected_response",
         [([], []), (lazy_fixture("multiple_transaction_types"), lazy_fixture("expected_multiple_transaction_types"))],
     )
-    async def test_get_all(
-        self, user: User, mock_db: Mock, expected_sql: str, expected_response: list[TransactionTypeRead]
-    ) -> None:
+    async def test_get_all(self, user: User, mock_db: Mock, expected_sql: str, expected_response: list[TransactionTypeRead]) -> None:
         response = await transaction_type.get_all_transaction_types(db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
@@ -79,7 +73,7 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:
+    def db_refresh(obj) -> None:  # type: ignore
         obj.transaction_type_id = raw_transaction_type_id
 
     @pytest.fixture
@@ -100,9 +94,7 @@ class TestCreate:
         expected_sql: str,
     ) -> None:
 
-        await transaction_type.create_transaction_type(
-            transaction_type=transaction_type_to_create, db=mock_db, current_user=user
-        )
+        await transaction_type.create_transaction_type(transaction_type=transaction_type_to_create, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -126,9 +118,7 @@ class TestCreate:
         self, user: User, transaction_type_to_create: TransactionTypeCreate, mock_db: Mock, expected_sql: str
     ) -> None:
         with pytest.raises(HTTPException):
-            await transaction_type.create_transaction_type(
-                transaction_type=transaction_type_to_create, db=mock_db, current_user=user
-            )
+            await transaction_type.create_transaction_type(transaction_type=transaction_type_to_create, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -157,9 +147,7 @@ class TestGet:
         expected_sql: str,
         expected_response: TransactionTypeRead,
     ) -> None:
-        response = await transaction_type.get_transaction_type(
-            transaction_type_id=transaction_type_id, db=mock_db, current_user=user
-        )
+        response = await transaction_type.get_transaction_type(transaction_type_id=transaction_type_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -168,13 +156,9 @@ class TestGet:
         assert response == expected_response
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
-    async def test_get_with_no_data(
-        self, user: User, transaction_type_id: int, mock_db: Mock, expected_sql: str
-    ) -> None:
+    async def test_get_with_no_data(self, user: User, transaction_type_id: int, mock_db: Mock, expected_sql: str) -> None:
         with pytest.raises(HTTPException):
-            await transaction_type.get_transaction_type(
-                transaction_type_id=transaction_type_id, db=mock_db, current_user=user
-            )
+            await transaction_type.get_transaction_type(transaction_type_id=transaction_type_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -191,9 +175,7 @@ class TestDelete:
     async def test_delete_with_transaction_type_found(
         self, user: User, transaction_type_id: int, mock_db: Mock, expected_sql: str, db_one_or_none_return_val: Any
     ) -> None:
-        response = await transaction_type.delete_transaction_type(
-            transaction_type_id=transaction_type_id, db=mock_db, current_user=user
-        )
+        response = await transaction_type.delete_transaction_type(transaction_type_id=transaction_type_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -204,13 +186,9 @@ class TestDelete:
         assert response == {"ok": True}
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
-    async def test_delete_with_transaction_type_not_found(
-        self, user: User, transaction_type_id: int, mock_db: Mock, expected_sql: str
-    ) -> None:
+    async def test_delete_with_transaction_type_not_found(self, user: User, transaction_type_id: int, mock_db: Mock, expected_sql: str) -> None:
         with pytest.raises(HTTPException):
-            await transaction_type.delete_transaction_type(
-                transaction_type_id=transaction_type_id, db=mock_db, current_user=user
-            )
+            await transaction_type.delete_transaction_type(transaction_type_id=transaction_type_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))

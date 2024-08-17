@@ -25,8 +25,6 @@ class TestGetAll:
             f"/quantum/v1/accounts/{my_account_1.account_id}/scheduled-transactions",
         )
 
-        assert response.status_code == 200
-
         expected = [
             {
                 "scheduled_transaction_id": my_minimal_scheduled_transaction.scheduled_transaction_id,
@@ -43,6 +41,7 @@ class TestGetAll:
                 "repeat_option_id": my_minimal_scheduled_transaction.repeat_option_id,
                 "notes": my_minimal_scheduled_transaction.notes,
                 "on_autopay": my_minimal_scheduled_transaction.on_autopay,
+                "next_transaction": None,
             },
             {
                 "scheduled_transaction_id": my_scheduled_transaction.scheduled_transaction_id,
@@ -54,15 +53,16 @@ class TestGetAll:
                 "estimate_occurrences": my_scheduled_transaction.estimate_occurrences,
                 "prompt_days": my_scheduled_transaction.prompt_days,
                 "start_date": my_scheduled_transaction.start_date.strftime("%Y-%m-%d"),
-                "end_date": my_scheduled_transaction.end_date.strftime("%Y-%m-%d")
-                if my_scheduled_transaction.end_date is not None
-                else None,
+                "end_date": my_scheduled_transaction.end_date.strftime("%Y-%m-%d") if my_scheduled_transaction.end_date is not None else None,
                 "limit_occurrences": my_scheduled_transaction.limit_occurrences,
                 "repeat_option_id": my_scheduled_transaction.repeat_option_id,
                 "notes": my_scheduled_transaction.notes,
                 "on_autopay": my_scheduled_transaction.on_autopay,
+                "next_transaction": None,
             },
         ]
+
+        assert response.status_code == 200
         assert response.json() == expected
 
 
@@ -158,13 +158,11 @@ class TestCreate:
         if not_my_scheduled_transaction.scheduled_transaction_id is not None:
             scheduled_transaction_id = not_my_scheduled_transaction.scheduled_transaction_id
 
-        assert response.status_code == 200
+        actual = response.json()
 
-        assert response.json() == {
+        expected = {
             "account_id": account.account_id,
-            "scheduled_transaction_id": (
-                scheduled_transaction_id + 1
-            ),  # Increment by 1, the last scheduled transaction ID inserted
+            "scheduled_transaction_id": (scheduled_transaction_id + 1),  # Increment by 1, the last scheduled transaction ID inserted
             "transaction_type_id": getattr(transaction_type, "transaction_type_id", None),
             "payee_id": getattr(payee, "payee_id", None),
             "category_id": getattr(category, "category_id", None),
@@ -177,7 +175,11 @@ class TestCreate:
             "repeat_option_id": repeat_option_id,
             "notes": notes,
             "on_autopay": on_autopay,
+            "next_transaction": None,
         }
+
+        assert response.status_code == 200
+        assert response.json() == expected
 
     @pytest.mark.parametrize(
         "account, transaction_type, payee, category, fixed_amount, estimate_occurrences, prompt_days, start_date, end_date, limit_occurrences, repeat_option_id, notes, on_autopay, expected_response",
@@ -199,7 +201,7 @@ class TestCreate:
                 {"detail": "Account not found"},
             ),
             (
-                Account(account_id=999999),
+                Account(portfolio_id=0, account_id=999999, name="", starting_balance=0),
                 lazy_fixture("my_transaction_type_2"),
                 lazy_fixture("my_payee_1"),
                 lazy_fixture("my_category_2"),
@@ -306,15 +308,12 @@ class TestCreate:
 
 @pytest.mark.usefixtures("create_complete_portfolio")
 class TestGetOne:
-    def test_get_one_scheduled_transaction_in_portfolio_succeeds(
-        self, client: TestClient, my_scheduled_transaction: ScheduledTransaction
-    ) -> None:
+    def test_get_one_scheduled_transaction_in_portfolio_succeeds(self, client: TestClient, my_scheduled_transaction: ScheduledTransaction) -> None:
         response = client.get(
             f"/quantum/v1/accounts/{my_scheduled_transaction.account_id}/scheduled-transactions/{my_scheduled_transaction.scheduled_transaction_id}"
         )
 
-        assert response.status_code == 200
-        assert response.json() == {
+        expected = {
             "account_id": my_scheduled_transaction.account_id,
             "scheduled_transaction_id": my_scheduled_transaction.scheduled_transaction_id,
             "transaction_type_id": getattr(my_scheduled_transaction, "transaction_type_id", None),
@@ -324,14 +323,31 @@ class TestGetOne:
             "estimate_occurrences": my_scheduled_transaction.estimate_occurrences,
             "prompt_days": my_scheduled_transaction.prompt_days,
             "start_date": my_scheduled_transaction.start_date.strftime("%Y-%m-%d"),
-            "end_date": my_scheduled_transaction.end_date.strftime("%Y-%m-%d")
-            if my_scheduled_transaction.end_date is not None
-            else None,
+            "end_date": my_scheduled_transaction.end_date.strftime("%Y-%m-%d") if my_scheduled_transaction.end_date is not None else None,
             "limit_occurrences": my_scheduled_transaction.limit_occurrences,
             "repeat_option_id": my_scheduled_transaction.repeat_option_id,
             "notes": my_scheduled_transaction.notes,
             "on_autopay": my_scheduled_transaction.on_autopay,
+            "next_transaction": {
+                "transaction_type_id": getattr(my_scheduled_transaction, "transaction_type_id", None),
+                "payee_id": getattr(my_scheduled_transaction, "payee_id", None),
+                "category_id": getattr(my_scheduled_transaction, "category_id", None),
+                "amount": my_scheduled_transaction.fixed_amount,
+                "transaction_date": date.today().strftime("%Y-%m-%d"),
+                "clear_date": None,
+                "check_number": None,
+                "exclude_from_forecast": False,
+                "notes": my_scheduled_transaction.notes,
+                "transaction_id": 0,
+                "account_id": my_scheduled_transaction.account_id,
+                "balance": None,
+            },
         }
+
+        actual = response.json()
+
+        assert response.status_code == 200
+        assert actual == expected
 
     def test_get_one_scheduled_transaction_in_wrong_portfolio_fails(
         self, client: TestClient, my_account_1: Account, not_my_scheduled_transaction: ScheduledTransaction
@@ -347,9 +363,7 @@ class TestGetOne:
     def test_get_one_scheduled_transaction_with_invalid_scheduled_transaction_id_fails(
         self, client: TestClient, my_account_1: Account, scheduled_transaction_id: int
     ) -> None:
-        response = client.get(
-            f"/quantum/v1/accounts/{my_account_1.account_id}/scheduled-transactions/{scheduled_transaction_id}"
-        )
+        response = client.get(f"/quantum/v1/accounts/{my_account_1.account_id}/scheduled-transactions/{scheduled_transaction_id}")
 
         assert response.status_code == 404
         assert response.json() == {"detail": "Scheduled transaction not found"}
@@ -433,7 +447,8 @@ class TestUpdate:
         )
 
         assert response.status_code == 200
-        assert response.json() == {
+
+        expected = {
             # Trying to change the account_id isn't allowed
             "account_id": scheduled_transaction.account_id,
             "scheduled_transaction_id": scheduled_transaction.scheduled_transaction_id,
@@ -449,7 +464,12 @@ class TestUpdate:
             "repeat_option_id": repeat_option_id,
             "notes": notes,
             "on_autopay": on_autopay,
+            "next_transaction": None,
         }
+
+        actual = response.json()
+
+        assert actual == expected
 
     def test_update_someone_elses_scheduled_transaction_fails(
         self, client: TestClient, my_account_1: Account, not_my_scheduled_transaction: ScheduledTransaction
@@ -495,7 +515,7 @@ class TestUpdate:
                 {"detail": "Scheduled transaction not found"},
             ),
             (
-                Account(account_id=999999),
+                Account(portfolio_id=0, account_id=999999, name="", starting_balance=0),
                 lazy_fixture("my_scheduled_transaction"),
                 lazy_fixture("my_transaction_type_2"),
                 lazy_fixture("my_payee_1"),
@@ -607,9 +627,7 @@ class TestUpdate:
 
 @pytest.mark.usefixtures("create_complete_portfolio")
 class TestDelete:
-    def test_delete_scheduled_transaction_succeeds(
-        self, client: TestClient, my_scheduled_transaction: ScheduledTransaction
-    ) -> None:
+    def test_delete_scheduled_transaction_succeeds(self, client: TestClient, my_scheduled_transaction: ScheduledTransaction) -> None:
         response = client.delete(
             f"/quantum/v1/accounts/{my_scheduled_transaction.account_id}/scheduled-transactions/{my_scheduled_transaction.scheduled_transaction_id}",
         )
@@ -641,9 +659,7 @@ class TestDelete:
     def test_delete_transaction_with_invalid_scheduled_transaction_id_fails(
         self, client: TestClient, my_account_1: Account, scheduled_transaction_id: int
     ) -> None:
-        response = client.delete(
-            f"/quantum/v1/accounts/{my_account_1.account_id}/scheduled-transactions/{scheduled_transaction_id}"
-        )
+        response = client.delete(f"/quantum/v1/accounts/{my_account_1.account_id}/scheduled-transactions/{scheduled_transaction_id}")
 
         assert response.status_code == 404
         assert response.json() == {"detail": "Scheduled transaction not found"}

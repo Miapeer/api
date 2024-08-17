@@ -51,9 +51,7 @@ def basic_application_role(application_id: int, role_id: int, application_role_d
 
 @pytest.fixture
 def complete_application_role(application_role_id: int, basic_application_role: ApplicationRole) -> ApplicationRole:
-    return ApplicationRole.model_validate(
-        basic_application_role.model_dump(), update={"application_role_id": application_role_id}
-    )
+    return ApplicationRole.model_validate(basic_application_role.model_dump(), update={"application_role_id": application_role_id})
 
 
 class TestGetAll:
@@ -62,9 +60,7 @@ class TestGetAll:
         return [complete_application_role, complete_application_role]
 
     @pytest.fixture
-    def expected_multiple_application_roles(
-        self, complete_application_role: ApplicationRole
-    ) -> list[ApplicationRoleRead]:
+    def expected_multiple_application_roles(self, complete_application_role: ApplicationRole) -> list[ApplicationRoleRead]:
         working_application_role = ApplicationRoleRead.model_validate(complete_application_role)
         return [working_application_role, working_application_role]
 
@@ -76,9 +72,7 @@ class TestGetAll:
         "db_all_return_val, expected_response",
         [([], []), (lazy_fixture("multiple_application_roles"), lazy_fixture("expected_multiple_application_roles"))],
     )
-    async def test_get_all(
-        self, mock_db: Mock, expected_sql: str, expected_response: list[ApplicationRoleRead]
-    ) -> None:
+    async def test_get_all(self, mock_db: Mock, expected_sql: str, expected_response: list[ApplicationRoleRead]) -> None:
         response = await application_role.get_all_application_roles(db=mock_db)
 
         sql = mock_db.exec.call_args.args[0]
@@ -89,7 +83,7 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:
+    def db_refresh(obj) -> None:  # type: ignore
         obj.application_role_id = raw_application_role_id
 
     @pytest.fixture
@@ -124,9 +118,7 @@ class TestGet:
         return ApplicationRoleRead.model_validate(complete_application_role)
 
     @pytest.mark.parametrize("db_get_return_val", [lazy_fixture("complete_application_role")])
-    async def test_get_with_data(
-        self, application_role_id: int, mock_db: Mock, expected_response: ApplicationRoleRead
-    ) -> None:
+    async def test_get_with_data(self, application_role_id: int, mock_db: Mock, expected_response: ApplicationRoleRead) -> None:
         response = await application_role.get_application_role(application_role_id=application_role_id, db=mock_db)
 
         assert response == expected_response
@@ -139,9 +131,7 @@ class TestGet:
 
 class TestDelete:
     @pytest.mark.parametrize("db_get_return_val", ["some data", 123])
-    async def test_delete_with_application_role_found(
-        self, application_role_id: int, mock_db: Mock, db_get_return_val: Any
-    ) -> None:
+    async def test_delete_with_application_role_found(self, application_role_id: int, mock_db: Mock, db_get_return_val: Any) -> None:
         response = await application_role.delete_application_role(application_role_id=application_role_id, db=mock_db)
 
         mock_db.delete.assert_called_once_with(db_get_return_val)
@@ -164,9 +154,7 @@ class TestUpdate:
 
     @pytest.fixture
     def updated_application_role(self, complete_application_role: ApplicationRole) -> ApplicationRole:
-        return ApplicationRole.model_validate(
-            complete_application_role.model_dump(), update={"description": "some new description"}
-        )
+        return ApplicationRole.model_validate(complete_application_role.model_dump(), update={"description": "some new description"})
 
     @pytest.fixture
     def expected_response(self, updated_application_role: ApplicationRole) -> ApplicationRoleRead:

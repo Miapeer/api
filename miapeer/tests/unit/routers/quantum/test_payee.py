@@ -63,9 +63,7 @@ class TestGetAll:
         "db_all_return_val, expected_response",
         [([], []), (lazy_fixture("multiple_payees"), lazy_fixture("expected_multiple_payees"))],
     )
-    async def test_get_all(
-        self, user: User, mock_db: Mock, expected_sql: str, expected_response: list[PayeeRead]
-    ) -> None:
+    async def test_get_all(self, user: User, mock_db: Mock, expected_sql: str, expected_response: list[PayeeRead]) -> None:
         response = await payee.get_all_payees(db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
@@ -76,7 +74,7 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:
+    def db_refresh(obj) -> None:  # type: ignore
         obj.payee_id = raw_payee_id
 
     @pytest.fixture
@@ -116,9 +114,7 @@ class TestCreate:
         # Don't need to test the response here because it's just the updated payee_to_add
 
     @pytest.mark.parametrize("db_first_return_val", [None, ""])
-    async def test_create_with_portfolio_not_found(
-        self, user: User, payee_to_create: PayeeCreate, mock_db: Mock, expected_sql: str
-    ) -> None:
+    async def test_create_with_portfolio_not_found(self, user: User, payee_to_create: PayeeCreate, mock_db: Mock, expected_sql: str) -> None:
         with pytest.raises(HTTPException):
             await payee.create_payee(payee=payee_to_create, db=mock_db, current_user=user)
 
@@ -141,9 +137,7 @@ class TestGet:
         return f"SELECT quantum_payee.name, quantum_payee.portfolio_id, quantum_payee.payee_id \nFROM quantum_payee JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_payee.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_payee.payee_id = {payee_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_payee")])
-    async def test_get_with_data(
-        self, user: User, payee_id: int, mock_db: Mock, expected_sql: str, expected_response: PayeeRead
-    ) -> None:
+    async def test_get_with_data(self, user: User, payee_id: int, mock_db: Mock, expected_sql: str, expected_response: PayeeRead) -> None:
         response = await payee.get_payee(payee_id=payee_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
@@ -169,9 +163,7 @@ class TestDelete:
         return f"SELECT quantum_payee.name, quantum_payee.portfolio_id, quantum_payee.payee_id \nFROM quantum_payee JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_payee.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_payee.payee_id = {payee_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.mark.parametrize("db_one_or_none_return_val", ["some data", 123])
-    async def test_delete_with_payee_found(
-        self, user: User, payee_id: int, mock_db: Mock, expected_sql: str, db_one_or_none_return_val: Any
-    ) -> None:
+    async def test_delete_with_payee_found(self, user: User, payee_id: int, mock_db: Mock, expected_sql: str, db_one_or_none_return_val: Any) -> None:
         response = await payee.delete_payee(payee_id=payee_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]
@@ -183,9 +175,7 @@ class TestDelete:
         assert response == {"ok": True}
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
-    async def test_delete_with_payee_not_found(
-        self, user: User, payee_id: int, mock_db: Mock, expected_sql: str
-    ) -> None:
+    async def test_delete_with_payee_not_found(self, user: User, payee_id: int, mock_db: Mock, expected_sql: str) -> None:
         with pytest.raises(HTTPException):
             await payee.delete_payee(payee_id=payee_id, db=mock_db, current_user=user)
 

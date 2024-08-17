@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from enum import Enum
 from os import environ as env
-from typing import Optional
+from typing import Any, Optional
 
 from jose import jwt
 from jose.exceptions import JWTError
@@ -37,9 +37,7 @@ def encode_jwt(jwt_key: str, data: TokenData, expires_delta: Optional[timedelta]
 
     to_encode = data | {"exp": expire}
 
-    encoded_jwt: str = jwt.encode(
-        claims=to_encode, key=jwt_key, algorithm=env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)
-    )
+    encoded_jwt: str = jwt.encode(claims=to_encode, key=jwt_key, algorithm=env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM))
 
     return encoded_jwt
 
@@ -49,10 +47,10 @@ def decode_jwt(jwt_key: str, token: str) -> TokenData:
         raise JwtException(JwtErrorMessage.INVALID_JWK.value)
 
     try:
-        payload: TokenData = jwt.decode(
-            token=token, key=jwt_key, algorithms=env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)
-        )
+        payload: dict[str, Any] = jwt.decode(token=token, key=jwt_key, algorithms=env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM))
+
+        typed_payload: TokenData = {"sub": payload.get("sub", ""), "exp": payload.get("exp", None)}
     except JWTError:
         raise JwtException(JwtErrorMessage.INVALID_TOKEN.value)
 
-    return payload
+    return typed_payload
