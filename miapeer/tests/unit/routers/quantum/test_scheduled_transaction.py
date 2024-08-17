@@ -461,11 +461,29 @@ class TestUpdate:
 
     @pytest.fixture
     def expected_response(self, updated_scheduled_transaction: ScheduledTransaction) -> ScheduledTransactionRead:
-        return ScheduledTransactionRead.model_validate(updated_scheduled_transaction.model_dump())
+        next_transaction = TransactionRead(
+            transaction_type_id=updated_scheduled_transaction.transaction_type_id,
+            payee_id=updated_scheduled_transaction.payee_id,
+            category_id=updated_scheduled_transaction.category_id,
+            amount=updated_scheduled_transaction.fixed_amount if updated_scheduled_transaction.fixed_amount else 0,
+            transaction_date=updated_scheduled_transaction.start_date,
+            clear_date=None,
+            check_number=None,
+            exclude_from_forecast=False,
+            notes=updated_scheduled_transaction.notes,
+            transaction_id=0,
+            account_id=updated_scheduled_transaction.account_id,
+            balance=None,
+        )
+        return ScheduledTransactionRead.model_validate(updated_scheduled_transaction.model_dump(), update={"next_transaction": next_transaction})
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_scheduled_transaction")])
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_unit")
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
     async def test_update_with_scheduled_transaction_found(
         self,
+        get_repeat_option_patch: AsyncMock,
+        get_repeat_unit_patch: AsyncMock,
         user: User,
         account_id: int,
         scheduled_transaction_id: int,
@@ -478,6 +496,9 @@ class TestUpdate:
         updated_scheduled_transaction: ScheduledTransaction,
         expected_response: ScheduledTransactionRead,
     ) -> None:
+        get_repeat_option_patch.return_value = RepeatOption(name="Anually", quantity=10, repeat_unit_id=1, order_index=0)
+        get_repeat_unit_patch.return_value = RepeatUnit(name="Year")
+
         response = await scheduled_transaction.update_scheduled_transaction(
             account_id=account_id,
             scheduled_transaction_id=scheduled_transaction_id,
@@ -508,9 +529,7 @@ class TestUpdate:
 
         mock_db.commit.assert_called_once()
 
-        assert mock_db.refresh.call_count == 1
-        refresh_call_param = mock_db.refresh.call_args[0][0]
-        assert refresh_call_param.model_dump() == updated_scheduled_transaction.model_dump()
+        mock_db.refresh.assert_not_called()
 
         assert response == expected_response
 

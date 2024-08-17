@@ -31,6 +31,16 @@ router = APIRouter(
 )
 
 
+async def _get_next_transaction(db: DbSession, scheduled_transaction: ScheduledTransaction) -> Optional[TransactionRead]:
+    next_transactions = await get_next_iterations(db=db, scheduled_transaction=scheduled_transaction, override_limit=1)
+
+    next_transaction = None
+    if next_transactions:
+        next_transaction = TransactionRead.model_validate(next_transactions[0].model_dump(), update={"transaction_id": 0})
+
+    return next_transaction
+
+
 @router.get("")
 async def get_all_scheduled_transactions(
     db: DbSession,
@@ -136,13 +146,9 @@ async def get_scheduled_transaction(
     if not scheduled_transaction:
         raise HTTPException(status_code=404, detail="Scheduled transaction not found")
 
-    next_transactions = await get_next_iterations(db=db, scheduled_transaction=scheduled_transaction, override_limit=1)
-
-    next_transaction = None
-    if next_transactions:
-        next_transaction = TransactionRead.model_validate(next_transactions[0].model_dump(), update={"transaction_id": 0})
-
-    return ScheduledTransactionRead.model_validate(scheduled_transaction.model_dump(), update={"next_transaction": next_transaction})
+    return ScheduledTransactionRead.model_validate(
+        scheduled_transaction.model_dump(), update={"next_transaction": await _get_next_transaction(db, scheduled_transaction)}
+    )
 
 
 @router.delete("/{scheduled_transaction_id}")
@@ -258,9 +264,11 @@ async def update_scheduled_transaction(
 
     db.add(db_scheduled_transaction)
     db.commit()
-    db.refresh(db_scheduled_transaction)
 
-    return ScheduledTransactionRead.model_validate(db_scheduled_transaction)
+    # Do this rather than a `db_refresh` in order to get the next_transaction as well
+    updated_scheduled_transaction = await get_scheduled_transaction(db, current_user, account_id, scheduled_transaction_id)
+
+    return updated_scheduled_transaction
 
 
 async def get_next_iterations(

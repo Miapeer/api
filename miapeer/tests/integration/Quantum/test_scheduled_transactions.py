@@ -386,7 +386,7 @@ class TestUpdate:
                 date(year=2021, month=2, day=3),
                 date(year=2020, month=1, day=2),
                 8129,
-                3,
+                2,
                 "new note",
                 False,
             ),
@@ -464,7 +464,20 @@ class TestUpdate:
             "repeat_option_id": repeat_option_id,
             "notes": notes,
             "on_autopay": on_autopay,
-            "next_transaction": None,
+            "next_transaction": {
+                "transaction_type_id": getattr(scheduled_transaction, "transaction_type_id", None),
+                "payee_id": getattr(payee, "payee_id", None),
+                "category_id": getattr(category, "category_id", None),
+                "amount": fixed_amount,
+                "transaction_date": start_date.strftime("%Y-%m-%d") if start_date is not None else None,
+                "clear_date": None,
+                "check_number": None,
+                "exclude_from_forecast": False,
+                "notes": notes,
+                "transaction_id": 0,
+                "account_id": scheduled_transaction.account_id,
+                "balance": None,
+            },
         }
 
         actual = response.json()
