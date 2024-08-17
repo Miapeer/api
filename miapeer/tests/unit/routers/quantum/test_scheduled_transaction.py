@@ -142,7 +142,24 @@ class TestGetAll:
 
     @pytest.fixture
     def expected_multiple_scheduled_transactions(self, complete_scheduled_transaction: ScheduledTransaction) -> list[ScheduledTransactionRead]:
-        working_scheduled_transaction = ScheduledTransactionRead.model_validate(complete_scheduled_transaction)
+        next_transaction = TransactionRead(
+            transaction_type_id=complete_scheduled_transaction.transaction_type_id,
+            payee_id=complete_scheduled_transaction.payee_id,
+            category_id=complete_scheduled_transaction.category_id,
+            amount=complete_scheduled_transaction.fixed_amount if complete_scheduled_transaction.fixed_amount else 0,
+            transaction_date=complete_scheduled_transaction.start_date,
+            clear_date=None,
+            check_number=None,
+            exclude_from_forecast=False,
+            notes=complete_scheduled_transaction.notes,
+            transaction_id=0,
+            account_id=complete_scheduled_transaction.account_id,
+            balance=None,
+        )
+
+        working_scheduled_transaction = ScheduledTransactionRead.model_validate(
+            complete_scheduled_transaction.model_dump(), update={"next_transaction": next_transaction}
+        )
         return [working_scheduled_transaction, working_scheduled_transaction]
 
     @pytest.fixture
@@ -159,14 +176,21 @@ class TestGetAll:
             ),
         ],
     )
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_unit")
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
     async def test_get_all(
         self,
+        get_repeat_option_patch: AsyncMock,
+        get_repeat_unit_patch: AsyncMock,
         user: User,
         account_id: int,
         mock_db: Mock,
         expected_sql: str,
         expected_response: list[ScheduledTransactionRead],
     ) -> None:
+        get_repeat_option_patch.return_value = RepeatOption(name="Anually", quantity=10, repeat_unit_id=1, order_index=0)
+        get_repeat_unit_patch.return_value = RepeatUnit(name="Year")
+
         response = await scheduled_transaction.get_all_scheduled_transactions(account_id=account_id, db=mock_db, current_user=user)
 
         sql = mock_db.exec.call_args.args[0]

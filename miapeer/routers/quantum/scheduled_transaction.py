@@ -56,7 +56,12 @@ async def get_all_scheduled_transactions(
         .where(PortfolioUser.user_id == current_user.user_id)
     )
     scheduled_transactions = db.exec(sql).all()
-    return [ScheduledTransactionRead.model_validate(scheduled_transaction) for scheduled_transaction in scheduled_transactions]
+    return [
+        ScheduledTransactionRead.model_validate(
+            scheduled_transaction.model_dump(), update={"next_transaction": await _get_next_transaction(db, scheduled_transaction)}
+        )
+        for scheduled_transaction in scheduled_transactions
+    ]
 
 
 @router.post("")

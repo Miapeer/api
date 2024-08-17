@@ -41,7 +41,20 @@ class TestGetAll:
                 "repeat_option_id": my_minimal_scheduled_transaction.repeat_option_id,
                 "notes": my_minimal_scheduled_transaction.notes,
                 "on_autopay": my_minimal_scheduled_transaction.on_autopay,
-                "next_transaction": None,
+                "next_transaction": {
+                    "transaction_type_id": my_minimal_scheduled_transaction.transaction_type_id,
+                    "payee_id": my_minimal_scheduled_transaction.payee_id,
+                    "category_id": my_minimal_scheduled_transaction.category_id,
+                    "amount": my_minimal_scheduled_transaction.fixed_amount,
+                    "transaction_date": my_minimal_scheduled_transaction.start_date.strftime("%Y-%m-%d"),
+                    "clear_date": None,
+                    "check_number": None,
+                    "exclude_from_forecast": False,
+                    "notes": my_minimal_scheduled_transaction.notes,
+                    "transaction_id": 0,
+                    "account_id": my_minimal_scheduled_transaction.account_id,
+                    "balance": None,
+                },
             },
             {
                 "scheduled_transaction_id": my_scheduled_transaction.scheduled_transaction_id,
@@ -58,12 +71,27 @@ class TestGetAll:
                 "repeat_option_id": my_scheduled_transaction.repeat_option_id,
                 "notes": my_scheduled_transaction.notes,
                 "on_autopay": my_scheduled_transaction.on_autopay,
-                "next_transaction": None,
+                "next_transaction": {
+                    "transaction_type_id": my_scheduled_transaction.transaction_type_id,
+                    "payee_id": my_scheduled_transaction.payee_id,
+                    "category_id": my_scheduled_transaction.category_id,
+                    "amount": my_scheduled_transaction.fixed_amount,
+                    "transaction_date": my_scheduled_transaction.start_date.strftime("%Y-%m-%d"),
+                    "clear_date": None,
+                    "check_number": None,
+                    "exclude_from_forecast": False,
+                    "notes": my_scheduled_transaction.notes,
+                    "transaction_id": 0,
+                    "account_id": my_scheduled_transaction.account_id,
+                    "balance": None,
+                },
             },
         ]
 
+        actual = response.json()
+
         assert response.status_code == 200
-        assert response.json() == expected
+        assert actual == expected
 
 
 @pytest.mark.usefixtures("create_complete_portfolio")
