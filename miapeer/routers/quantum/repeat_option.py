@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import select
+from sqlmodel import asc, select
 
 from miapeer.dependencies import DbSession, is_quantum_user
 from miapeer.models.quantum.repeat_option import RepeatOption, RepeatOptionRead
@@ -17,7 +17,7 @@ router = APIRouter(
 async def get_all_repeat_options(
     db: DbSession,
 ) -> list[RepeatOptionRead]:
-    sql = select(RepeatOption)
+    sql = select(RepeatOption).order_by(asc(RepeatOption.order_index))
     repeat_options = db.exec(sql).all()
     return [RepeatOptionRead.model_validate(repeat_option) for repeat_option in repeat_options]
 

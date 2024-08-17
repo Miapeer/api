@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import select
+from sqlmodel import asc, select
 
 from miapeer.dependencies import DbSession, is_miapeer_super_user
 from miapeer.models.miapeer import (
@@ -20,7 +20,7 @@ router = APIRouter(
 async def get_all_applications(
     db: DbSession,
 ) -> list[ApplicationRead]:
-    applications = db.exec(select(Application).order_by(Application.name)).all()
+    applications = db.exec(select(Application).order_by(asc(Application.name))).all()
     return [ApplicationRead.model_validate(application) for application in applications]
 
 
