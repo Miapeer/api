@@ -19,7 +19,14 @@ from miapeer.models.quantum.scheduled_transaction import (
     ScheduledTransactionRead,
     ScheduledTransactionUpdate,
 )
-from miapeer.models.quantum.transaction import Transaction, TransactionRead
+from miapeer.models.quantum.scheduled_transaction_history import (
+    ScheduledTransactionHistory,
+)
+from miapeer.models.quantum.transaction import (
+    Transaction,
+    TransactionCreate,
+    TransactionRead,
+)
 from miapeer.models.quantum.transaction_type import TransactionType
 from miapeer.routers.quantum import repeat_option
 
@@ -346,3 +353,43 @@ async def get_next_iterations(
         )
 
     return transactions
+
+
+@router.post("/{scheduled_transaction_id}/create-transaction")
+async def create_transaction(
+    db: DbSession,
+    current_user: CurrentActiveUser,
+    account_id: int,
+    scheduled_transaction_id: int,
+    override_transaction_data: Optional[TransactionCreate],
+) -> TransactionRead:
+
+    scheduled_transaction = await get_scheduled_transaction(
+        db=db, current_user=current_user, account_id=account_id, scheduled_transaction_id=scheduled_transaction_id
+    )
+
+    if not scheduled_transaction.next_transaction and not override_transaction_data:
+        raise HTTPException(status_code=404, detail="No data provided")
+
+    override_data = override_transaction_data.model_dump(exclude_unset=True) if override_transaction_data else {}
+    transaction_data = scheduled_transaction.next_transaction.model_dump() if scheduled_transaction.next_transaction else {}
+
+    # Create the transaction
+    transaction = Transaction.model_validate(transaction_data, update=override_data)
+    db.add(transaction)
+    db.commit()  # Need to commit early in order to get the new transaction's ID
+    db.refresh(transaction)
+
+    # Link the transaction and scheduled transaction
+    link = ScheduledTransactionHistory.model_validate(
+        {
+            "target_date": scheduled_transaction.start_date,
+            "post_date": date.today(),
+            "scheduled_transaction_id": scheduled_transaction_id,
+            "transaction_id": transaction.transaction_id,
+        }
+    )
+    db.add(link)
+    db.commit()
+
+    return TransactionRead.model_validate(transaction)
