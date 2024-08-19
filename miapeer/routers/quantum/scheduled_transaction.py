@@ -37,6 +37,9 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+MAX_LIMIT = 100
+MAX_END_DATE = date(year=9999, month=1, day=1)
+
 
 async def _get_next_transaction(db: DbSession, scheduled_transaction: ScheduledTransaction) -> Optional[TransactionRead]:
     next_transactions = await get_next_iterations(db=db, scheduled_transaction=scheduled_transaction, override_limit=1)
@@ -284,11 +287,11 @@ async def update_scheduled_transaction(
 
 
 async def get_next_iterations(
-    db: DbSession, scheduled_transaction: ScheduledTransaction, override_end_date: Optional[date] = None, override_limit: int = 100
+    db: DbSession,
+    scheduled_transaction: ScheduledTransaction | ScheduledTransactionRead,
+    override_end_date: Optional[date] = None,
+    override_limit: int = MAX_LIMIT,
 ):
-    MAX_LIMIT = 100
-    MAX_END_DATE = date(year=9999, month=1, day=1)
-
     limit = MAX_LIMIT
     if override_limit and scheduled_transaction.limit_occurrences:
         limit = min(override_limit, scheduled_transaction.limit_occurrences)
@@ -391,5 +394,11 @@ async def create_transaction(
     )
     db.add(link)
     db.commit()
+
+    # Update scheduled transaction's next iteration date by getting the next two iterations (actual current, actual next)
+    # TODO: Test for iterations past end date, limit, etc
+    next_iterations = await get_next_iterations(db=db, scheduled_transaction=scheduled_transaction, override_limit=2)
+    scheduled_transaction.start_date = next_iterations[1].transaction_date if len(next_iterations) == 2 else MAX_END_DATE
+    db.add(scheduled_transaction)
 
     return TransactionRead.model_validate(transaction)
