@@ -15,7 +15,14 @@ from miapeer.models.quantum.scheduled_transaction import (
     ScheduledTransactionRead,
     ScheduledTransactionUpdate,
 )
-from miapeer.models.quantum.transaction import Transaction, TransactionRead
+from miapeer.models.quantum.scheduled_transaction_history import (
+    ScheduledTransactionHistory,
+)
+from miapeer.models.quantum.transaction import (
+    Transaction,
+    TransactionCreate,
+    TransactionRead,
+)
 from miapeer.routers.quantum import scheduled_transaction
 
 pytestmark = pytest.mark.asyncio
@@ -180,16 +187,16 @@ class TestGetAll:
     @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
     async def test_get_all(
         self,
-        get_repeat_option_patch: AsyncMock,
-        get_repeat_unit_patch: AsyncMock,
+        patched_get_repeat_option: AsyncMock,
+        patched_get_repeat_unit: AsyncMock,
         user: User,
         account_id: int,
         mock_db: Mock,
         expected_sql: str,
         expected_response: list[ScheduledTransactionRead],
     ) -> None:
-        get_repeat_option_patch.return_value = RepeatOption(name="Anually", quantity=10, repeat_unit_id=1, order_index=0)
-        get_repeat_unit_patch.return_value = RepeatUnit(name="Year")
+        patched_get_repeat_option.return_value = RepeatOption(name="Anually", quantity=10, repeat_unit_id=1, order_index=0)
+        patched_get_repeat_unit.return_value = RepeatUnit(name="Year")
 
         response = await scheduled_transaction.get_all_scheduled_transactions(account_id=account_id, db=mock_db, current_user=user)
 
@@ -350,8 +357,8 @@ class TestGet:
     @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
     async def test_get_with_data(
         self,
-        get_repeat_option_patch: AsyncMock,
-        get_repeat_unit_patch: AsyncMock,
+        patched_get_repeat_option: AsyncMock,
+        patched_get_repeat_unit: AsyncMock,
         user: User,
         account_id: int,
         scheduled_transaction_id: int,
@@ -359,8 +366,8 @@ class TestGet:
         expected_sql: str,
         expected_response: ScheduledTransactionRead,
     ) -> None:
-        get_repeat_option_patch.return_value = RepeatOption(name="Anually", quantity=1, repeat_unit_id=1, order_index=0)
-        get_repeat_unit_patch.return_value = RepeatUnit(name="Year")
+        patched_get_repeat_option.return_value = RepeatOption(name="Anually", quantity=1, repeat_unit_id=1, order_index=0)
+        patched_get_repeat_unit.return_value = RepeatUnit(name="Year")
 
         response = await scheduled_transaction.get_scheduled_transaction(
             account_id=account_id, scheduled_transaction_id=scheduled_transaction_id, db=mock_db, current_user=user
@@ -506,8 +513,8 @@ class TestUpdate:
     @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
     async def test_update_with_scheduled_transaction_found(
         self,
-        get_repeat_option_patch: AsyncMock,
-        get_repeat_unit_patch: AsyncMock,
+        patched_get_repeat_option: AsyncMock,
+        patched_get_repeat_unit: AsyncMock,
         user: User,
         account_id: int,
         scheduled_transaction_id: int,
@@ -520,8 +527,8 @@ class TestUpdate:
         updated_scheduled_transaction: ScheduledTransaction,
         expected_response: ScheduledTransactionRead,
     ) -> None:
-        get_repeat_option_patch.return_value = RepeatOption(name="Anually", quantity=10, repeat_unit_id=1, order_index=0)
-        get_repeat_unit_patch.return_value = RepeatUnit(name="Year")
+        patched_get_repeat_option.return_value = RepeatOption(name="Anually", quantity=10, repeat_unit_id=1, order_index=0)
+        patched_get_repeat_unit.return_value = RepeatUnit(name="Year")
 
         response = await scheduled_transaction.update_scheduled_transaction(
             account_id=account_id,
@@ -682,8 +689,8 @@ class TestNextIteration:
     @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
     async def test_next_iterations_with_reasonable_end_date(
         self,
-        get_repeat_option_patch: AsyncMock,
-        get_repeat_unit_patch: AsyncMock,
+        patched_get_repeat_option: AsyncMock,
+        patched_get_repeat_unit: AsyncMock,
         mock_db: Mock,
         complete_scheduled_transaction: ScheduledTransaction,
         start_date: date,
@@ -692,8 +699,8 @@ class TestNextIteration:
         repeat_unit: RepeatUnit,
         expected_transaction_dates: list[date],
     ) -> None:
-        get_repeat_option_patch.return_value = repeat_option
-        get_repeat_unit_patch.return_value = repeat_unit
+        patched_get_repeat_option.return_value = repeat_option
+        patched_get_repeat_unit.return_value = repeat_unit
 
         results = await scheduled_transaction.get_next_iterations(
             db=mock_db,
@@ -711,13 +718,13 @@ class TestNextIteration:
     @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
     async def test_next_iterations_with_limit(
         self,
-        get_repeat_option_patch: AsyncMock,
-        get_repeat_unit_patch: AsyncMock,
+        patched_get_repeat_option: AsyncMock,
+        patched_get_repeat_unit: AsyncMock,
         mock_db: Mock,
         complete_scheduled_transaction: ScheduledTransaction,
     ) -> None:
-        get_repeat_option_patch.return_value = RepeatOption(name="Anually", quantity=10, repeat_unit_id=1, order_index=0)
-        get_repeat_unit_patch.return_value = RepeatUnit(name="Year")
+        patched_get_repeat_option.return_value = RepeatOption(name="Anually", quantity=10, repeat_unit_id=1, order_index=0)
+        patched_get_repeat_unit.return_value = RepeatUnit(name="Year")
 
         set_limit = 10
 
@@ -760,3 +767,259 @@ class TestNextIteration:
 
         assert len(results) == 1
         assert results[0].model_dump() == expected.model_dump()
+
+
+class TestCreateTransaction:
+    @pytest.fixture
+    def scheduled_transaction_with_no_next(self, complete_scheduled_transaction) -> ScheduledTransactionRead:
+        return ScheduledTransactionRead.model_validate(complete_scheduled_transaction)
+
+    @pytest.fixture
+    def scheduled_transaction_with_next(self, complete_scheduled_transaction: ScheduledTransaction) -> ScheduledTransactionRead:
+        next_transaction = TransactionRead(
+            transaction_type_id=complete_scheduled_transaction.transaction_type_id,
+            payee_id=complete_scheduled_transaction.payee_id,
+            category_id=complete_scheduled_transaction.category_id,
+            amount=complete_scheduled_transaction.fixed_amount if complete_scheduled_transaction.fixed_amount else 0,
+            transaction_date=complete_scheduled_transaction.start_date,
+            clear_date=None,
+            check_number=None,
+            exclude_from_forecast=False,
+            notes=complete_scheduled_transaction.notes,
+            transaction_id=0,
+            account_id=complete_scheduled_transaction.account_id,
+            balance=None,
+        )
+
+        return ScheduledTransactionRead.model_validate(
+            complete_scheduled_transaction.model_dump(),
+            update={
+                "next_transaction": next_transaction,
+            },
+        )
+
+    @pytest.fixture
+    def base_transaction_to_create(self, complete_scheduled_transaction: ScheduledTransaction) -> Transaction:
+        return Transaction(
+            transaction_type_id=complete_scheduled_transaction.transaction_type_id,
+            payee_id=complete_scheduled_transaction.payee_id,
+            category_id=complete_scheduled_transaction.category_id,
+            amount=complete_scheduled_transaction.fixed_amount if complete_scheduled_transaction.fixed_amount else 0,
+            transaction_date=complete_scheduled_transaction.start_date,
+            clear_date=None,
+            check_number=None,
+            exclude_from_forecast=False,
+            notes=complete_scheduled_transaction.notes,
+            account_id=complete_scheduled_transaction.account_id,
+            transaction_id=0,
+        )
+
+    @pytest.fixture
+    def base_transaction_created(self, base_transaction_to_create: Transaction):
+        return TransactionRead(
+            transaction_type_id=base_transaction_to_create.transaction_type_id,
+            payee_id=base_transaction_to_create.payee_id,
+            category_id=base_transaction_to_create.category_id,
+            amount=base_transaction_to_create.amount,
+            transaction_date=base_transaction_to_create.transaction_date,
+            clear_date=base_transaction_to_create.clear_date,
+            check_number=base_transaction_to_create.check_number,
+            exclude_from_forecast=base_transaction_to_create.exclude_from_forecast,
+            notes=base_transaction_to_create.notes,
+            transaction_id=0,
+            account_id=base_transaction_to_create.account_id if base_transaction_to_create.account_id else 0,
+            balance=None,
+        )
+
+    @pytest.fixture
+    def transaction_overrides_1(self) -> TransactionCreate:
+        return TransactionCreate(
+            transaction_type_id=131,
+            category_id=133,
+            transaction_date=date(year=2000, month=2, day=22),
+            check_number="135",
+            notes="overridden note",
+        )
+
+    @pytest.fixture
+    def transaction_overrides_2(self) -> TransactionCreate:
+        return TransactionCreate(
+            payee_id=132,
+            amount=134,
+            clear_date=None,
+            exclude_from_forecast=True,
+        )
+
+    @pytest.fixture
+    def transaction_to_create_with_overrides_1(
+        self, complete_scheduled_transaction: ScheduledTransaction, transaction_overrides_1: TransactionCreate
+    ) -> Transaction:
+        return Transaction(
+            transaction_type_id=transaction_overrides_1.transaction_type_id,
+            payee_id=complete_scheduled_transaction.payee_id,
+            category_id=transaction_overrides_1.category_id,
+            amount=complete_scheduled_transaction.fixed_amount if complete_scheduled_transaction.fixed_amount else 0,
+            transaction_date=transaction_overrides_1.transaction_date,
+            clear_date=None,
+            check_number=transaction_overrides_1.check_number,
+            exclude_from_forecast=False,
+            notes=transaction_overrides_1.notes,
+            account_id=complete_scheduled_transaction.account_id,
+            transaction_id=0,
+        )
+
+    @pytest.fixture
+    def transaction_to_create_with_overrides_2(
+        self, complete_scheduled_transaction: ScheduledTransaction, transaction_overrides_2: TransactionCreate
+    ) -> Transaction:
+        return Transaction(
+            transaction_type_id=complete_scheduled_transaction.transaction_type_id,
+            payee_id=transaction_overrides_2.payee_id,
+            category_id=complete_scheduled_transaction.category_id,
+            amount=transaction_overrides_2.amount,
+            transaction_date=complete_scheduled_transaction.start_date,
+            clear_date=transaction_overrides_2.clear_date,
+            check_number=None,
+            exclude_from_forecast=transaction_overrides_2.exclude_from_forecast,
+            notes=complete_scheduled_transaction.notes,
+            account_id=complete_scheduled_transaction.account_id,
+            transaction_id=0,
+        )
+
+    @pytest.fixture
+    def transaction_with_overrides_created_1(self, transaction_to_create_with_overrides_1: Transaction):
+        return TransactionRead(
+            transaction_type_id=transaction_to_create_with_overrides_1.transaction_type_id,
+            payee_id=transaction_to_create_with_overrides_1.payee_id,
+            category_id=transaction_to_create_with_overrides_1.category_id,
+            amount=transaction_to_create_with_overrides_1.amount,
+            transaction_date=transaction_to_create_with_overrides_1.transaction_date,
+            clear_date=transaction_to_create_with_overrides_1.clear_date,
+            check_number=transaction_to_create_with_overrides_1.check_number,
+            exclude_from_forecast=transaction_to_create_with_overrides_1.exclude_from_forecast,
+            notes=transaction_to_create_with_overrides_1.notes,
+            transaction_id=0,
+            account_id=transaction_to_create_with_overrides_1.account_id if transaction_to_create_with_overrides_1.account_id else 0,
+            balance=None,
+        )
+
+    @pytest.fixture
+    def transaction_with_overrides_created_2(self, transaction_to_create_with_overrides_2: Transaction):
+        return TransactionRead(
+            transaction_type_id=transaction_to_create_with_overrides_2.transaction_type_id,
+            payee_id=transaction_to_create_with_overrides_2.payee_id,
+            category_id=transaction_to_create_with_overrides_2.category_id,
+            amount=transaction_to_create_with_overrides_2.amount,
+            transaction_date=transaction_to_create_with_overrides_2.transaction_date,
+            clear_date=transaction_to_create_with_overrides_2.clear_date,
+            check_number=transaction_to_create_with_overrides_2.check_number,
+            exclude_from_forecast=transaction_to_create_with_overrides_2.exclude_from_forecast,
+            notes=transaction_to_create_with_overrides_2.notes,
+            transaction_id=0,
+            account_id=transaction_to_create_with_overrides_2.account_id if transaction_to_create_with_overrides_2.account_id else 0,
+            balance=None,
+        )
+
+    @pytest.fixture
+    def scheduled_transaction_history_record(
+        self, complete_scheduled_transaction: ScheduledTransaction, base_transaction_to_create: Transaction
+    ) -> ScheduledTransactionHistory:
+        return ScheduledTransactionHistory(
+            target_date=complete_scheduled_transaction.start_date,
+            post_date=date.today(),
+            scheduled_transaction_id=complete_scheduled_transaction.scheduled_transaction_id
+            if complete_scheduled_transaction.scheduled_transaction_id
+            else 0,
+            transaction_id=base_transaction_to_create.transaction_id if base_transaction_to_create.transaction_id else 0,
+            scheduled_transaction_history_id=None,
+        )
+
+    @patch("miapeer.routers.quantum.scheduled_transaction.get_scheduled_transaction")
+    async def test_create_transaction_fails(
+        self,
+        patched_get_scheduled_transaction: AsyncMock,
+        mock_db: Mock,
+        user: User,
+        account_id: int,
+        scheduled_transaction_id: int,
+        scheduled_transaction_with_no_next: ScheduledTransactionRead,
+    ) -> None:
+        patched_get_scheduled_transaction.return_value = scheduled_transaction_with_no_next
+
+        with pytest.raises(HTTPException):
+            await scheduled_transaction.create_transaction(
+                db=mock_db,
+                current_user=user,
+                account_id=account_id,
+                scheduled_transaction_id=scheduled_transaction_id,
+                override_transaction_data=None,
+            )
+
+        mock_db.add.assert_not_called()
+        mock_db.commit.assert_not_called()
+        mock_db.refresh.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "override_transaction_data, transaction_to_create, expected_response",
+        [
+            (
+                None,
+                lazy_fixture("base_transaction_to_create"),
+                lazy_fixture("base_transaction_created"),
+            ),
+            # (
+            #     lazy_fixture("transaction_overrides_1"), lazy_fixture("transaction_to_create_with_overrides_1"), lazy_fixture("transaction_with_overrides_created_1"),
+            # ),
+            # (
+            #     lazy_fixture("transaction_overrides_2"), lazy_fixture("transaction_to_create_with_overrides_2"), lazy_fixture("transaction_with_overrides_created_2"),
+            # ),
+        ],
+    )
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_unit")
+    @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
+    @patch("miapeer.routers.quantum.scheduled_transaction.get_scheduled_transaction")
+    async def test_create_transaction_succeeds(
+        self,
+        patched_get_scheduled_transaction: AsyncMock,
+        patched_get_repeat_option: AsyncMock,
+        patched_get_repeat_unit: AsyncMock,
+        mock_db: Mock,
+        user: User,
+        account_id: int,
+        scheduled_transaction_id: int,
+        scheduled_transaction_with_next: ScheduledTransactionRead,
+        override_transaction_data: TransactionCreate,
+        transaction_to_create: Transaction,
+        scheduled_transaction_history_record: ScheduledTransactionHistory,
+        expected_response: TransactionRead,
+    ) -> None:
+        patched_get_repeat_option.return_value = RepeatOption(name="Anually", quantity=1, repeat_unit_id=1, order_index=0)
+        patched_get_repeat_unit.return_value = RepeatUnit(name="Year")
+        patched_get_scheduled_transaction.return_value = scheduled_transaction_with_next
+
+        response = await scheduled_transaction.create_transaction(
+            db=mock_db,
+            current_user=user,
+            account_id=account_id,
+            scheduled_transaction_id=scheduled_transaction_id,
+            override_transaction_data=override_transaction_data,
+        )
+        assert response == expected_response
+
+        assert mock_db.add.call_count == 3
+
+        add_call_param = mock_db.add.call_args_list[0].args[0]
+        assert add_call_param.model_dump() == transaction_to_create.model_dump()
+
+        add_call_param = mock_db.add.call_args_list[1].args[0]
+        assert add_call_param.model_dump() == scheduled_transaction_history_record.model_dump()
+
+        add_call_param = mock_db.add.call_args_list[2].args[0]
+        assert add_call_param.model_dump() == scheduled_transaction_with_next.model_dump()
+
+        assert mock_db.commit.call_count == 2
+
+        assert mock_db.refresh.call_count == 1
+
+        refresh_call_param = mock_db.refresh.call_args_list[0].args[0]
+        assert refresh_call_param.model_dump() == transaction_to_create.model_dump()
