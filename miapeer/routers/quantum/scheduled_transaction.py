@@ -291,7 +291,7 @@ async def get_next_iterations(
     scheduled_transaction: ScheduledTransaction | ScheduledTransactionRead,
     override_end_date: Optional[date] = None,
     override_limit: int = MAX_LIMIT,
-):
+) -> list[Transaction]:
     limit = MAX_LIMIT
     if override_limit and scheduled_transaction.limit_occurrences:
         limit = min(override_limit, scheduled_transaction.limit_occurrences)
@@ -395,10 +395,28 @@ async def create_transaction(
     db.add(link)
     db.commit()
 
-    # Update scheduled transaction's next iteration date by getting the next two iterations (actual current, actual next)
-    # TODO: Test for iterations past end date, limit, etc
-    next_iterations = await get_next_iterations(db=db, scheduled_transaction=scheduled_transaction, override_limit=2)
-    scheduled_transaction.start_date = next_iterations[1].transaction_date if len(next_iterations) == 2 else MAX_END_DATE
-    db.add(scheduled_transaction)
+    await progress_iteration(db=db, current_user=current_user, account_id=account_id, scheduled_transaction_id=scheduled_transaction_id)
 
     return TransactionRead.model_validate(transaction)
+
+
+@router.post("/{scheduled_transaction_id}/skip-iteration")
+async def progress_iteration(
+    db: DbSession,
+    current_user: CurrentActiveUser,
+    account_id: int,
+    scheduled_transaction_id: int,
+) -> None:
+
+    scheduled_transaction = await get_scheduled_transaction(
+        db=db, current_user=current_user, account_id=account_id, scheduled_transaction_id=scheduled_transaction_id
+    )
+
+    # Update scheduled transaction's next iteration date by getting the next two iterations (actual current, actual next)
+    next_iterations = await get_next_iterations(db=db, scheduled_transaction=scheduled_transaction, override_limit=2)
+
+    scheduled_transaction_data = scheduled_transaction.model_dump()
+    scheduled_transaction_data["start_date"] = next_iterations[1].transaction_date if len(next_iterations) == 2 else MAX_END_DATE
+    scheduled_transaction_data["next_transaction"] = None
+    db.add(ScheduledTransaction.model_validate(scheduled_transaction_data))
+    db.commit()
