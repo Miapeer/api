@@ -111,6 +111,7 @@ authorized_tests = [
     ParamTestCase(method="DELETE", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", quantum_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", quantum_user=True),
     ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}/create-transaction", quantum_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}/skip-iteration", quantum_user=True),
 
     # Quantum: RepeatOptions
     ParamTestCase(method="GET", route="/quantum/v1/repeat-options", quantum_user=True),
@@ -208,6 +209,7 @@ unauthorized_tests = [
     ParamTestCase(method="DELETE", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}/create-transaction", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}/skip-iteration", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Quantum: RepeatOptions
     ParamTestCase(method="GET", route="/quantum/v1/repeat-options", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
