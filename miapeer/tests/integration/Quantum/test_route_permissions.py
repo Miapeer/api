@@ -110,6 +110,7 @@ authorized_tests = [
     ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", quantum_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", quantum_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", quantum_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}/create-transaction", quantum_user=True),
 
     # Quantum: RepeatOptions
     ParamTestCase(method="GET", route="/quantum/v1/repeat-options", quantum_user=True),
@@ -206,6 +207,7 @@ unauthorized_tests = [
     ParamTestCase(method="GET", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="DELETE", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
     ParamTestCase(method="PATCH", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/accounts/{account_id}/scheduled-transactions/{scheduled_transaction_id}/create-transaction", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
 
     # Quantum: RepeatOptions
     ParamTestCase(method="GET", route="/quantum/v1/repeat-options", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
@@ -286,9 +288,7 @@ class TestPermissions:
             for t in unauthorized_tests
         ],
     )
-    def test_permissions_not_authorized(
-        self, client: TestClient, method: str, route: str, allow_anonymous: bool
-    ) -> None:
+    def test_permissions_not_authorized(self, client: TestClient, method: str, route: str, allow_anonymous: bool) -> None:
         if allow_anonymous:
             # We can just skip this test since no request is unauthorized
             return
