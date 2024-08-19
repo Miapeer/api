@@ -967,22 +967,24 @@ class TestCreateTransaction:
                 lazy_fixture("base_transaction_to_create"),
                 lazy_fixture("base_transaction_created"),
             ),
-            # (
-            #     lazy_fixture("transaction_overrides_1"), lazy_fixture("transaction_to_create_with_overrides_1"), lazy_fixture("transaction_with_overrides_created_1"),
-            # ),
-            # (
-            #     lazy_fixture("transaction_overrides_2"), lazy_fixture("transaction_to_create_with_overrides_2"), lazy_fixture("transaction_with_overrides_created_2"),
-            # ),
+            (
+                lazy_fixture("transaction_overrides_1"),
+                lazy_fixture("transaction_to_create_with_overrides_1"),
+                lazy_fixture("transaction_with_overrides_created_1"),
+            ),
+            (
+                lazy_fixture("transaction_overrides_2"),
+                lazy_fixture("transaction_to_create_with_overrides_2"),
+                lazy_fixture("transaction_with_overrides_created_2"),
+            ),
         ],
     )
-    @patch("miapeer.routers.quantum.repeat_option.get_repeat_unit")
-    @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
     @patch("miapeer.routers.quantum.scheduled_transaction.get_scheduled_transaction")
+    @patch("miapeer.routers.quantum.scheduled_transaction.progress_iteration")
     async def test_create_transaction_succeeds(
         self,
+        patched_progress_iteration: AsyncMock,
         patched_get_scheduled_transaction: AsyncMock,
-        patched_get_repeat_option: AsyncMock,
-        patched_get_repeat_unit: AsyncMock,
         mock_db: Mock,
         user: User,
         account_id: int,
@@ -993,8 +995,6 @@ class TestCreateTransaction:
         scheduled_transaction_history_record: ScheduledTransactionHistory,
         expected_response: TransactionRead,
     ) -> None:
-        patched_get_repeat_option.return_value = RepeatOption(name="Anually", quantity=1, repeat_unit_id=1, order_index=0)
-        patched_get_repeat_unit.return_value = RepeatUnit(name="Year")
         patched_get_scheduled_transaction.return_value = scheduled_transaction_with_next
 
         response = await scheduled_transaction.create_transaction(
@@ -1006,7 +1006,7 @@ class TestCreateTransaction:
         )
         assert response == expected_response
 
-        assert mock_db.add.call_count == 3
+        assert mock_db.add.call_count == 2
 
         add_call_param = mock_db.add.call_args_list[0].args[0]
         assert add_call_param.model_dump() == transaction_to_create.model_dump()
@@ -1014,12 +1014,77 @@ class TestCreateTransaction:
         add_call_param = mock_db.add.call_args_list[1].args[0]
         assert add_call_param.model_dump() == scheduled_transaction_history_record.model_dump()
 
-        add_call_param = mock_db.add.call_args_list[2].args[0]
-        assert add_call_param.model_dump() == scheduled_transaction_with_next.model_dump()
-
         assert mock_db.commit.call_count == 2
 
         assert mock_db.refresh.call_count == 1
 
         refresh_call_param = mock_db.refresh.call_args_list[0].args[0]
         assert refresh_call_param.model_dump() == transaction_to_create.model_dump()
+
+        patched_progress_iteration.assert_called_once()
+
+
+class TestProgressIteration:
+    @pytest.fixture
+    def updated_scheduled_transaction_with_next(
+        self, complete_scheduled_transaction: ScheduledTransactionRead, next_transactions: list[Transaction]
+    ) -> ScheduledTransaction:
+        return ScheduledTransaction.model_validate(
+            complete_scheduled_transaction.model_dump(), update={"start_date": next_transactions[1].transaction_date}
+        )
+
+    @pytest.fixture
+    def updated_scheduled_transaction_with_no_next(
+        self, complete_scheduled_transaction: ScheduledTransactionRead, next_transactions: list[Transaction]
+    ) -> ScheduledTransaction:
+        return ScheduledTransaction.model_validate(
+            complete_scheduled_transaction.model_dump(), update={"start_date": scheduled_transaction.MAX_END_DATE}
+        )
+
+    @pytest.mark.parametrize(
+        "next_transactions, updated_scheduled_transaction",
+        [
+            (  # Happy path
+                [Transaction(transaction_date=date(year=111, month=1, day=1)), Transaction(transaction_date=date(year=222, month=1, day=1))],
+                lazy_fixture("updated_scheduled_transaction_with_next"),
+            ),
+            (  # There's a current transaction, but not a next
+                [Transaction(transaction_date=date(year=111, month=1, day=1))],
+                lazy_fixture("updated_scheduled_transaction_with_no_next"),
+            ),
+            (  # No next iterations at all
+                [],
+                lazy_fixture("updated_scheduled_transaction_with_no_next"),
+            ),
+        ],
+    )
+    @patch("miapeer.routers.quantum.scheduled_transaction.get_scheduled_transaction")
+    @patch("miapeer.routers.quantum.scheduled_transaction.get_next_iterations")
+    async def test_scheduled_transaction_has_correct_next_iteration(
+        self,
+        patched_get_next_iterations: AsyncMock,
+        patched_get_scheduled_transaction: AsyncMock,
+        mock_db: Mock,
+        user: User,
+        account_id: int,
+        scheduled_transaction_id: int,
+        complete_scheduled_transaction: ScheduledTransactionRead,
+        next_transactions: list[Transaction],
+        updated_scheduled_transaction: ScheduledTransaction,
+    ) -> None:
+        patched_get_scheduled_transaction.return_value = complete_scheduled_transaction
+        patched_get_next_iterations.return_value = next_transactions
+
+        await scheduled_transaction.progress_iteration(
+            db=mock_db,
+            current_user=user,
+            account_id=account_id,
+            scheduled_transaction_id=scheduled_transaction_id,
+        )
+
+        mock_db.add.assert_called_once()
+
+        add_call_param = mock_db.add.call_args_list[0].args[0]
+        assert add_call_param.model_dump() == updated_scheduled_transaction.model_dump()
+
+        mock_db.commit.assert_called_once()
