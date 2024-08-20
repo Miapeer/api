@@ -318,7 +318,7 @@ async def get_next_iterations(
     if rpt_option and rpt_option.repeat_unit_id:
         rpt_unit = await repeat_option.get_repeat_unit(db=db, repeat_unit_id=rpt_option.repeat_unit_id)
 
-    transactions = []
+    transactions: list[Transaction] = []
     active_date = scheduled_transaction.start_date
 
     if rpt_option and rpt_unit:

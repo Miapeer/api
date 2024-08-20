@@ -1,5 +1,8 @@
 {
     "pythonPlatform": "Linux",
+    "pythonVersion": "3.10",
+
+    // "strict": ["."],
 
     "venvPath": "/Users/jep/.pyenv/versions",
     "venv": "miapeer-api"

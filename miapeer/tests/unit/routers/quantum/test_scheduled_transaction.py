@@ -771,7 +771,7 @@ class TestNextIteration:
 
 class TestCreateTransaction:
     @pytest.fixture
-    def scheduled_transaction_with_no_next(self, complete_scheduled_transaction) -> ScheduledTransactionRead:
+    def scheduled_transaction_with_no_next(self, complete_scheduled_transaction: ScheduledTransaction) -> ScheduledTransactionRead:
         return ScheduledTransactionRead.model_validate(complete_scheduled_transaction)
 
     @pytest.fixture

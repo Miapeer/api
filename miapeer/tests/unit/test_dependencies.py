@@ -24,16 +24,12 @@ class TestGetCurrentUser:
         res = await dependencies.get_current_user(token=valid_jwt, jwt_key=jwk, db=mock_db)
         assert res == db_first_return_val
 
-    async def test_get_current_user_raises_exception_when_username_not_provided(
-        self, mock_db: Mock, jwt_missing_sub: str, jwk: str
-    ) -> None:
+    async def test_get_current_user_raises_exception_when_username_not_provided(self, mock_db: Mock, jwt_missing_sub: str, jwk: str) -> None:
         with pytest.raises(HTTPException):
             await dependencies.get_current_user(token=jwt_missing_sub, jwt_key=jwk, db=mock_db)
 
     @pytest.mark.parametrize("db_first_return_val", [None])
-    async def test_get_current_user_raises_exception_when_user_not_found(
-        self, mock_db: Mock, valid_jwt: str, jwk: str
-    ) -> None:
+    async def test_get_current_user_raises_exception_when_user_not_found(self, mock_db: Mock, valid_jwt: str, jwk: str) -> None:
         with pytest.raises(HTTPException):
             await dependencies.get_current_user(token=valid_jwt, jwt_key=jwk, db=mock_db)
 
@@ -52,16 +48,12 @@ class TestGetCurrentActiveUser:
 class TestHasPermission:
     @pytest.mark.parametrize("db_all_return_val", [[{}]])
     def test_has_permission(self, mock_db: Mock) -> None:
-        permitted = dependencies.has_permission(
-            db=mock_db, email="", application=dependencies.Applications.MIAPEER, role=dependencies.Roles.USER
-        )
+        permitted = dependencies.has_permission(db=mock_db, email="", application=dependencies.Applications.MIAPEER, role=dependencies.Roles.USER)
         assert permitted is True
 
     @pytest.mark.parametrize("db_all_return_val", [[]])
     def test_no_permission(self, mock_db: Mock) -> None:
-        permitted = dependencies.has_permission(
-            db=mock_db, email="", application=dependencies.Applications.MIAPEER, role=dependencies.Roles.USER
-        )
+        permitted = dependencies.has_permission(db=mock_db, email="", application=dependencies.Applications.MIAPEER, role=dependencies.Roles.USER)
         assert permitted is False
 
 
@@ -110,5 +102,5 @@ class TestIndividualPermissions:
     ) -> None:
         patched_has_permission.return_value = False
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(HTTPException):
             permission_function(db=mock_db, user=user)
