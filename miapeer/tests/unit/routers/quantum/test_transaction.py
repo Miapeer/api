@@ -488,7 +488,7 @@ class TestRunningBalance:
         self, starting_balance: int, transaction_amounts: list[int], complete_transaction: Transaction
     ) -> list[TransactionRead]:
         running_balance = starting_balance
-        working_transactions = []
+        working_transactions: list[TransactionRead] = []
 
         for transaction_amount in transaction_amounts:
             running_balance += transaction_amount

@@ -19,7 +19,14 @@ from miapeer.models.quantum.scheduled_transaction import (
     ScheduledTransactionRead,
     ScheduledTransactionUpdate,
 )
-from miapeer.models.quantum.transaction import Transaction, TransactionRead
+from miapeer.models.quantum.scheduled_transaction_history import (
+    ScheduledTransactionHistory,
+)
+from miapeer.models.quantum.transaction import (
+    Transaction,
+    TransactionCreate,
+    TransactionRead,
+)
 from miapeer.models.quantum.transaction_type import TransactionType
 from miapeer.routers.quantum import repeat_option
 
@@ -29,6 +36,9 @@ router = APIRouter(
     dependencies=[Depends(is_quantum_user)],
     responses={404: {"description": "Not found"}},
 )
+
+MAX_LIMIT = 100
+MAX_END_DATE = date(year=9999, month=1, day=1)
 
 
 async def _get_next_transaction(db: DbSession, scheduled_transaction: ScheduledTransaction) -> Optional[TransactionRead]:
@@ -129,6 +139,20 @@ async def create_scheduled_transaction(
     return ScheduledTransactionRead.model_validate(db_scheduled_transaction)
 
 
+async def _get_scheduled_transaction(db: DbSession, account_id: int, scheduled_transaction_id: int, user_id: int) -> Optional[ScheduledTransaction]:
+    sql = (
+        select(ScheduledTransaction)
+        .join(Account, Account.account_id == ScheduledTransaction.account_id)  # type: ignore
+        .join(Portfolio)
+        .join(PortfolioUser)
+        .where(Account.account_id == account_id)
+        .where(ScheduledTransaction.scheduled_transaction_id == scheduled_transaction_id)
+        .where(PortfolioUser.user_id == user_id)
+    )
+
+    return db.exec(sql).one_or_none()
+
+
 @router.get("/{scheduled_transaction_id}")
 async def get_scheduled_transaction(
     db: DbSession,
@@ -137,16 +161,9 @@ async def get_scheduled_transaction(
     scheduled_transaction_id: int,
 ) -> ScheduledTransactionRead:
 
-    sql = (
-        select(ScheduledTransaction)
-        .join(Account, Account.account_id == ScheduledTransaction.account_id)  # type: ignore
-        .join(Portfolio)
-        .join(PortfolioUser)
-        .where(Account.account_id == account_id)
-        .where(ScheduledTransaction.scheduled_transaction_id == scheduled_transaction_id)
-        .where(PortfolioUser.user_id == current_user.user_id)
+    scheduled_transaction = await _get_scheduled_transaction(
+        db=db, account_id=account_id, scheduled_transaction_id=scheduled_transaction_id, user_id=current_user.user_id if current_user.user_id else 0
     )
-    scheduled_transaction = db.exec(sql).one_or_none()
 
     if not scheduled_transaction:
         raise HTTPException(status_code=404, detail="Scheduled transaction not found")
@@ -277,11 +294,11 @@ async def update_scheduled_transaction(
 
 
 async def get_next_iterations(
-    db: DbSession, scheduled_transaction: ScheduledTransaction, override_end_date: Optional[date] = None, override_limit: int = 100
-):
-    MAX_LIMIT = 100
-    MAX_END_DATE = date(year=9999, month=1, day=1)
-
+    db: DbSession,
+    scheduled_transaction: ScheduledTransaction | ScheduledTransactionRead,
+    override_end_date: Optional[date] = None,
+    override_limit: int = MAX_LIMIT,
+) -> list[Transaction]:
     limit = MAX_LIMIT
     if override_limit and scheduled_transaction.limit_occurrences:
         limit = min(override_limit, scheduled_transaction.limit_occurrences)
@@ -308,7 +325,7 @@ async def get_next_iterations(
     if rpt_option and rpt_option.repeat_unit_id:
         rpt_unit = await repeat_option.get_repeat_unit(db=db, repeat_unit_id=rpt_option.repeat_unit_id)
 
-    transactions = []
+    transactions: list[Transaction] = []
     active_date = scheduled_transaction.start_date
 
     if rpt_option and rpt_unit:
@@ -346,3 +363,68 @@ async def get_next_iterations(
         )
 
     return transactions
+
+
+@router.post("/{scheduled_transaction_id}/create-transaction")
+async def create_transaction(
+    db: DbSession,
+    current_user: CurrentActiveUser,
+    account_id: int,
+    scheduled_transaction_id: int,
+    override_transaction_data: Optional[TransactionCreate],
+) -> TransactionRead:
+
+    scheduled_transaction = await get_scheduled_transaction(
+        db=db, current_user=current_user, account_id=account_id, scheduled_transaction_id=scheduled_transaction_id
+    )
+
+    if not scheduled_transaction.next_transaction and not override_transaction_data:
+        raise HTTPException(status_code=404, detail="No data provided")
+
+    override_data = override_transaction_data.model_dump(exclude_unset=True) if override_transaction_data else {}
+    transaction_data = scheduled_transaction.next_transaction.model_dump() if scheduled_transaction.next_transaction else {}
+
+    # Create the transaction
+    transaction = Transaction.model_validate(transaction_data, update=override_data)
+    db.add(transaction)
+    db.commit()  # Need to commit early in order to get the new transaction's ID
+    db.refresh(transaction)
+
+    # Link the transaction and scheduled transaction
+    link = ScheduledTransactionHistory.model_validate(
+        {
+            "target_date": scheduled_transaction.start_date,
+            "post_date": date.today(),
+            "scheduled_transaction_id": scheduled_transaction_id,
+            "transaction_id": transaction.transaction_id,
+        }
+    )
+    db.add(link)
+    db.commit()
+
+    await progress_iteration(db=db, current_user=current_user, account_id=account_id, scheduled_transaction_id=scheduled_transaction_id)
+
+    return TransactionRead.model_validate(transaction)
+
+
+@router.post("/{scheduled_transaction_id}/skip-iteration")
+async def progress_iteration(
+    db: DbSession,
+    current_user: CurrentActiveUser,
+    account_id: int,
+    scheduled_transaction_id: int,
+) -> None:
+
+    scheduled_transaction = await _get_scheduled_transaction(
+        db=db, user_id=current_user.user_id if current_user.user_id else 0, account_id=account_id, scheduled_transaction_id=scheduled_transaction_id
+    )
+
+    if not scheduled_transaction:
+        raise HTTPException(status_code=404, detail="Scheduled Transaction not found")
+
+    # Update scheduled transaction's next iteration date by getting the next two iterations (actual current, actual next)
+    next_iterations = await get_next_iterations(db=db, scheduled_transaction=scheduled_transaction, override_limit=2)
+
+    scheduled_transaction.start_date = next_iterations[1].transaction_date if len(next_iterations) == 2 else MAX_END_DATE
+    db.add(scheduled_transaction)
+    db.commit()

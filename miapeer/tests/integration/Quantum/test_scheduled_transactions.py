@@ -207,7 +207,7 @@ class TestCreate:
         }
 
         assert response.status_code == 200
-        assert response.json() == expected
+        assert actual == expected
 
     @pytest.mark.parametrize(
         "account, transaction_type, payee, category, fixed_amount, estimate_occurrences, prompt_days, start_date, end_date, limit_occurrences, repeat_option_id, notes, on_autopay, expected_response",
@@ -448,7 +448,7 @@ class TestUpdate:
         estimate_occurrences: int,
         prompt_days: int,
         start_date: date,
-        end_date: date,
+        end_date: Optional[date],
         limit_occurrences: int,
         repeat_option_id: int,
         notes: str,
@@ -465,7 +465,7 @@ class TestUpdate:
                 "fixed_amount": fixed_amount,
                 "estimate_occurrences": estimate_occurrences,
                 "prompt_days": prompt_days,
-                "start_date": start_date.strftime("%Y-%m-%d") if start_date is not None else None,
+                "start_date": start_date.strftime("%Y-%m-%d"),
                 "end_date": end_date.strftime("%Y-%m-%d") if end_date is not None else None,
                 "limit_occurrences": limit_occurrences,
                 "repeat_option_id": repeat_option_id,
@@ -486,7 +486,7 @@ class TestUpdate:
             "fixed_amount": fixed_amount,
             "estimate_occurrences": estimate_occurrences,
             "prompt_days": prompt_days,
-            "start_date": start_date.strftime("%Y-%m-%d") if start_date is not None else None,
+            "start_date": start_date.strftime("%Y-%m-%d"),
             "end_date": end_date.strftime("%Y-%m-%d") if end_date is not None else None,
             "limit_occurrences": limit_occurrences,
             "repeat_option_id": repeat_option_id,
@@ -497,7 +497,7 @@ class TestUpdate:
                 "payee_id": getattr(payee, "payee_id", None),
                 "category_id": getattr(category, "category_id", None),
                 "amount": fixed_amount,
-                "transaction_date": start_date.strftime("%Y-%m-%d") if start_date is not None else None,
+                "transaction_date": start_date.strftime("%Y-%m-%d"),
                 "clear_date": None,
                 "check_number": None,
                 "exclude_from_forecast": False,
