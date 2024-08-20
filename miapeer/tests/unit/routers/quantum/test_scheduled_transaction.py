@@ -1058,7 +1058,7 @@ class TestProgressIteration:
             ),
         ],
     )
-    @patch("miapeer.routers.quantum.scheduled_transaction.get_scheduled_transaction")
+    @patch("miapeer.routers.quantum.scheduled_transaction._get_scheduled_transaction")
     @patch("miapeer.routers.quantum.scheduled_transaction.get_next_iterations")
     async def test_scheduled_transaction_has_correct_next_iteration(
         self,
