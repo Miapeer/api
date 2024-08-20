@@ -139,6 +139,20 @@ async def create_scheduled_transaction(
     return ScheduledTransactionRead.model_validate(db_scheduled_transaction)
 
 
+async def _get_scheduled_transaction(db: DbSession, account_id: int, scheduled_transaction_id: int, user_id: int) -> Optional[ScheduledTransaction]:
+    sql = (
+        select(ScheduledTransaction)
+        .join(Account, Account.account_id == ScheduledTransaction.account_id)  # type: ignore
+        .join(Portfolio)
+        .join(PortfolioUser)
+        .where(Account.account_id == account_id)
+        .where(ScheduledTransaction.scheduled_transaction_id == scheduled_transaction_id)
+        .where(PortfolioUser.user_id == user_id)
+    )
+
+    return db.exec(sql).one_or_none()
+
+
 @router.get("/{scheduled_transaction_id}")
 async def get_scheduled_transaction(
     db: DbSession,
@@ -147,16 +161,9 @@ async def get_scheduled_transaction(
     scheduled_transaction_id: int,
 ) -> ScheduledTransactionRead:
 
-    sql = (
-        select(ScheduledTransaction)
-        .join(Account, Account.account_id == ScheduledTransaction.account_id)  # type: ignore
-        .join(Portfolio)
-        .join(PortfolioUser)
-        .where(Account.account_id == account_id)
-        .where(ScheduledTransaction.scheduled_transaction_id == scheduled_transaction_id)
-        .where(PortfolioUser.user_id == current_user.user_id)
+    scheduled_transaction = await _get_scheduled_transaction(
+        db=db, account_id=account_id, scheduled_transaction_id=scheduled_transaction_id, user_id=current_user.user_id if current_user.user_id else 0
     )
-    scheduled_transaction = db.exec(sql).one_or_none()
 
     if not scheduled_transaction:
         raise HTTPException(status_code=404, detail="Scheduled transaction not found")
@@ -408,15 +415,16 @@ async def progress_iteration(
     scheduled_transaction_id: int,
 ) -> None:
 
-    scheduled_transaction = await get_scheduled_transaction(
-        db=db, current_user=current_user, account_id=account_id, scheduled_transaction_id=scheduled_transaction_id
+    scheduled_transaction = await _get_scheduled_transaction(
+        db=db, user_id=current_user.user_id if current_user.user_id else 0, account_id=account_id, scheduled_transaction_id=scheduled_transaction_id
     )
+
+    if not scheduled_transaction:
+        raise HTTPException(status_code=404, detail="Scheduled Transaction not found")
 
     # Update scheduled transaction's next iteration date by getting the next two iterations (actual current, actual next)
     next_iterations = await get_next_iterations(db=db, scheduled_transaction=scheduled_transaction, override_limit=2)
 
-    scheduled_transaction_data = scheduled_transaction.model_dump()
-    scheduled_transaction_data["start_date"] = next_iterations[1].transaction_date if len(next_iterations) == 2 else MAX_END_DATE
-    scheduled_transaction_data["next_transaction"] = None
-    db.add(ScheduledTransaction.model_validate(scheduled_transaction_data))
+    scheduled_transaction.start_date = next_iterations[1].transaction_date if len(next_iterations) == 2 else MAX_END_DATE
+    db.add(scheduled_transaction)
     db.commit()
