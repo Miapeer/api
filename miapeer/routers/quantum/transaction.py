@@ -2,7 +2,7 @@ from datetime import date
 
 from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import select
+from sqlmodel import func, select
 
 from miapeer.dependencies import CurrentActiveUser, DbSession, is_quantum_user
 from miapeer.models.quantum.account import Account
@@ -47,6 +47,7 @@ async def get_all_transactions(
         .where(Transaction.account_id == account_id)
         .where(PortfolioUser.user_id == current_user.user_id)
         .where((Transaction.clear_date == None) | (Transaction.clear_date >= limit_date))  # type: ignore
+        .order_by(func.ifnull(Transaction.clear_date, date(year=9999, month=1, day=1)), Transaction.transaction_date)  # type: ignore
     )
     transactions = db.exec(sql).all()
 
