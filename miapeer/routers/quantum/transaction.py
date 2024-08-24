@@ -1,3 +1,6 @@
+from datetime import date
+
+from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 
@@ -29,7 +32,13 @@ async def get_all_transactions(
     db: DbSession,
     current_user: CurrentActiveUser,
     account_id: int,
+    limit_months: int = 6,
 ) -> list[TransactionRead]:
+
+    limit_months = max(limit_months, 0)
+    limit_date = date(year=date.today().year, month=date.today().month, day=1)
+    limit_date -= relativedelta(months=limit_months)
+
     sql = (
         select(Transaction)
         .join(Account)
@@ -37,6 +46,7 @@ async def get_all_transactions(
         .join(PortfolioUser)
         .where(Transaction.account_id == account_id)
         .where(PortfolioUser.user_id == current_user.user_id)
+        .where((Transaction.clear_date == None) | (Transaction.clear_date >= limit_date))  # type: ignore
     )
     transactions = db.exec(sql).all()
 
@@ -49,9 +59,7 @@ async def get_all_transactions(
     modified_transactions = []
     for transaction in transactions:
         running_balance += transaction.amount
-        modified_transactions.append(
-            TransactionRead.model_validate(transaction.model_dump(), update={"balance": running_balance})
-        )
+        modified_transactions.append(TransactionRead.model_validate(transaction.model_dump(), update={"balance": running_balance}))
 
     return modified_transactions
 
