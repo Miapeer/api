@@ -4,6 +4,7 @@ from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from dateutil.relativedelta import relativedelta
 from fastapi import HTTPException
 from pytest_lazyfixture import lazy_fixture
 
@@ -122,7 +123,9 @@ class TestGetAll:
 
     @pytest.fixture
     def expected_sql(self, user_id: int, account_id: int) -> str:
-        return f"SELECT quantum_transaction.transaction_type_id, quantum_transaction.payee_id, quantum_transaction.category_id, quantum_transaction.amount, quantum_transaction.transaction_date, quantum_transaction.clear_date, quantum_transaction.check_number, quantum_transaction.exclude_from_forecast, quantum_transaction.notes, quantum_transaction.account_id, quantum_transaction.transaction_id \nFROM quantum_transaction JOIN quantum_account ON quantum_account.account_id = quantum_transaction.account_id JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_transaction.account_id = {account_id} AND quantum_portfolio_user.user_id = {user_id}"
+        limit_date = date(year=date.today().year, month=date.today().month, day=1)
+        limit_date -= relativedelta(months=6)
+        return f"SELECT quantum_transaction.transaction_type_id, quantum_transaction.payee_id, quantum_transaction.category_id, quantum_transaction.amount, quantum_transaction.transaction_date, quantum_transaction.clear_date, quantum_transaction.check_number, quantum_transaction.exclude_from_forecast, quantum_transaction.notes, quantum_transaction.account_id, quantum_transaction.transaction_id \nFROM quantum_transaction JOIN quantum_account ON quantum_account.account_id = quantum_transaction.account_id JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_transaction.account_id = {account_id} AND quantum_portfolio_user.user_id = {user_id} AND (quantum_transaction.clear_date IS NULL OR quantum_transaction.clear_date >= '{limit_date}')"
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",

@@ -73,7 +73,9 @@ class TestGetAll:
             },
         ]
 
-        assert response.json() == expected
+        actual = response.json()
+
+        assert actual == expected
 
 
 @pytest.mark.usefixtures("create_complete_portfolio")
