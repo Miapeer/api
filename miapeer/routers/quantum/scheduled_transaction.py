@@ -382,6 +382,7 @@ async def create_transaction(
         raise HTTPException(status_code=404, detail="No data provided")
 
     override_data = override_transaction_data.model_dump(exclude_unset=True) if override_transaction_data else {}
+    override_data["transaction_id"] = None
     transaction_data = scheduled_transaction.next_transaction.model_dump() if scheduled_transaction.next_transaction else {}
 
     # Create the transaction
