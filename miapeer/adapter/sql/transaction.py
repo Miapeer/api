@@ -1,5 +1,7 @@
 from sqlmodel import text
 
+from miapeer.adapter import sql
+
 GET_ALL = text(
     """
     with
@@ -115,5 +117,7 @@ GET_ALL = text(
         SUM(amount) OVER (ORDER BY order_index) AS balance
     from ordered_transactions
     order by order_index;
-"""
+""".replace(
+        "ifnull", sql.ifnull
+    )
 )
