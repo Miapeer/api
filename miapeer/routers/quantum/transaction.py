@@ -2,8 +2,9 @@ from datetime import date
 
 from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import func, select
+from sqlmodel import select
 
+from miapeer.adapter.sql import transaction as transaction_sql
 from miapeer.dependencies import CurrentActiveUser, DbSession, is_quantum_user
 from miapeer.models.quantum.account import Account
 from miapeer.models.quantum.category import Category
@@ -17,7 +18,6 @@ from miapeer.models.quantum.transaction import (
     TransactionUpdate,
 )
 from miapeer.models.quantum.transaction_type import TransactionType
-from miapeer.routers.quantum import account
 
 router = APIRouter(
     prefix="/accounts/{account_id}/transactions",
@@ -39,30 +39,11 @@ async def get_all_transactions(
     limit_date = date(year=date.today().year, month=date.today().month, day=1)
     limit_date -= relativedelta(months=limit_months)
 
-    sql = (
-        select(Transaction)
-        .join(Account)
-        .join(Portfolio)
-        .join(PortfolioUser)
-        .where(Transaction.account_id == account_id)
-        .where(PortfolioUser.user_id == current_user.user_id)
-        .where((Transaction.clear_date == None) | (Transaction.clear_date >= limit_date))  # type: ignore
-        .order_by(func.ifnull(Transaction.clear_date, date(year=9999, month=1, day=1)), Transaction.transaction_date)  # type: ignore
-    )
-    transactions = db.exec(sql).all()
+    transactions = db.exec(
+        transaction_sql.GET_ALL, params={"account_id": account_id, "user_id": current_user.user_id, "limit_date": limit_date}  # type: ignore
+    ).all()
 
-    running_balance = 0
-
-    if transactions:
-        a = await account.get_account(db, current_user, account_id)
-        running_balance = a.starting_balance
-
-    modified_transactions = []
-    for transaction in transactions:
-        running_balance += transaction.amount
-        modified_transactions.append(TransactionRead.model_validate(transaction.model_dump(), update={"balance": running_balance}))
-
-    return modified_transactions
+    return [TransactionRead.model_validate(transaction) for transaction in transactions if transaction.order_index > 0]
 
 
 @router.post("")
