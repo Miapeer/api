@@ -29,6 +29,7 @@ async def get_all_transaction_types(
         .join(Portfolio)
         .join(PortfolioUser)
         .where(PortfolioUser.user_id == current_user.user_id)
+        .order_by(TransactionType.name)
     )
     transaction_types = db.exec(sql).all()
     return [TransactionTypeRead.model_validate(transaction_type) for transaction_type in transaction_types]

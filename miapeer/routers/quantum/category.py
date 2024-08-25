@@ -24,7 +24,7 @@ async def get_all_categories(
     db: DbSession,
     current_user: CurrentActiveUser,
 ) -> list[CategoryRead]:
-    sql = select(Category).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
+    sql = select(Category).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id).order_by(Category.name)
     categories = db.exec(sql).all()
     return [CategoryRead.model_validate(category) for category in categories]
 
