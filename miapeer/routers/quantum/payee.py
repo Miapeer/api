@@ -24,7 +24,7 @@ async def get_all_payees(
     db: DbSession,
     current_user: CurrentActiveUser,
 ) -> list[PayeeRead]:
-    sql = select(Payee).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id)
+    sql = select(Payee).join(Portfolio).join(PortfolioUser).where(PortfolioUser.user_id == current_user.user_id).order_by(Payee.name)
     payees = db.exec(sql).all()
     return [PayeeRead.model_validate(payee) for payee in payees]
 
@@ -59,13 +59,7 @@ async def get_payee(
     payee_id: int,
 ) -> PayeeRead:
 
-    sql = (
-        select(Payee)
-        .join(Portfolio)
-        .join(PortfolioUser)
-        .where(Payee.payee_id == payee_id)
-        .where(PortfolioUser.user_id == current_user.user_id)
-    )
+    sql = select(Payee).join(Portfolio).join(PortfolioUser).where(Payee.payee_id == payee_id).where(PortfolioUser.user_id == current_user.user_id)
     payee = db.exec(sql).one_or_none()
 
     if not payee:
@@ -81,13 +75,7 @@ async def delete_payee(
     payee_id: int,
 ) -> dict[str, bool]:
 
-    sql = (
-        select(Payee)
-        .join(Portfolio)
-        .join(PortfolioUser)
-        .where(Payee.payee_id == payee_id)
-        .where(PortfolioUser.user_id == current_user.user_id)
-    )
+    sql = select(Payee).join(Portfolio).join(PortfolioUser).where(Payee.payee_id == payee_id).where(PortfolioUser.user_id == current_user.user_id)
     payee = db.exec(sql).one_or_none()
 
     if not payee:
@@ -107,13 +95,7 @@ async def update_payee(
     payee: PayeeUpdate,
 ) -> PayeeRead:
 
-    sql = (
-        select(Payee)
-        .join(Portfolio)
-        .join(PortfolioUser)
-        .where(Payee.payee_id == payee_id)
-        .where(PortfolioUser.user_id == current_user.user_id)
-    )
+    sql = select(Payee).join(Portfolio).join(PortfolioUser).where(Payee.payee_id == payee_id).where(PortfolioUser.user_id == current_user.user_id)
     db_payee = db.exec(sql).one_or_none()
 
     if not db_payee:
