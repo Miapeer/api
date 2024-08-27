@@ -1,4 +1,5 @@
 from datetime import date
+from enum import Enum
 from typing import Optional
 
 from dateutil.relativedelta import relativedelta
@@ -39,6 +40,12 @@ router = APIRouter(
 
 MAX_LIMIT = 100
 MAX_END_DATE = date(year=9999, month=1, day=1)
+
+
+class AmountTrend(Enum):
+    FIXED = 0
+    STEADY = 1
+    AVERAGE = 2
 
 
 async def _get_next_transaction(db: DbSession, scheduled_transaction: ScheduledTransaction) -> Optional[TransactionRead]:
@@ -293,12 +300,60 @@ async def update_scheduled_transaction(
     return updated_scheduled_transaction
 
 
+def _get_next_iterations_amount_modifier(
+    previous_transactions: list[Transaction],
+) -> tuple[AmountTrend, int]:
+    if not previous_transactions:
+        return AmountTrend.FIXED, 0
+    elif len(previous_transactions) == 1:
+        return AmountTrend.FIXED, previous_transactions[0].amount
+
+    deltas: list[int] = []
+    for transaction_index, transaction in enumerate(previous_transactions[:-1]):
+        next_transaction = previous_transactions[transaction_index + 1]
+        deltas.append(next_transaction.amount - transaction.amount)
+
+    if all(d == 0 for d in deltas) or all(d > 0 for d in deltas) or all(d < 0 for d in deltas):
+        return AmountTrend.STEADY, round(sum(deltas) / len(deltas))
+    else:
+        return AmountTrend.AVERAGE, round(sum(pt.amount for pt in previous_transactions) / len(previous_transactions))
+
+
+def _get_next_amount(
+    previous_amount: int,
+    amount_trend: AmountTrend,
+    amount_modifier: int,
+) -> int:
+    if amount_trend == AmountTrend.FIXED:
+        return amount_modifier
+    elif amount_trend == AmountTrend.STEADY:
+        return previous_amount + amount_modifier
+    elif amount_trend == AmountTrend.AVERAGE:
+        return amount_modifier
+
+
 async def get_next_iterations(
     db: DbSession,
     scheduled_transaction: ScheduledTransaction | ScheduledTransactionRead,
     override_end_date: Optional[date] = None,
     override_limit: int = MAX_LIMIT,
 ) -> list[Transaction]:
+
+    if scheduled_transaction.fixed_amount:
+        previous_transactions = []
+        amount_trend = AmountTrend.FIXED
+        amount_modifier = scheduled_transaction.fixed_amount
+    else:
+        sql = (
+            select(Transaction)
+            .join(ScheduledTransactionHistory)
+            .where(ScheduledTransactionHistory.scheduled_transaction_id == scheduled_transaction.scheduled_transaction_id)
+            .order_by(ScheduledTransactionHistory.scheduled_transaction_history_id)  # type: ignore
+            .limit(scheduled_transaction.estimate_occurrences)
+        )
+        previous_transactions = list(db.exec(sql).all())
+        amount_trend, amount_modifier = _get_next_iterations_amount_modifier(previous_transactions)
+
     limit = MAX_LIMIT
     if override_limit and scheduled_transaction.limit_occurrences:
         limit = min(override_limit, scheduled_transaction.limit_occurrences)
@@ -327,9 +382,14 @@ async def get_next_iterations(
 
     transactions: list[Transaction] = []
     active_date = scheduled_transaction.start_date
+    active_amount = previous_transactions[-1].amount if previous_transactions else 0
 
     if rpt_option and rpt_unit:
         while (len(transactions) < limit) and (active_date <= end_date):
+            next_amount = _get_next_amount(previous_amount=active_amount, amount_trend=amount_trend, amount_modifier=amount_modifier)
+            print(f"{next_amount=}\n")  # TODO: Remove this!!!
+            active_amount = next_amount
+
             # Special handling for invalid start_dates. Don't add a transaction unless valid.
             if rpt_unit.name != "Semi-Month" or (active_date.day == 1 or active_date.day == 16):
                 transactions.append(
@@ -337,7 +397,7 @@ async def get_next_iterations(
                         scheduled_transaction.model_dump(),
                         update={
                             "transaction_date": active_date,
-                            "amount": scheduled_transaction.fixed_amount if scheduled_transaction.fixed_amount else 0,
+                            "amount": next_amount,
                         },
                     )
                 )
