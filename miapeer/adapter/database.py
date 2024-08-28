@@ -78,7 +78,7 @@ def seed_db() -> None:  # pragma: no cover
                     ),
                     quantum := Application(
                         name="Quantum",
-                        url="https://quantum.miapeer.com",
+                        url="/quantum",
                         description="A free budgeting and money management web app.<br /><br />With its focus on forecasting, Quantum will help you be proactive rather than reactive.",
                         icon="icon icon-1 fa fa-usd",
                         display=True,
