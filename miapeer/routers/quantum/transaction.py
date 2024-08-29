@@ -51,6 +51,14 @@ async def _get_forecasted_transactions(
 
 
 def _merge_transactions_with_forecast(transactions: list[TransactionRead], forecasted_transactions: list[TransactionRead]):
+    if not forecasted_transactions:
+        # Shortcut if there's nothing to merge
+        return transactions
+
+    if not transactions:
+        # Shortcut if there's nothing to merge
+        return forecasted_transactions
+
     merged_transactions: list[TransactionRead] = []
 
     forecasted_transactions.sort(key=lambda x: x.transaction_date)
