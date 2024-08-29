@@ -69,18 +69,18 @@ def _merge_transactions_with_forecast(transactions: list[TransactionRead], forec
         if (
             transactions[transaction_index].clear_date
             or transactions[transaction_index].transaction_date <= forecasted_transactions[forecast_index].transaction_date
-            or forecast_index == len(forecasted_transactions)
         ):
             merged_transactions.append(transactions[transaction_index])
             transaction_index += 1
-        elif forecasted_transactions[forecast_index].transaction_date < transactions[transaction_index].transaction_date or transaction_index == len(
-            transactions
-        ):
+        else:
             merged_transactions.append(forecasted_transactions[forecast_index])
             forecast_index += 1
-        else:
-            # This should never happen, but add condition just in case to prevent potential infinite loop
-            raise Exception("Merging actual and forecasted transactions failed. Of course the unexpected happened.")
+
+    if transaction_index < len(transactions):
+        merged_transactions.extend(transactions[transaction_index:])
+
+    if forecast_index < len(forecasted_transactions):
+        merged_transactions.extend(forecasted_transactions[forecast_index:])
 
     return merged_transactions
 
