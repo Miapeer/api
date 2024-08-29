@@ -7,9 +7,7 @@ from sqlmodel import Field, SQLModel
 class TransactionBase(SQLModel):
     # parent_category_id: Optional[int] = Field(default=None, foreign_key="quantum_category.category_id")
 
-    transaction_type_id: Optional[int] = Field(
-        default=None, foreign_key="quantum_transaction_type.transaction_type_id"
-    )
+    transaction_type_id: Optional[int] = Field(default=None, foreign_key="quantum_transaction_type.transaction_type_id")
     payee_id: Optional[int] = Field(default=None, foreign_key="quantum_payee.payee_id")
     category_id: Optional[int] = Field(default=None, foreign_key="quantum_category.category_id")
     amount: int = 0
@@ -42,6 +40,7 @@ class TransactionRead(TransactionBase):
     transaction_id: int
     account_id: int
     balance: Optional[int] = None
+    is_forecast: bool = False
 
 
 class TransactionUpdate(SQLModel):
