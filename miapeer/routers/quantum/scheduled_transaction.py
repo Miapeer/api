@@ -387,7 +387,6 @@ async def get_next_iterations(
     if rpt_option and rpt_unit:
         while (len(transactions) < limit) and (active_date <= end_date):
             next_amount = _get_next_amount(previous_amount=active_amount, amount_trend=amount_trend, amount_modifier=amount_modifier)
-            print(f"{next_amount=}\n")  # TODO: Remove this!!!
             active_amount = next_amount
 
             # Special handling for invalid start_dates. Don't add a transaction unless valid.

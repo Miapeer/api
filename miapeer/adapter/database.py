@@ -34,7 +34,7 @@ def db_uri() -> str:
     return prod_db_uri if env.get("MIAPEER_ENV") == "Production" else dev_db_uri
 
 
-engine: Engine = create_engine(db_uri(), connect_args={"check_same_thread": False}, echo=True)
+engine: Engine = create_engine(db_uri(), connect_args={"check_same_thread": False}, echo=False)
 
 
 def get_user_count() -> int:  # pragma: no cover
@@ -78,7 +78,7 @@ def seed_db() -> None:  # pragma: no cover
                     ),
                     quantum := Application(
                         name="Quantum",
-                        url="https://quantum.miapeer.com",
+                        url="/quantum",
                         description="A free budgeting and money management web app.<br /><br />With its focus on forecasting, Quantum will help you be proactive rather than reactive.",
                         icon="icon icon-1 fa fa-usd",
                         display=True,
