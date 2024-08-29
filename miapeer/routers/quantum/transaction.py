@@ -41,7 +41,11 @@ async def _get_forecasted_transactions(
         fts = await scheduled_transaction.get_next_iterations(db=db, scheduled_transaction=st, override_end_date=limit_forecast_date)
 
         for ft in fts:
-            forecasted_transactions.append(TransactionRead.model_validate(ft.model_dump(), update={"transaction_id": 0, "is_forecast": True}))
+            forecasted_transactions.append(
+                TransactionRead.model_validate(
+                    ft.model_dump(), update={"transaction_id": 0, "forecast_from_scheduled_transaction_id": st.scheduled_transaction_id}
+                )
+            )
 
     return forecasted_transactions
 
