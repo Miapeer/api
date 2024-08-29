@@ -40,7 +40,7 @@ class TransactionRead(TransactionBase):
     transaction_id: int
     account_id: int
     balance: Optional[int] = None
-    is_forecast: bool = False
+    forecast_from_scheduled_transaction_id: Optional[int] = None
 
 
 class TransactionUpdate(SQLModel):
