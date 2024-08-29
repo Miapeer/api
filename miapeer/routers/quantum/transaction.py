@@ -99,7 +99,7 @@ async def get_all_transactions(
     limit_date -= relativedelta(months=limit_months)
 
     limit_forecast_months = max(limit_forecast_months, 0)
-    limit_forecast_date = date(year=date.today().year, month=date.today().month, day=1)
+    limit_forecast_date = date.today()
     limit_forecast_date += relativedelta(months=limit_forecast_months)
 
     transactions = db.exec(
