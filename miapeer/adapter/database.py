@@ -34,7 +34,7 @@ def db_uri() -> str:
     return prod_db_uri if env.get("MIAPEER_ENV") == "Production" else dev_db_uri
 
 
-engine: Engine = create_engine(db_uri(), connect_args={"check_same_thread": False}, echo=True)
+engine: Engine = create_engine(db_uri(), connect_args={"check_same_thread": False}, echo=False)
 
 
 def get_user_count() -> int:  # pragma: no cover
