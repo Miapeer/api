@@ -303,20 +303,22 @@ async def update_scheduled_transaction(
 def _get_next_iterations_amount_modifier(
     previous_transactions: list[Transaction],
 ) -> tuple[AmountTrend, int]:
-    if not previous_transactions:
+    filtered_transactions = [t for t in previous_transactions if not t.exclude_from_forecast]
+
+    if not filtered_transactions:
         return AmountTrend.FIXED, 0
-    elif len(previous_transactions) == 1:
-        return AmountTrend.FIXED, previous_transactions[0].amount
+    elif len(filtered_transactions) == 1:
+        return AmountTrend.FIXED, filtered_transactions[0].amount
 
     deltas: list[int] = []
-    for transaction_index, transaction in enumerate(previous_transactions[:-1]):
-        next_transaction = previous_transactions[transaction_index + 1]
+    for transaction_index, transaction in enumerate(filtered_transactions[:-1]):
+        next_transaction = filtered_transactions[transaction_index + 1]
         deltas.append(next_transaction.amount - transaction.amount)
 
     if all(d == 0 for d in deltas) or all(d > 0 for d in deltas) or all(d < 0 for d in deltas):
         return AmountTrend.STEADY, round(sum(deltas) / len(deltas))
     else:
-        return AmountTrend.AVERAGE, round(sum(pt.amount for pt in previous_transactions) / len(previous_transactions))
+        return AmountTrend.AVERAGE, round(sum(pt.amount for pt in filtered_transactions) / len(filtered_transactions))
 
 
 def _get_next_amount(
