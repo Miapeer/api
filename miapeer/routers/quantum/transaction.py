@@ -11,6 +11,9 @@ from miapeer.models.quantum.category import Category
 from miapeer.models.quantum.payee import Payee
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
+from miapeer.models.quantum.scheduled_transaction_history import (
+    ScheduledTransactionHistory,
+)
 from miapeer.models.quantum.transaction import (
     Transaction,
     TransactionCreate,
@@ -43,7 +46,11 @@ async def _get_forecasted_transactions(
         for ft in fts:
             forecasted_transactions.append(
                 TransactionRead.model_validate(
-                    ft.model_dump(), update={"transaction_id": 0, "forecast_from_scheduled_transaction_id": st.scheduled_transaction_id}
+                    ft.model_dump(),
+                    update={
+                        "transaction_id": 0,
+                        "forecast_from_scheduled_transaction_id": st.scheduled_transaction_id,
+                    },
                 )
             )
 
@@ -93,7 +100,6 @@ async def get_all_transactions(
     limit_months: int = 3,
     limit_forecast_months: int = 1,
 ) -> list[TransactionRead]:
-
     limit_months = max(limit_months, 0)
     limit_date = date(year=date.today().year, month=date.today().month, day=1)
     limit_date -= relativedelta(months=limit_months)
@@ -103,7 +109,12 @@ async def get_all_transactions(
     limit_forecast_date += relativedelta(months=limit_forecast_months)
 
     transactions = db.exec(
-        transaction_sql.GET_ALL, params={"account_id": account_id, "user_id": current_user.user_id, "limit_date": limit_date}  # type: ignore
+        transaction_sql.GET_ALL,  # type: ignore
+        params={
+            "account_id": account_id,
+            "user_id": current_user.user_id,
+            "limit_date": limit_date,
+        },
     ).all()
 
     # TODO: Currently operating off of "magic" transactions. The SQL produces transaction_id=-2 as the starting balance of the account and
@@ -113,9 +124,15 @@ async def get_all_transactions(
 
     actual_transactions = [TransactionRead.model_validate(t) for t in transactions if t.order_index > 0]
     forecasted_transactions = await _get_forecasted_transactions(
-        db=db, current_user=current_user, account_id=account_id, limit_forecast_date=limit_forecast_date
+        db=db,
+        current_user=current_user,
+        account_id=account_id,
+        limit_forecast_date=limit_forecast_date,
     )
-    merged_transactions = _merge_transactions_with_forecast(transactions=actual_transactions, forecasted_transactions=forecasted_transactions)
+    merged_transactions = _merge_transactions_with_forecast(
+        transactions=actual_transactions,
+        forecasted_transactions=forecasted_transactions,
+    )
 
     for t in merged_transactions:
         running_balance += t.amount
@@ -131,7 +148,6 @@ async def create_transaction(
     account_id: int,
     transaction: TransactionCreate,
 ) -> TransactionRead:
-
     # Get the user's data to verify access
     account_sql = (
         select(Account)
@@ -196,7 +212,6 @@ async def get_transaction(
     account_id: int,
     transaction_id: int,
 ) -> TransactionRead:
-
     sql = (
         select(Transaction)
         .join(Account)
@@ -221,7 +236,6 @@ async def delete_transaction(
     account_id: int,
     transaction_id: int,
 ) -> dict[str, bool]:
-
     sql = (
         select(Transaction)
         .join(Account)
@@ -235,6 +249,12 @@ async def delete_transaction(
 
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
+
+    sql = select(ScheduledTransactionHistory).where(ScheduledTransactionHistory.transaction_id == transaction_id)
+    scheduled_transaction_history = db.exec(sql).one_or_none()
+
+    if scheduled_transaction_history:
+        db.delete(scheduled_transaction_history)
 
     db.delete(transaction)
     db.commit()
@@ -250,7 +270,6 @@ async def update_transaction(
     transaction_id: int,
     transaction: TransactionUpdate,
 ) -> TransactionRead:
-
     transaction_sql = (
         select(Transaction)
         .join(Account)
