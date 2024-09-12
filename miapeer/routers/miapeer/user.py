@@ -33,10 +33,7 @@ async def get_all_users(
     return [UserRead.model_validate(user) for user in users]
 
 
-@router.post(
-    "",
-    dependencies=[Depends(is_miapeer_admin)],
-)
+@router.post("")
 async def create_user(
     db: DbSession,
     user: UserCreate,
