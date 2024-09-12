@@ -8,6 +8,7 @@ from miapeer.dependencies import (
     is_miapeer_super_user,
 )
 from miapeer.models.miapeer import User, UserCreate, UserRead, UserUpdate
+from miapeer.routers.auth import get_password_hash
 
 router = APIRouter(
     prefix="/users",
@@ -40,7 +41,7 @@ async def create_user(
     db: DbSession,
     user: UserCreate,
 ) -> UserRead:
-    db_user = User.model_validate(user.model_dump(), update={"password": "", "disabled": False})
+    db_user = User.model_validate(user.model_dump(), update={"password": get_password_hash(user.password)})
 
     db.add(db_user)
     db.commit()
@@ -83,7 +84,8 @@ async def update_user(
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    updated_user = User.model_validate(db_user.model_dump(), update=user.model_dump())
+    password = {"password": get_password_hash(user.password) if user.password else db_user.password}
+    updated_user = User.model_validate(db_user.model_dump(), update={**user.model_dump(), **password})
 
     db.add(updated_user)
     db.commit()
