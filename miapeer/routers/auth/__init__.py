@@ -29,12 +29,12 @@ def _verify_password(plain_password: str, hashed_password: str) -> bool:
     )
 
     # if not pw_verified:
-    #     print(f"\n{_get_password_hash(plain_password) = }\n")
+    #     print(f"\n{get_password_hash(plain_password) = }\n")
 
     return pw_verified
 
 
-def _get_password_hash(password: str) -> str:
+def get_password_hash(password: str) -> str:
     return _pwd_context.hash(password)  # pragma: no cover
 
 

@@ -23,6 +23,7 @@ class TokenData(BaseModel):
 
 class UserBase(SQLModel):
     email: str
+    disabled: bool
 
 
 class User(UserBase, table=True):
@@ -30,14 +31,13 @@ class User(UserBase, table=True):
 
     user_id: Optional[int] = Field(default=None, primary_key=True)
     password: str
-    disabled: bool
 
     permissions: List["Permission"] = Relationship(back_populates="user")
     # portfolio_users: List["PortfolioUser"] = Relationship(back_populates="user")
 
 
 class UserCreate(UserBase):
-    ...
+    password: str
 
 
 class UserRead(UserBase):
@@ -46,6 +46,7 @@ class UserRead(UserBase):
 
 class UserUpdate(SQLModel):
     email: Optional[str] = None
+    password: Optional[str] = None
 
 
 # endregion
