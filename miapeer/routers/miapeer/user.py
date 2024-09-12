@@ -7,7 +7,16 @@ from miapeer.dependencies import (
     is_miapeer_admin,
     is_miapeer_super_user,
 )
-from miapeer.models.miapeer import User, UserCreate, UserRead, UserUpdate
+from miapeer.models.miapeer import (
+    Application,
+    ApplicationRole,
+    Permission,
+    Role,
+    User,
+    UserCreate,
+    UserRead,
+    UserUpdate,
+)
 from miapeer.routers.auth import get_password_hash
 
 router = APIRouter(
@@ -38,11 +47,26 @@ async def create_user(
     db: DbSession,
     user: UserCreate,
 ) -> UserRead:
+
+    # Create the user
     db_user = User.model_validate(user.model_dump(), update={"password": get_password_hash(user.password)})
 
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
+    # Add Quantum as initial permissions
+    application_role_sql = select(ApplicationRole).join(Application).join(Role).where(Application.name == "Quantum").where(Role.name == "User")
+    application_role_found = db.exec(application_role_sql).first()
+    if not application_role_found:
+        raise HTTPException(status_code=404, detail="ApplicationRole not found")
+
+    if not db_user.user_id or not application_role_found.application_role_id:
+        raise HTTPException(status_code=500, detail="Database inconsistent")
+
+    quantum_permission = Permission(user_id=db_user.user_id, application_role_id=application_role_found.application_role_id)
+    db.add(quantum_permission)
+    db.commit()
 
     return UserRead.model_validate(db_user)
 
