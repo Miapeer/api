@@ -33,7 +33,9 @@ class Transaction(TransactionBase, table=True):
 
 
 class TransactionCreate(TransactionBase):
-    ...
+    transaction_type_name: Optional[str] = None
+    payee_name: Optional[str] = None
+    category_name: Optional[str] = None
 
 
 class TransactionRead(TransactionBase):

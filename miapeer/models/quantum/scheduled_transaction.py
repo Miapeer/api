@@ -40,7 +40,9 @@ class ScheduledTransaction(ScheduledTransactionBase, table=True):
 
 
 class ScheduledTransactionCreate(ScheduledTransactionBase):
-    ...
+    transaction_type_name: Optional[str] = None
+    payee_name: Optional[str] = None
+    category_name: Optional[str] = None
 
 
 class ScheduledTransactionRead(ScheduledTransactionBase):
