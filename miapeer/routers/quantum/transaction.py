@@ -7,8 +7,8 @@ from sqlmodel import select
 from miapeer.adapter.sql import transaction as transaction_sql
 from miapeer.dependencies import CurrentActiveUser, DbSession, is_quantum_user
 from miapeer.models.quantum.account import Account
-from miapeer.models.quantum.category import Category
-from miapeer.models.quantum.payee import Payee
+from miapeer.models.quantum.category import Category, CategoryCreate
+from miapeer.models.quantum.payee import Payee, PayeeCreate
 from miapeer.models.quantum.portfolio import Portfolio
 from miapeer.models.quantum.portfolio_user import PortfolioUser
 from miapeer.models.quantum.scheduled_transaction_history import (
@@ -20,8 +20,14 @@ from miapeer.models.quantum.transaction import (
     TransactionRead,
     TransactionUpdate,
 )
-from miapeer.models.quantum.transaction_type import TransactionType
+from miapeer.models.quantum.transaction_type import (
+    TransactionType,
+    TransactionTypeCreate,
+)
 from miapeer.routers.quantum import scheduled_transaction
+from miapeer.routers.quantum.category import create_category
+from miapeer.routers.quantum.payee import create_payee
+from miapeer.routers.quantum.transaction_type import create_transaction_type
 
 router = APIRouter(
     prefix="/accounts/{account_id}/transactions",
@@ -168,9 +174,19 @@ async def create_transaction(
             .where(TransactionType.transaction_type_id == transaction.transaction_type_id)
             .where(PortfolioUser.user_id == current_user.user_id)
         )
-        trasaction_type_found = db.exec(transaction_type_sql).first()
-        if not trasaction_type_found:
+        transaction_type_found = db.exec(transaction_type_sql).first()
+        if not transaction_type_found:
             raise HTTPException(status_code=404, detail="Transaction type not found")
+    elif transaction.transaction_type_name:
+        new_transaction_type = await create_transaction_type(
+            db=db,
+            current_user=current_user,
+            transaction_type=TransactionTypeCreate(portfolio_id=account_found.portfolio_id, name=transaction.transaction_type_name),
+        )
+        if new_transaction_type:
+            transaction.transaction_type_id = new_transaction_type.transaction_type_id
+        else:
+            raise HTTPException(status_code=500, detail="Could not create transaction type")
 
     if transaction.payee_id is not None:
         payee_sql = (
@@ -183,6 +199,14 @@ async def create_transaction(
         payee_found = db.exec(payee_sql).first()
         if not payee_found:
             raise HTTPException(status_code=404, detail="Payee not found")
+    elif transaction.payee_name:
+        new_payee = await create_payee(
+            db=db, current_user=current_user, payee=PayeeCreate(portfolio_id=account_found.portfolio_id, name=transaction.payee_name)
+        )
+        if new_payee:
+            transaction.payee_id = new_payee.payee_id
+        else:
+            raise HTTPException(status_code=500, detail="Could not create payee")
 
     if transaction.category_id is not None:
         category_sql = (
@@ -195,6 +219,14 @@ async def create_transaction(
         category_found = db.exec(category_sql).first()
         if not category_found:
             raise HTTPException(status_code=404, detail="Category not found")
+    elif transaction.category_name:
+        new_category = await create_category(
+            db=db, current_user=current_user, category=CategoryCreate(portfolio_id=account_found.portfolio_id, name=transaction.category_name)
+        )
+        if new_category:
+            transaction.category_id = new_category.category_id
+        else:
+            raise HTTPException(status_code=500, detail="Could not create category")
 
     # Create the transaction
     db_transaction = Transaction.model_validate(transaction.model_dump(), update={"account_id": account_id})
