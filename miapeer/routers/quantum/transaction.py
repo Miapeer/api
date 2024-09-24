@@ -315,56 +315,79 @@ async def update_transaction(
     if not db_transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    if db_transaction.transaction_type_id != transaction.transaction_type_id:
-        if transaction.transaction_type_id:
-            transaction_type_sql = (
-                select(TransactionType)
-                .join(Portfolio)
-                .join(PortfolioUser)
-                .where(TransactionType.transaction_type_id == transaction.transaction_type_id)
-                .where(PortfolioUser.user_id == current_user.user_id)
-            )
-            transaction_type_found = db.exec(transaction_type_sql).one_or_none()
-            if transaction_type_found:
-                db_transaction.transaction_type_id = transaction.transaction_type_id
-            else:
-                raise HTTPException(status_code=404, detail="Transaction type not found")
-        else:
-            db_transaction.transaction_type_id = None
+    # Get the user's data to verify access
+    account_sql = (
+        select(Account)
+        .join(Portfolio)
+        .join(PortfolioUser)
+        .where(Account.account_id == account_id)
+        .where(PortfolioUser.user_id == current_user.user_id)
+    )
+    account_found = db.exec(account_sql).first()
+    if not account_found:
+        raise HTTPException(status_code=404, detail="Account not found")
 
-    if db_transaction.payee_id != transaction.payee_id:
-        if transaction.payee_id:
-            payee_sql = (
-                select(Payee)
-                .join(Portfolio)
-                .join(PortfolioUser)
-                .where(Payee.payee_id == transaction.payee_id)
-                .where(PortfolioUser.user_id == current_user.user_id)
-            )
-            payee_found = db.exec(payee_sql).one_or_none()
-            if payee_found:
-                db_transaction.payee_id = transaction.payee_id
-            else:
-                raise HTTPException(status_code=404, detail="Payee not found")
+    if transaction.transaction_type_id is not None:
+        transaction_type_sql = (
+            select(TransactionType)
+            .join(Portfolio)
+            .join(PortfolioUser)
+            .where(TransactionType.transaction_type_id == transaction.transaction_type_id)
+            .where(PortfolioUser.user_id == current_user.user_id)
+        )
+        transaction_type_found = db.exec(transaction_type_sql).first()
+        if not transaction_type_found:
+            raise HTTPException(status_code=404, detail="Transaction type not found")
+    elif transaction.transaction_type_name:
+        new_transaction_type = await create_transaction_type(
+            db=db,
+            current_user=current_user,
+            transaction_type=TransactionTypeCreate(portfolio_id=account_found.portfolio_id, name=transaction.transaction_type_name),
+        )
+        if new_transaction_type:
+            db_transaction.transaction_type_id = new_transaction_type.transaction_type_id
         else:
-            db_transaction.payee_id = None
+            raise HTTPException(status_code=500, detail="Could not create transaction type")
 
-    if db_transaction.category_id != transaction.category_id:
-        if transaction.category_id:
-            category_sql = (
-                select(Category)
-                .join(Portfolio)
-                .join(PortfolioUser)
-                .where(Category.category_id == transaction.category_id)
-                .where(PortfolioUser.user_id == current_user.user_id)
-            )
-            category_found = db.exec(category_sql).one_or_none()
-            if category_found:
-                db_transaction.category_id = transaction.category_id
-            else:
-                raise HTTPException(status_code=404, detail="Category not found")
+    if transaction.payee_id is not None:
+        payee_sql = (
+            select(Payee)
+            .join(Portfolio)
+            .join(PortfolioUser)
+            .where(Payee.payee_id == transaction.payee_id)
+            .where(PortfolioUser.user_id == current_user.user_id)
+        )
+        payee_found = db.exec(payee_sql).first()
+        if not payee_found:
+            raise HTTPException(status_code=404, detail="Payee not found")
+    elif transaction.payee_name:
+        new_payee = await create_payee(
+            db=db, current_user=current_user, payee=PayeeCreate(portfolio_id=account_found.portfolio_id, name=transaction.payee_name)
+        )
+        if new_payee:
+            db_transaction.payee_id = new_payee.payee_id
         else:
-            db_transaction.category_id = None
+            raise HTTPException(status_code=500, detail="Could not create payee")
+
+    if transaction.category_id is not None:
+        category_sql = (
+            select(Category)
+            .join(Portfolio)
+            .join(PortfolioUser)
+            .where(Category.category_id == transaction.category_id)
+            .where(PortfolioUser.user_id == current_user.user_id)
+        )
+        category_found = db.exec(category_sql).first()
+        if not category_found:
+            raise HTTPException(status_code=404, detail="Category not found")
+    elif transaction.category_name:
+        new_category = await create_category(
+            db=db, current_user=current_user, category=CategoryCreate(portfolio_id=account_found.portfolio_id, name=transaction.category_name)
+        )
+        if new_category:
+            db_transaction.category_id = new_category.category_id
+        else:
+            raise HTTPException(status_code=500, detail="Could not create category")
 
     db_transaction.amount = transaction.amount
     db_transaction.transaction_date = transaction.transaction_date
