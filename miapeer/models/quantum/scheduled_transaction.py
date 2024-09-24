@@ -53,8 +53,11 @@ class ScheduledTransactionRead(ScheduledTransactionBase):
 
 class ScheduledTransactionUpdate(SQLModel):
     transaction_type_id: Optional[int] = None
+    transaction_type_name: Optional[str] = None
     payee_id: Optional[int] = None
+    payee_name: Optional[str] = None
     category_id: Optional[int] = None
+    category_name: Optional[str] = None
     fixed_amount: Optional[int] = None
     estimate_occurrences: Optional[int] = None
     prompt_days: Optional[int] = None
