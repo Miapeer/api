@@ -33,7 +33,9 @@ class Transaction(TransactionBase, table=True):
 
 
 class TransactionCreate(TransactionBase):
-    ...
+    transaction_type_name: Optional[str] = None
+    payee_name: Optional[str] = None
+    category_name: Optional[str] = None
 
 
 class TransactionRead(TransactionBase):
@@ -45,8 +47,11 @@ class TransactionRead(TransactionBase):
 
 class TransactionUpdate(SQLModel):
     transaction_type_id: Optional[int] = None
+    transaction_type_name: Optional[str] = None
     payee_id: Optional[int] = None
+    payee_name: Optional[str] = None
     category_id: Optional[int] = None
+    category_name: Optional[str] = None
     amount: int
     transaction_date: date
     clear_date: Optional[date] = None
