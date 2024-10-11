@@ -4,9 +4,11 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
-from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import User
+from miapeer.models.quantum.account import Account
+from miapeer.models.quantum.category import Category
+from miapeer.models.quantum.payee import Payee
 from miapeer.models.quantum.repeat_option import RepeatOption
 from miapeer.models.quantum.repeat_unit import RepeatUnit
 from miapeer.models.quantum.scheduled_transaction import (
@@ -23,6 +25,7 @@ from miapeer.models.quantum.transaction import (
     TransactionCreate,
     TransactionRead,
 )
+from miapeer.models.quantum.transaction_type import TransactionType
 from miapeer.routers.quantum import scheduled_transaction
 
 pytestmark = pytest.mark.asyncio
@@ -142,6 +145,21 @@ def complete_scheduled_transaction(scheduled_transaction_id: int, basic_schedule
     )
 
 
+@pytest.fixture
+def account_name() -> str:
+    return "transaction type name"
+
+
+@pytest.fixture
+def portfolio_id() -> int:
+    return 321
+
+
+@pytest.fixture
+def basic_account(account_id: int, account_name: str, portfolio_id: int) -> Account:
+    return Account(account_id=account_id, name=account_name, portfolio_id=portfolio_id, starting_balance=0)
+
+
 class TestGetAll:
     @pytest.fixture
     def multiple_scheduled_transactions(self, complete_scheduled_transaction: ScheduledTransaction) -> list[ScheduledTransaction]:
@@ -178,8 +196,8 @@ class TestGetAll:
         [
             ([], []),
             (
-                lazy_fixture("multiple_scheduled_transactions"),
-                lazy_fixture("expected_multiple_scheduled_transactions"),
+                pytest.lazy_fixture("multiple_scheduled_transactions"),
+                pytest.lazy_fixture("expected_multiple_scheduled_transactions"),
             ),
         ],
     )
@@ -352,7 +370,7 @@ class TestGet:
     def expected_sql(self, user_id: int, account_id: int, scheduled_transaction_id: int) -> str:
         return f"SELECT quantum_scheduled_transaction.transaction_type_id, quantum_scheduled_transaction.payee_id, quantum_scheduled_transaction.category_id, quantum_scheduled_transaction.fixed_amount, quantum_scheduled_transaction.estimate_occurrences, quantum_scheduled_transaction.prompt_days, quantum_scheduled_transaction.start_date, quantum_scheduled_transaction.end_date, quantum_scheduled_transaction.limit_occurrences, quantum_scheduled_transaction.repeat_option_id, quantum_scheduled_transaction.notes, quantum_scheduled_transaction.on_autopay, quantum_scheduled_transaction.scheduled_transaction_id, quantum_scheduled_transaction.account_id \nFROM quantum_scheduled_transaction JOIN quantum_account ON quantum_account.account_id = quantum_scheduled_transaction.account_id JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_scheduled_transaction.scheduled_transaction_id = {scheduled_transaction_id} AND quantum_portfolio_user.user_id = {user_id}"
 
-    @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_scheduled_transaction")])
+    @pytest.mark.parametrize("db_one_or_none_return_val", [pytest.lazy_fixture("complete_scheduled_transaction")])
     @patch("miapeer.routers.quantum.repeat_option.get_repeat_unit")
     @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
     async def test_get_with_data(
@@ -508,7 +526,19 @@ class TestUpdate:
         )
         return ScheduledTransactionRead.model_validate(updated_scheduled_transaction.model_dump(), update={"next_transaction": next_transaction})
 
-    @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_scheduled_transaction")])
+    @pytest.fixture
+    def db_first_return_values(self, basic_account, updated_scheduled_transaction) -> list:
+        return [
+            basic_account,
+            TransactionType(transaction_type_id=updated_scheduled_transaction.transaction_type_id),
+            Payee(payee_id=updated_scheduled_transaction.payee_id),
+            Category(category_id=updated_scheduled_transaction.category_id),
+        ]
+
+    @pytest.mark.parametrize(
+        "db_one_or_none_return_val, db_first_side_effect_val",
+        [(pytest.lazy_fixture("complete_scheduled_transaction"), pytest.lazy_fixture("db_first_return_values"))],
+    )
     @patch("miapeer.routers.quantum.repeat_option.get_repeat_unit")
     @patch("miapeer.routers.quantum.repeat_option.get_repeat_option")
     async def test_update_with_scheduled_transaction_found(
@@ -770,6 +800,9 @@ class TestNextIteration:
 
 
 class TestCreateTransaction:
+    def db_refresh(obj) -> None:  # type: ignore
+        obj.transaction_id = 0
+
     @pytest.fixture
     def scheduled_transaction_with_no_next(self, complete_scheduled_transaction: ScheduledTransaction) -> ScheduledTransactionRead:
         return ScheduledTransactionRead.model_validate(complete_scheduled_transaction)
@@ -960,22 +993,25 @@ class TestCreateTransaction:
         mock_db.refresh.assert_not_called()
 
     @pytest.mark.parametrize(
-        "override_transaction_data, transaction_to_create, expected_response",
+        "db_refresh_patch_method, override_transaction_data, transaction_to_create, expected_response",
         [
             (
+                db_refresh,
                 None,
-                lazy_fixture("base_transaction_to_create"),
-                lazy_fixture("base_transaction_created"),
+                pytest.lazy_fixture("base_transaction_to_create"),
+                pytest.lazy_fixture("base_transaction_created"),
             ),
             (
-                lazy_fixture("transaction_overrides_1"),
-                lazy_fixture("transaction_to_create_with_overrides_1"),
-                lazy_fixture("transaction_with_overrides_created_1"),
+                db_refresh,
+                pytest.lazy_fixture("transaction_overrides_1"),
+                pytest.lazy_fixture("transaction_to_create_with_overrides_1"),
+                pytest.lazy_fixture("transaction_with_overrides_created_1"),
             ),
             (
-                lazy_fixture("transaction_overrides_2"),
-                lazy_fixture("transaction_to_create_with_overrides_2"),
-                lazy_fixture("transaction_with_overrides_created_2"),
+                db_refresh,
+                pytest.lazy_fixture("transaction_overrides_2"),
+                pytest.lazy_fixture("transaction_to_create_with_overrides_2"),
+                pytest.lazy_fixture("transaction_with_overrides_created_2"),
             ),
         ],
     )
@@ -1046,15 +1082,15 @@ class TestProgressIteration:
         [
             (  # Happy path
                 [Transaction(transaction_date=date(year=111, month=1, day=1)), Transaction(transaction_date=date(year=222, month=1, day=1))],
-                lazy_fixture("updated_scheduled_transaction_with_next"),
+                pytest.lazy_fixture("updated_scheduled_transaction_with_next"),
             ),
             (  # There's a current transaction, but not a next
                 [Transaction(transaction_date=date(year=111, month=1, day=1))],
-                lazy_fixture("updated_scheduled_transaction_with_no_next"),
+                pytest.lazy_fixture("updated_scheduled_transaction_with_no_next"),
             ),
             (  # No next iterations at all
                 [],
-                lazy_fixture("updated_scheduled_transaction_with_no_next"),
+                pytest.lazy_fixture("updated_scheduled_transaction_with_no_next"),
             ),
         ],
     )

@@ -3,7 +3,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 from fastapi import HTTPException
-from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import User
 from miapeer.models.quantum.account import (
@@ -67,7 +66,7 @@ class TestGetAll:
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
-        [([], []), (lazy_fixture("multiple_accounts"), lazy_fixture("expected_multiple_accounts"))],
+        [([], []), (pytest.lazy_fixture("multiple_accounts"), pytest.lazy_fixture("expected_multiple_accounts"))],
     )
     @patch("miapeer.routers.quantum.account.get_account_balance")
     async def test_get_all(
@@ -106,7 +105,7 @@ class TestCreate:
     def expected_sql(self, user_id: int) -> str:
         return f"SELECT quantum_portfolio.portfolio_id \nFROM quantum_portfolio JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_portfolio_user.user_id = {user_id}"
 
-    @pytest.mark.parametrize("db_first_return_val, db_refresh_patch_method", [(lazy_fixture("portfolio"), db_refresh)])
+    @pytest.mark.parametrize("db_first_return_val, db_refresh_patch_method", [(pytest.lazy_fixture("portfolio"), db_refresh)])
     @patch("miapeer.routers.quantum.account.get_account_balance")
     async def test_create_with_portfolio_found(
         self,
@@ -164,7 +163,7 @@ class TestGet:
     def expected_sql(self, user_id: int, account_id: int) -> str:
         return f"SELECT quantum_account.portfolio_id, quantum_account.name, quantum_account.starting_balance, quantum_account.account_id \nFROM quantum_account JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_portfolio_user.user_id = {user_id}"
 
-    @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_account")])
+    @pytest.mark.parametrize("db_one_or_none_return_val", [pytest.lazy_fixture("complete_account")])
     @patch("miapeer.routers.quantum.account.get_account_balance")
     async def test_get_with_data(
         self,
@@ -246,7 +245,7 @@ class TestUpdate:
     def expected_response(self, updated_account: Account, starting_balance: int) -> AccountRead:
         return AccountRead.model_validate(updated_account.model_dump(), update={"starting_balance": starting_balance, "balance": starting_balance})
 
-    @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_account")])
+    @pytest.mark.parametrize("db_one_or_none_return_val", [pytest.lazy_fixture("complete_account")])
     @patch("miapeer.routers.quantum.account.get_account_balance")
     async def test_update_with_account_found(
         self,

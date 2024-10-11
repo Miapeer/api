@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
-from pytest_lazyfixture import lazy_fixture
 
 from miapeer.auth import jwt
 
@@ -68,7 +67,7 @@ class TestDecodeJwt:
             ("some.bad.token", jwt.JwtErrorMessage.INVALID_TOKEN),
             # Expired token
             (
-                lazy_fixture("expired_jwt"),
+                pytest.lazy_fixture("expired_jwt"),
                 jwt.JwtErrorMessage.INVALID_TOKEN,
             ),
         ],

@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import HTTPException
-from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import User
 from miapeer.models.quantum.category import (
@@ -66,7 +65,7 @@ class TestGetAll:
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
-        [([], []), (lazy_fixture("multiple_categories"), lazy_fixture("expected_multiple_categories"))],
+        [([], []), (pytest.lazy_fixture("multiple_categories"), pytest.lazy_fixture("expected_multiple_categories"))],
     )
     async def test_get_all(self, user: User, mock_db: Mock, expected_sql: str, expected_response: list[CategoryRead]) -> None:
         response = await category.get_all_categories(db=mock_db, current_user=user)
@@ -141,7 +140,7 @@ class TestGet:
     def expected_sql(self, user_id: int, category_id: int) -> str:
         return f"SELECT quantum_category.name, quantum_category.parent_category_id, quantum_category.portfolio_id, quantum_category.category_id \nFROM quantum_category JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_category.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_category.category_id = {category_id} AND quantum_portfolio_user.user_id = {user_id}"
 
-    @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_category")])
+    @pytest.mark.parametrize("db_one_or_none_return_val", [pytest.lazy_fixture("complete_category")])
     async def test_get_with_data(self, user: User, category_id: int, mock_db: Mock, expected_sql: str, expected_response: CategoryRead) -> None:
         response = await category.get_category(category_id=category_id, db=mock_db, current_user=user)
 
@@ -211,7 +210,7 @@ class TestUpdate:
     def expected_response(self, updated_category: Category) -> CategoryRead:
         return CategoryRead.model_validate(updated_category.model_dump())
 
-    @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_category")])
+    @pytest.mark.parametrize("db_one_or_none_return_val", [pytest.lazy_fixture("complete_category")])
     async def test_update_with_category_found(
         self,
         user: User,

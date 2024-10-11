@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import HTTPException
-from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import Permission, PermissionCreate, PermissionRead
 from miapeer.routers.miapeer import permission
@@ -52,7 +51,7 @@ class TestGetAll:
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
-        [([], []), (lazy_fixture("multiple_permissions"), lazy_fixture("expected_multiple_permissions"))],
+        [([], []), (pytest.lazy_fixture("multiple_permissions"), pytest.lazy_fixture("expected_multiple_permissions"))],
     )
     async def test_get_all(self, mock_db: Mock, expected_sql: str, expected_response: list[PermissionRead]) -> None:
         response = await permission.get_all_permissions(db=mock_db)
@@ -99,7 +98,7 @@ class TestGet:
     def expected_response(self, complete_permission: Permission) -> PermissionRead:
         return PermissionRead.model_validate(complete_permission)
 
-    @pytest.mark.parametrize("db_get_return_val", [lazy_fixture("complete_permission")])
+    @pytest.mark.parametrize("db_get_return_val", [pytest.lazy_fixture("complete_permission")])
     async def test_get_with_data(self, permission_id: int, mock_db: Mock, expected_response: PermissionRead) -> None:
         response = await permission.get_permission(permission_id=permission_id, db=mock_db)
 

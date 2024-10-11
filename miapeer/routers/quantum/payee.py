@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 
@@ -17,6 +19,26 @@ router = APIRouter(
     dependencies=[Depends(is_quantum_user)],
     responses={404: {"description": "Not found"}},
 )
+
+
+async def update_payee_id_ref(
+    db: DbSession, current_user: CurrentActiveUser, object_to_update, portfolio_id: int, payee_id: Optional[int], payee_name: Optional[str]
+):
+    if payee_id is not None:
+        payee_sql = (
+            select(Payee).join(Portfolio).join(PortfolioUser).where(Payee.payee_id == payee_id).where(PortfolioUser.user_id == current_user.user_id)
+        )
+        payee_found = db.exec(payee_sql).first()
+        if payee_found:
+            object_to_update.payee_id = payee_found.payee_id
+        else:
+            raise HTTPException(status_code=404, detail="Payee not found")
+    elif payee_name:
+        new_payee = await create_payee(db=db, current_user=current_user, payee=PayeeCreate(portfolio_id=portfolio_id, name=payee_name))
+        if new_payee:
+            object_to_update.payee_id = new_payee.payee_id
+        else:
+            raise HTTPException(status_code=500, detail="Could not create payee")
 
 
 @router.get("")

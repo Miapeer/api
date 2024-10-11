@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import HTTPException
-from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import User
 from miapeer.models.quantum.transaction_type import (
@@ -56,11 +55,11 @@ class TestGetAll:
 
     @pytest.fixture
     def expected_sql(self, user_id: int) -> str:
-        return f"SELECT quantum_transaction_type.name, quantum_transaction_type.portfolio_id, quantum_transaction_type.transaction_type_id \nFROM quantum_transaction_type JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_transaction_type.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_portfolio_user.user_id = {user_id}"
+        return f"SELECT quantum_transaction_type.name, quantum_transaction_type.portfolio_id, quantum_transaction_type.transaction_type_id \nFROM quantum_transaction_type JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_transaction_type.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_portfolio_user.user_id = {user_id} ORDER BY quantum_transaction_type.name"
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
-        [([], []), (lazy_fixture("multiple_transaction_types"), lazy_fixture("expected_multiple_transaction_types"))],
+        [([], []), (pytest.lazy_fixture("multiple_transaction_types"), pytest.lazy_fixture("expected_multiple_transaction_types"))],
     )
     async def test_get_all(self, user: User, mock_db: Mock, expected_sql: str, expected_response: list[TransactionTypeRead]) -> None:
         response = await transaction_type.get_all_transaction_types(db=mock_db, current_user=user)
@@ -138,7 +137,7 @@ class TestGet:
     def expected_sql(self, user_id: int, transaction_type_id: int) -> str:
         return f"SELECT quantum_transaction_type.name, quantum_transaction_type.portfolio_id, quantum_transaction_type.transaction_type_id \nFROM quantum_transaction_type JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_transaction_type.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_transaction_type.transaction_type_id = {transaction_type_id} AND quantum_portfolio_user.user_id = {user_id}"
 
-    @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_transaction_type")])
+    @pytest.mark.parametrize("db_one_or_none_return_val", [pytest.lazy_fixture("complete_transaction_type")])
     async def test_get_with_data(
         self,
         user: User,
@@ -215,7 +214,7 @@ class TestUpdate:
     def expected_response(self, updated_transaction_type: TransactionType) -> TransactionTypeRead:
         return TransactionTypeRead.model_validate(updated_transaction_type.model_dump())
 
-    @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_transaction_type")])
+    @pytest.mark.parametrize("db_one_or_none_return_val", [pytest.lazy_fixture("complete_transaction_type")])
     async def test_update_with_transaction_type_found(
         self,
         user: User,

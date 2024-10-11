@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 
@@ -17,6 +19,30 @@ router = APIRouter(
     dependencies=[Depends(is_quantum_user)],
     responses={404: {"description": "Not found"}},
 )
+
+
+async def update_category_id_ref(
+    db: DbSession, current_user: CurrentActiveUser, object_to_update, portfolio_id: int, category_id: Optional[int], category_name: Optional[str]
+):
+    if category_id is not None:
+        category_sql = (
+            select(Category)
+            .join(Portfolio)
+            .join(PortfolioUser)
+            .where(Category.category_id == category_id)
+            .where(PortfolioUser.user_id == current_user.user_id)
+        )
+        category_found = db.exec(category_sql).first()
+        if category_found:
+            object_to_update.category_id = category_found.category_id
+        else:
+            raise HTTPException(status_code=404, detail="Category not found")
+    elif category_name:
+        new_category = await create_category(db=db, current_user=current_user, category=CategoryCreate(portfolio_id=portfolio_id, name=category_name))
+        if new_category:
+            object_to_update.category_id = new_category.category_id
+        else:
+            raise HTTPException(status_code=500, detail="Could not create category")
 
 
 @router.get("")

@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import HTTPException
-from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import Role, RoleCreate, RoleRead, RoleUpdate
 from miapeer.routers.miapeer import role
@@ -55,7 +54,7 @@ class TestGetAll:
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
-        [([], []), (lazy_fixture("multiple_roles"), lazy_fixture("expected_multiple_roles"))],
+        [([], []), (pytest.lazy_fixture("multiple_roles"), pytest.lazy_fixture("expected_multiple_roles"))],
     )
     async def test_get_all(self, mock_db: Mock, expected_sql: str, expected_response: list[RoleRead]) -> None:
         response = await role.get_all_roles(db=mock_db)
@@ -102,7 +101,7 @@ class TestGet:
     def expected_response(self, complete_role: Role) -> RoleRead:
         return RoleRead.model_validate(complete_role)
 
-    @pytest.mark.parametrize("db_get_return_val", [lazy_fixture("complete_role")])
+    @pytest.mark.parametrize("db_get_return_val", [pytest.lazy_fixture("complete_role")])
     async def test_get_with_data(self, role_id: int, mock_db: Mock, expected_response: RoleRead) -> None:
         response = await role.get_role(role_id=role_id, db=mock_db)
 
@@ -145,7 +144,7 @@ class TestUpdate:
     def expected_response(self, updated_role: Role) -> RoleRead:
         return RoleRead.model_validate(updated_role.model_dump())
 
-    @pytest.mark.parametrize("db_get_return_val", [lazy_fixture("complete_role")])
+    @pytest.mark.parametrize("db_get_return_val", [pytest.lazy_fixture("complete_role")])
     async def test_update_with_role_found(
         self,
         role_id: int,

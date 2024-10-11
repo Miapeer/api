@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import HTTPException
-from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import User, UserCreate, UserRead, UserUpdate
 from miapeer.routers.miapeer import user
@@ -61,7 +60,7 @@ class TestGetAll:
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
-        [([], []), (lazy_fixture("multiple_users"), lazy_fixture("expected_multiple_users"))],
+        [([], []), (pytest.lazy_fixture("multiple_users"), pytest.lazy_fixture("expected_multiple_users"))],
     )
     async def test_get_all(self, mock_db: Mock, expected_sql: str, expected_response: list[UserRead]) -> None:
         response = await user.get_all_users(db=mock_db)
@@ -79,7 +78,7 @@ class TestCreate:
 
     @pytest.fixture
     def user_to_create(self, user_email: str) -> UserCreate:
-        return UserCreate(email=user_email)
+        return UserCreate(email=user_email, disabled=False, password="")
 
     @pytest.mark.parametrize("db_first_return_val, db_refresh_patch_method", [("some data", db_refresh)])
     async def test_create(
@@ -108,7 +107,7 @@ class TestGet:
     def expected_response(self, complete_user: User) -> UserRead:
         return UserRead.model_validate(complete_user)
 
-    @pytest.mark.parametrize("db_get_return_val", [lazy_fixture("complete_user")])
+    @pytest.mark.parametrize("db_get_return_val", [pytest.lazy_fixture("complete_user")])
     async def test_get_with_data(self, user_id: int, mock_db: Mock, expected_response: UserRead) -> None:
         response = await user.get_user(user_id=user_id, db=mock_db)
 
@@ -151,7 +150,7 @@ class TestUpdate:
     def expected_response(self, updated_user: User) -> UserRead:
         return UserRead.model_validate(updated_user.model_dump())
 
-    @pytest.mark.parametrize("db_get_return_val", [lazy_fixture("complete_user")])
+    @pytest.mark.parametrize("db_get_return_val", [pytest.lazy_fixture("complete_user")])
     async def test_update_with_user_found(
         self,
         user_id: int,
