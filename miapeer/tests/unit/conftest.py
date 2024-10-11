@@ -6,6 +6,8 @@ import pytest
 from miapeer.auth.jwt import TokenData
 from miapeer.models.miapeer import User
 
+UNSET = "fixture not set"
+
 
 @pytest.fixture
 def jwk() -> str:
@@ -33,50 +35,59 @@ def jwt_missing_sub() -> str:
 
 
 @pytest.fixture
-def db_all_return_val() -> None:
-    return None
+def db_all_return_val():
+    return UNSET
 
 
 @pytest.fixture
-def db_first_return_val() -> None:
-    return None
+def db_first_return_val():
+    return UNSET
 
 
 @pytest.fixture
-def db_one_or_none_return_val() -> None:
-    return None
+def db_first_side_effect_val():
+    return UNSET
 
 
 @pytest.fixture
-def db_get_return_val() -> None:
-    return None
+def db_one_or_none_return_val():
+    return UNSET
 
 
 @pytest.fixture
-def db_refresh_patch_method() -> None:
-    return None
+def db_get_return_val():
+    return UNSET
+
+
+@pytest.fixture
+def db_refresh_patch_method():
+    return UNSET
 
 
 @pytest.fixture
 def mock_db(
     db_all_return_val: Any,
     db_first_return_val: Any,
+    db_first_side_effect_val: Any,
     db_one_or_none_return_val: Any,
     db_get_return_val: Any,
     db_refresh_patch_method: Any,
 ) -> Mock:
     mock_db = Mock()
-
     db_methods = Mock()
-    db_methods.all.return_value = db_all_return_val
-    db_methods.first.return_value = db_first_return_val
-    db_methods.one_or_none.return_value = db_one_or_none_return_val
 
-    mock_db.get.return_value = db_get_return_val
+    db_methods.all.return_value = None if db_all_return_val == UNSET else db_all_return_val
+
+    db_methods.first.return_value = None if db_first_return_val == UNSET else db_first_return_val
+    db_methods.first.side_effect = None if db_first_side_effect_val == UNSET else db_first_side_effect_val
+
+    db_methods.one_or_none.return_value = None if db_one_or_none_return_val == UNSET else db_one_or_none_return_val
+
+    mock_db.get.return_value = None if db_get_return_val == UNSET else db_get_return_val
+
+    mock_db.refresh.side_effect = None if db_refresh_patch_method == UNSET else db_refresh_patch_method
+
     mock_db.exec.return_value = db_methods
-
-    mock_db.refresh.side_effect = db_refresh_patch_method
-
     return mock_db
 
 

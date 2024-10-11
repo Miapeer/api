@@ -3,7 +3,6 @@ from unittest.mock import Mock
 import pytest
 from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import User
 from miapeer.routers import auth
@@ -22,7 +21,7 @@ def user_with_incorrect_password(user: User) -> User:
     return user
 
 
-@pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("user")])
+@pytest.mark.parametrize("db_one_or_none_return_val", [pytest.lazy_fixture("user")])
 async def test_access_token(form_data: OAuth2PasswordRequestForm, mock_db: Mock) -> None:
     response = await auth.login_for_access_token(form_data=form_data, jwk="My secret key", db=mock_db)
 
@@ -36,7 +35,7 @@ async def test_access_token_when_user_not_found(form_data: OAuth2PasswordRequest
         await auth.login_for_access_token(form_data=form_data, jwk="My secret key", db=mock_db)
 
 
-@pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("user_with_incorrect_password")])
+@pytest.mark.parametrize("db_one_or_none_return_val", [pytest.lazy_fixture("user_with_incorrect_password")])
 async def test_access_token_when_password_incorrect(form_data: OAuth2PasswordRequestForm, mock_db: Mock) -> None:
     with pytest.raises(HTTPException):
         await auth.login_for_access_token(form_data=form_data, jwk="My secret key", db=mock_db)

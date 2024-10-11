@@ -3,7 +3,6 @@ from unittest.mock import Mock, call
 
 import pytest
 from fastapi import HTTPException
-from pytest_lazyfixture import lazy_fixture
 
 from miapeer.models.miapeer import User
 from miapeer.models.quantum.portfolio import (
@@ -51,7 +50,7 @@ class TestGetAll:
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
-        [([], []), (lazy_fixture("multiple_portfolios"), lazy_fixture("expected_multiple_portfolios"))],
+        [([], []), (pytest.lazy_fixture("multiple_portfolios"), pytest.lazy_fixture("expected_multiple_portfolios"))],
     )
     async def test_get_all(self, user: User, mock_db: Mock, expected_sql: str, expected_response: list[PortfolioRead]) -> None:
         response = await portfolio.get_all_portfolios(db=mock_db, current_user=user)
@@ -121,7 +120,7 @@ class TestGet:
     def expected_sql(self, user_id: int, portfolio_id: int) -> str:
         return f"SELECT quantum_portfolio.portfolio_id \nFROM quantum_portfolio JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_portfolio.portfolio_id = {portfolio_id} AND quantum_portfolio_user.user_id = {user_id}"
 
-    @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("complete_portfolio")])
+    @pytest.mark.parametrize("db_one_or_none_return_val", [pytest.lazy_fixture("complete_portfolio")])
     async def test_get_with_data(self, user: User, portfolio_id: int, mock_db: Mock, expected_sql: str, expected_response: PortfolioRead) -> None:
         response = await portfolio.get_portfolio(portfolio_id=portfolio_id, db=mock_db, current_user=user)
 
