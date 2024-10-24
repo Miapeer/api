@@ -8,7 +8,7 @@ GET_ALL = text(
         recent_transactions as (
             select
                 t.transaction_id,
-                substr(coalesce(t.clear_date, t.transaction_date), 1, 7) as report_date,
+                substr(cast(coalesce(t.clear_date, t.transaction_date) as varchar), 1, 7) as report_date,
                 t.category_id,
                 t.amount
             from quantum_transaction t
@@ -27,7 +27,7 @@ GET_ALL = text(
         older_transactions as (
             select
                 t.transaction_id,
-                substr(t.clear_date, 1, 7) as report_date,
+                substr(cast(t.clear_date as varchar), 1, 7) as report_date,
                 t.category_id,
                 t.amount
             from quantum_transaction t
@@ -43,6 +43,7 @@ GET_ALL = text(
                     on rt.transaction_id = t.transaction_id
             where
                 pu.user_id = :user_id and
+                clear_date >= :limit_date and
                 rt.transaction_id is null
         ),
         transactions as (
@@ -75,7 +76,7 @@ GET_ONE = text(
         recent_transactions as (
             select
                 t.transaction_id,
-                substr(coalesce(t.clear_date, t.transaction_date), 1, 7) as report_date,
+                substring(cast(coalesce(t.clear_date, t.transaction_date) as varchar), 1, 7) as report_date,
                 t.amount
             from quantum_transaction t
                 inner join quantum_budget b
@@ -94,7 +95,7 @@ GET_ONE = text(
         older_transactions as (
             select
                 t.transaction_id,
-                substr(t.clear_date, 1, 7) as report_date,
+                substring(cast(t.clear_date as varchar), 1, 7) as report_date,
                 t.amount
             from quantum_transaction t
                 inner join quantum_budget b
@@ -110,6 +111,7 @@ GET_ONE = text(
             where
                 b.budget_id = :budget_id and
                 pu.user_id = :user_id and
+                clear_date >= :limit_date and
                 rt.transaction_id is null
         ),
         transactions as (
