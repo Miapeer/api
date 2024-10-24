@@ -76,7 +76,7 @@ GET_ONE = text(
         recent_transactions as (
             select
                 t.transaction_id,
-                substring(cast(coalesce(t.clear_date, t.transaction_date) as varchar), 1, 7) as report_date,
+                substr(cast(coalesce(t.clear_date, t.transaction_date) as varchar), 1, 7) as report_date,
                 t.amount
             from quantum_transaction t
                 inner join quantum_budget b
@@ -95,7 +95,7 @@ GET_ONE = text(
         older_transactions as (
             select
                 t.transaction_id,
-                substring(cast(t.clear_date as varchar), 1, 7) as report_date,
+                substr(cast(t.clear_date as varchar), 1, 7) as report_date,
                 t.amount
             from quantum_transaction t
                 inner join quantum_budget b
