@@ -2,56 +2,29 @@ version: '3'
 
 silent: true
 
+dotenv: ['.env']
+
 tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list-all
+
   compile-requirements:
     cmds:
       - pip-compile
 
-  uninstall-local:
-    cmds:
-      - pyenv local --unset
-      - pyenv virtualenv-delete miapeer-api
-
-  install-local:
-    cmds:
-      - pyenv virtualenv 3.10 miapeer-api
-      - pyenv local miapeer-api
-      - pip install -r requirements.txt
-
-  build-dev:
-    cmds:
-      - docker image build --file ./Dockerfile-dev --tag miapeer.azurecr.io/miapeer-api-dev .
-
   start:
     cmds:
-      - docker container run --rm -p 8000:80 --env-file {{.USER_WORKING_DIR}}/.env --volume {{.USER_WORKING_DIR}}:/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-api-dev
-
-  run-command:
-    internal: true
-    cmds:
-      - docker container run --rm -it -p 8000:80 --env-file {{.USER_WORKING_DIR}}/.env --volume {{.USER_WORKING_DIR}}:/miapeer --name miapeer-api miapeer.azurecr.io/miapeer-api-dev {{.COMMAND_STRING}}
-
-  run-cmd:
-    cmds:
-      - task: run-command
-        vars:
-          COMMAND_STRING: "{{.CLI_ARGS}}"
-
-  stop:
-    cmds:
-      - docker container stop miapeer-api
+      - ./start_server
 
   tdd:
     cmds:
-      - task: run-command
-        vars:
-          COMMAND_STRING: ptw
+      - ptw
 
   coverage-report:
     cmds:
-      - task: run-command
-        vars:
-          COMMAND_STRING: pytest --cov-report term-missing:skip-covered --cov=miapeer miapeer/tests/
+      - pytest --cov-report term-missing:skip-covered --cov=miapeer miapeer/tests/
 
   type-check:
     cmds:

@@ -1,0 +1,8 @@
+{
+	"name": "Miapeer API DevContainer",
+	"build": {
+		"dockerfile": "../Dockerfile-dev"
+	},
+	"workspaceFolder": "/workspaces/api",
+	"forwardPorts": [8000]
+}
