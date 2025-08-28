@@ -13,8 +13,7 @@ RUN apt-get install -y unixodbc-dev
 RUN ACCEPT_EULA=Y apt-get install -y msodbcsql18
 
 # Dev setup
-RUN apt-get install -y sqlite3
-RUN apt-get install -y git
+RUN apt-get update && apt-get install -y sqlite3 git
 RUN pip install pipx && pipx ensurepath
 RUN pipx install go-task-bin
 
