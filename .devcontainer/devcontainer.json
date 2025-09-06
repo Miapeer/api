@@ -6,6 +6,7 @@
 	"workspaceFolder": "/workspaces/api",
 	"forwardPorts": [8000],
 	"mounts": [
+		"type=bind,source=${env:HOME}/.ssh,target=/root/.ssh",
 		"type=bind,source=./.env,target=/workspaces/api/miapeer/.env"
 	],
 	"customizations": {
