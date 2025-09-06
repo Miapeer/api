@@ -26,5 +26,5 @@ jobs:
 
       - name: "Build and push Docker image"
         run: |
-          docker build --file ./Dockerfile-prod --tag ${{ secrets.REGISTRY_LOGIN_SERVER }}/miapeer-api .
+          docker image build --file ./Dockerfile-prod --tag ${{ secrets.REGISTRY_LOGIN_SERVER }}/miapeer-api .
           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/miapeer-api
