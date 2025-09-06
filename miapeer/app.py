@@ -1,4 +1,7 @@
+
 from os import environ as env
+from dotenv import load_dotenv
+
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from miapeer.routers import auth, miapeer, quantum
 
+load_dotenv()
 app = FastAPI()
 
 app_secret_key = env.get("APP_SECRET_KEY")
