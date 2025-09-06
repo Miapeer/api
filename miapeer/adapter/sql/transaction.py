@@ -33,7 +33,7 @@ GET_ALL = text(
             where
                a.account_id = :account_id and
                pu.user_id = :user_id and
-               clear_date is null or clear_date >= :limit_date
+               (clear_date is null or clear_date >= :limit_date)
         ),
         older_transactions_sum as (
             select min(t.account_id) as account_id, sum(t.amount) as sum_of_old
@@ -50,6 +50,9 @@ GET_ALL = text(
                 a.account_id = :account_id and
                 pu.user_id = :user_id and
                 rt.transaction_id is null
+            having
+                min(t.account_id) is not null and
+                sum(t.amount) is not null
         ),
         ordered_transactions as (
             select
