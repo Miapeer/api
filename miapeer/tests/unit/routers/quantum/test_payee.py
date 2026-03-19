@@ -56,7 +56,7 @@ class TestGetAll:
 
     @pytest.fixture
     def expected_sql(self, user_id: int) -> str:
-        return f"SELECT quantum_payee.name, quantum_payee.portfolio_id, quantum_payee.payee_id \nFROM quantum_payee JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_payee.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_portfolio_user.user_id = {user_id}"
+        return f"SELECT quantum_payee.name, quantum_payee.portfolio_id, quantum_payee.payee_id \nFROM quantum_payee JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_payee.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_portfolio_user.user_id = {user_id} ORDER BY quantum_payee.name"
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
@@ -67,6 +67,9 @@ class TestGetAll:
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
+
+        print(f'\n{sql_str = }\n')
+        print(f'\n{expected_sql = }\n')
 
         assert sql_str == expected_sql
         assert response == expected_response
