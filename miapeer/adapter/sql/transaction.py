@@ -5,11 +5,6 @@ from miapeer.adapter import sql
 GET_ALL = text(
     """
     with
-        account as (
-            select account_id, starting_balance
-            from quantum_account
-            where account_id = :account_id
-        ),
         recent_transactions as (
             select
                 t.account_id,
@@ -38,23 +33,22 @@ GET_ALL = text(
         older_transactions_sum as (
             select min(t.account_id) as account_id, sum(t.amount) as sum_of_old
             from quantum_transaction t
+                left join recent_transactions rt
+                    on rt.transaction_id = t.transaction_id
                 inner join quantum_account a
                     on a.account_id = t.account_id
                 inner join quantum_portfolio p
                     on p.portfolio_id = a.portfolio_id
                 inner join quantum_portfolio_user pu
                     on pu.portfolio_id = p.portfolio_id
-                left join recent_transactions rt
-                    on rt.transaction_id = t.transaction_id
             where
                 a.account_id = :account_id and
                 pu.user_id = :user_id and
                 rt.transaction_id is null
-            having
-                min(t.account_id) is not null and
-                sum(t.amount) is not null
+            group by t.account_id
         ),
         ordered_transactions as (
+            -- Starting balance
             select
                 account_id,
                 null as transaction_id,
@@ -68,10 +62,12 @@ GET_ALL = text(
                 null as notes,
                 null as exclude_from_forecast,
                 -2 as order_index
-            from account
+            from quantum_account
+            where account_id = :account_id
 
             union all
 
+            -- Sum of older transactions
             select
                 account_id,
                 null as transaction_id,
@@ -89,6 +85,7 @@ GET_ALL = text(
 
             union all
 
+            -- Recent transactions
             select
                 account_id,
                 transaction_id,
