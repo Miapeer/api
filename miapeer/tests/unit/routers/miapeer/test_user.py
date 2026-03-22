@@ -95,7 +95,9 @@ class TestCreate:
     def user_to_create(self, user_email: str) -> UserCreate:
         return UserCreate(email=user_email, disabled=False, password="")
 
-    @pytest.mark.parametrize("db_first_return_val, db_refresh_patch_method", [(ApplicationRole(application_role_id=1), db_refresh)])
+    @pytest.mark.parametrize(
+        "db_first_return_val, db_refresh_patch_method", [(ApplicationRole(application_role_id=1, application_id=2, role_id=3), db_refresh)]
+    )
     async def test_create(
         self,
         user_to_create: UserCreate,
