@@ -43,6 +43,8 @@ async def update_category_id_ref(
             object_to_update.category_id = new_category.category_id
         else:
             raise HTTPException(status_code=500, detail="Could not create category")
+    else:
+        object_to_update.category_id = None
 
 
 @router.get("")

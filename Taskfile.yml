@@ -20,7 +20,7 @@ tasks:
 
   tdd:
     cmds:
-      - ptw
+      - ptw --ext py,sql
 
   coverage-report:
     cmds:

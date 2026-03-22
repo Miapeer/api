@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from miapeer.models.quantum.account import Account
 from miapeer.models.quantum.category import Category
 from miapeer.models.quantum.payee import Payee
+from miapeer.models.quantum.scheduled_transaction import ScheduledTransaction
 from miapeer.models.quantum.transaction import Transaction
 from miapeer.models.quantum.transaction_type import TransactionType
 
@@ -20,28 +21,16 @@ class TestGetAll:
         my_minimal_transaction: Transaction,
         my_debit_transaction: Transaction,
         my_credit_transaction: Transaction,
+        my_minimal_scheduled_transaction: ScheduledTransaction,
+        my_scheduled_transaction: ScheduledTransaction,
     ) -> None:
         response = client.get(
             f"/quantum/v1/accounts/{my_account_1.account_id}/transactions",
         )
 
-        assert response.status_code == 200
-
-        expected = [
-            {
-                "account_id": my_minimal_transaction.account_id,
-                "transaction_id": my_minimal_transaction.transaction_id,
-                "transaction_type_id": None,
-                "payee_id": None,
-                "category_id": None,
-                "amount": my_minimal_transaction.amount,
-                "transaction_date": my_minimal_transaction.transaction_date.strftime("%Y-%m-%d"),
-                "clear_date": None,
-                "check_number": None,
-                "exclude_from_forecast": my_minimal_transaction.exclude_from_forecast,
-                "notes": None,
-                "balance": my_account_1.starting_balance + my_minimal_transaction.amount,
-            },
+        expected_response = [
+            # Make sure to calculate running balance
+            # Actual transactions
             {
                 "account_id": my_debit_transaction.account_id,
                 "transaction_id": my_debit_transaction.transaction_id,
@@ -54,7 +43,23 @@ class TestGetAll:
                 "check_number": my_debit_transaction.check_number,
                 "exclude_from_forecast": my_debit_transaction.exclude_from_forecast,
                 "notes": my_debit_transaction.notes,
-                "balance": my_account_1.starting_balance + my_minimal_transaction.amount + my_debit_transaction.amount,
+                "balance": my_account_1.starting_balance + my_debit_transaction.amount,
+                "forecast_from_scheduled_transaction_id": None,
+            },
+            {
+                "account_id": my_minimal_transaction.account_id,
+                "transaction_id": my_minimal_transaction.transaction_id,
+                "transaction_type_id": None,
+                "payee_id": None,
+                "category_id": None,
+                "amount": my_minimal_transaction.amount,
+                "transaction_date": my_minimal_transaction.transaction_date.strftime("%Y-%m-%d"),
+                "clear_date": None,
+                "check_number": None,
+                "exclude_from_forecast": my_minimal_transaction.exclude_from_forecast,
+                "notes": None,
+                "balance": my_account_1.starting_balance + my_debit_transaction.amount + my_minimal_transaction.amount,
+                "forecast_from_scheduled_transaction_id": None,
             },
             {
                 "account_id": my_credit_transaction.account_id,
@@ -68,13 +73,58 @@ class TestGetAll:
                 "check_number": my_credit_transaction.check_number,
                 "exclude_from_forecast": my_credit_transaction.exclude_from_forecast,
                 "notes": my_credit_transaction.notes,
-                "balance": my_account_1.starting_balance + my_minimal_transaction.amount + my_debit_transaction.amount + my_credit_transaction.amount,
+                "balance": my_account_1.starting_balance + my_debit_transaction.amount + my_minimal_transaction.amount + my_credit_transaction.amount,
+                "forecast_from_scheduled_transaction_id": None,
+            },
+            # Forecasted transactions
+            {
+                "account_id": my_account_1.account_id,
+                "transaction_id": 0,
+                "transaction_type_id": my_minimal_scheduled_transaction.transaction_type_id,
+                "payee_id": my_minimal_scheduled_transaction.payee_id,
+                "category_id": my_minimal_scheduled_transaction.category_id,
+                "amount": my_minimal_scheduled_transaction.fixed_amount,
+                "transaction_date": date.today().strftime("%Y-%m-%d"),
+                "clear_date": None,
+                "check_number": None,
+                "exclude_from_forecast": False,
+                "notes": my_minimal_scheduled_transaction.notes,
+                "balance": my_account_1.starting_balance
+                + my_debit_transaction.amount
+                + my_minimal_transaction.amount
+                + my_credit_transaction.amount
+                + (my_minimal_scheduled_transaction.fixed_amount or 0),
+                "forecast_from_scheduled_transaction_id": my_minimal_scheduled_transaction.scheduled_transaction_id,
+            },
+            {
+                "account_id": my_account_1.account_id,
+                "transaction_id": 0,
+                "transaction_type_id": my_scheduled_transaction.transaction_type_id,
+                "payee_id": my_scheduled_transaction.payee_id,
+                "category_id": my_scheduled_transaction.category_id,
+                "amount": my_scheduled_transaction.fixed_amount,
+                "transaction_date": date.today().strftime("%Y-%m-%d"),
+                "clear_date": None,
+                "check_number": None,
+                "exclude_from_forecast": False,
+                "notes": my_scheduled_transaction.notes,
+                "balance": my_account_1.starting_balance
+                + my_debit_transaction.amount
+                + my_minimal_transaction.amount
+                + my_credit_transaction.amount
+                + (my_minimal_scheduled_transaction.fixed_amount or 0)
+                + (my_scheduled_transaction.fixed_amount or 0),
+                "forecast_from_scheduled_transaction_id": my_scheduled_transaction.scheduled_transaction_id,
             },
         ]
 
-        actual = response.json()
+        actual_response = response.json()
 
-        assert actual == expected
+        print(f"\n{actual_response = }\n")
+        print(f"\n{expected_response = }\n")
+
+        assert response.status_code == 200
+        assert actual_response == expected_response
 
 
 @pytest.mark.usefixtures("create_complete_portfolio")
@@ -154,8 +204,7 @@ class TestCreate:
         if not_my_credit_transaction.transaction_id is not None:
             transaction_id = not_my_credit_transaction.transaction_id
 
-        assert response.status_code == 200
-        assert response.json() == {
+        expected_response = {
             "account_id": account.account_id,
             "transaction_id": (transaction_id + 1),  # Increment by 1, the last transaction ID inserted
             "transaction_type_id": getattr(transaction_type, "transaction_type_id", None),
@@ -168,7 +217,16 @@ class TestCreate:
             "exclude_from_forecast": exclude_from_forecast,
             "notes": notes,
             "balance": None,
+            "forecast_from_scheduled_transaction_id": None,
         }
+
+        actual_response = response.json()
+
+        print(f"\n{actual_response = }\n")
+        print(f"\n{expected_response = }\n")
+
+        assert response.status_code == 200
+        assert actual_response == expected_response
 
     @pytest.mark.parametrize(
         "account, transaction_type, payee, category, amount, transaction_date, clear_date, check_number, exclude_from_forecast, notes, expected_response",
@@ -270,8 +328,10 @@ class TestCreate:
             },
         )
 
+        actual_response = response.json()
+
         assert response.status_code == 404
-        assert response.json() == expected_response
+        assert actual_response == expected_response
 
 
 @pytest.mark.usefixtures("create_complete_portfolio")
@@ -279,8 +339,7 @@ class TestGetOne:
     def test_get_one_transaction_in_portfolio_succeeds(self, client: TestClient, my_debit_transaction: Transaction) -> None:
         response = client.get(f"/quantum/v1/accounts/{my_debit_transaction.account_id}/transactions/{my_debit_transaction.transaction_id}")
 
-        assert response.status_code == 200
-        assert response.json() == {
+        expected_response = {
             "account_id": my_debit_transaction.account_id,
             "transaction_id": my_debit_transaction.transaction_id,
             "transaction_type_id": getattr(my_debit_transaction, "transaction_type_id", None),
@@ -293,7 +352,16 @@ class TestGetOne:
             "exclude_from_forecast": my_debit_transaction.exclude_from_forecast,
             "notes": my_debit_transaction.notes,
             "balance": None,
+            "forecast_from_scheduled_transaction_id": None,
         }
+
+        actual_response = response.json()
+
+        print(f"\n{actual_response = }\n")
+        print(f"\n{expected_response = }\n")
+
+        assert response.status_code == 200
+        assert actual_response == expected_response
 
     def test_get_one_transaction_in_wrong_portfolio_fails(
         self, client: TestClient, my_account_1: Account, not_my_debit_transaction: Transaction
@@ -316,6 +384,7 @@ class TestUpdate:
     @pytest.mark.parametrize(
         "transaction, account, transaction_type, payee, category, amount, transaction_date, clear_date, check_number, exclude_from_forecast, notes",
         [
+            # Test updating a bunch of stuff
             (
                 pytest.lazy_fixture("my_debit_transaction"),
                 pytest.lazy_fixture("my_account_2"),
@@ -329,6 +398,7 @@ class TestUpdate:
                 False,
                 "new note",
             ),
+            # Test un-setting a bunch of stuff except for amount and transaction date, which are required
             (
                 pytest.lazy_fixture("my_debit_transaction"),
                 None,
@@ -362,27 +432,28 @@ class TestUpdate:
         response = client.patch(
             f"/quantum/v1/accounts/{transaction.account_id}/transactions/{transaction.transaction_id}",
             json={
-                "account_id": getattr(account, "account_id", None),
-                "transaction_id": transaction.transaction_id,
-                "transaction_type_id": getattr(transaction_type, "transaction_type_id", None),
-                "payee_id": getattr(payee, "payee_id", None),
-                "category_id": getattr(category, "category_id", None),
+                "account_id": account.account_id if account is not None else None,
+                "transaction_id": transaction.transaction_id if transaction.transaction_id is not None else None,
+                "transaction_type_id": transaction_type.transaction_type_id if transaction_type is not None else None,
+                "payee_id": payee.payee_id if payee is not None else None,
+                "category_id": category.category_id if category is not None else None,
                 "amount": amount,
                 "transaction_date": transaction_date.strftime("%Y-%m-%d"),
                 "clear_date": clear_date.strftime("%Y-%m-%d") if clear_date is not None else None,
                 "check_number": check_number,
                 "exclude_from_forecast": exclude_from_forecast,
                 "notes": notes,
+                "forecast_from_scheduled_transaction_id": None,
             },
         )
 
         expected_response = {
             # Trying to change the account_id isn't allowed
-            "account_id": transaction.account_id,
-            "transaction_id": transaction.transaction_id,
-            "transaction_type_id": getattr(transaction, "transaction_type_id", None),
-            "payee_id": getattr(payee, "payee_id", None),
-            "category_id": getattr(category, "category_id", None),
+            "account_id": transaction.account_id if transaction.account_id is not None else None,
+            "transaction_id": transaction.transaction_id if transaction.transaction_id is not None else None,
+            "transaction_type_id": transaction_type.transaction_type_id if transaction_type is not None else None,
+            "payee_id": payee.payee_id if payee is not None else None,
+            "category_id": category.category_id if category is not None else None,
             "amount": amount,
             "transaction_date": transaction_date.strftime("%Y-%m-%d"),
             "clear_date": clear_date.strftime("%Y-%m-%d") if clear_date is not None else None,
@@ -390,7 +461,11 @@ class TestUpdate:
             "exclude_from_forecast": exclude_from_forecast,
             "notes": notes,
             "balance": None,
+            "forecast_from_scheduled_transaction_id": None,
         }
+
+        print(f"\n{response.json() = }\n")
+        print(f"\n{expected_response = }\n")
 
         assert response.status_code == 200
         assert response.json() == expected_response

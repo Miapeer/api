@@ -4,7 +4,14 @@ from unittest.mock import Mock
 import pytest
 from fastapi import HTTPException
 
-from miapeer.models.miapeer import User, UserCreate, UserRead, UserUpdate
+from miapeer.models.miapeer import (
+    ApplicationRole,
+    Permission,
+    User,
+    UserCreate,
+    UserRead,
+    UserUpdate,
+)
 from miapeer.routers.miapeer import user
 
 pytestmark = pytest.mark.asyncio
@@ -37,6 +44,11 @@ def complete_user(user_id: int, basic_user: User) -> User:
     return User.model_validate(basic_user.model_dump(), update={"user_id": user_id})
 
 
+@pytest.fixture
+def user_permission() -> Permission:
+    return Permission(user_id=raw_user_id, application_role_id=1)
+
+
 class TestWhoAmI:
     @pytest.mark.parametrize("return_val", [[], "some data", 123])
     async def test_return_val(self, return_val: Any) -> None:
@@ -56,7 +68,7 @@ class TestGetAll:
 
     @pytest.fixture
     def expected_sql(self) -> str:
-        return f"SELECT miapeer_user.email, miapeer_user.user_id, miapeer_user.password, miapeer_user.disabled \nFROM miapeer_user"
+        return f"SELECT miapeer_user.email, miapeer_user.disabled, miapeer_user.user_id, miapeer_user.password \nFROM miapeer_user"
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
@@ -67,6 +79,9 @@ class TestGetAll:
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
+
+        print(f"\n{sql_str = }\n")
+        print(f"\n{expected_sql = }\n")
 
         assert sql_str == expected_sql
         assert response == expected_response
@@ -80,20 +95,30 @@ class TestCreate:
     def user_to_create(self, user_email: str) -> UserCreate:
         return UserCreate(email=user_email, disabled=False, password="")
 
-    @pytest.mark.parametrize("db_first_return_val, db_refresh_patch_method", [("some data", db_refresh)])
+    @pytest.mark.parametrize(
+        "db_first_return_val, db_refresh_patch_method", [(ApplicationRole(application_role_id=1, application_id=2, role_id=3), db_refresh)]
+    )
     async def test_create(
         self,
         user_to_create: UserCreate,
         complete_user: User,
+        user_permission: Permission,
         mock_db: Mock,
     ) -> None:
         await user.create_user(user=user_to_create, db=mock_db)
 
-        assert mock_db.add.call_count == 1
-        add_call_param = mock_db.add.call_args[0][0]
-        assert add_call_param.model_dump() == complete_user.model_dump()
+        assert mock_db.add.call_count == 2
 
-        mock_db.commit.assert_called_once()
+        first_add_obj = mock_db.add.call_args_list[0].args[0]
+        second_add_obj = mock_db.add.call_args_list[1].args[0]
+
+        # Don't try to compare the hashed password
+        first_add_obj.password = complete_user.password
+        assert first_add_obj.model_dump() == complete_user.model_dump()
+
+        assert second_add_obj.model_dump() == user_permission.model_dump()
+
+        assert mock_db.commit.call_count == 2
 
         assert mock_db.refresh.call_count == 1
         refresh_call_param = mock_db.refresh.call_args[0][0]

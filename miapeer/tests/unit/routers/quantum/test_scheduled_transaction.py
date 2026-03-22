@@ -276,7 +276,16 @@ class TestCreate:
     def expected_category_sql(self, user_id: int, category_id: int) -> str:
         return f"SELECT quantum_category.name, quantum_category.parent_category_id, quantum_category.portfolio_id, quantum_category.category_id \nFROM quantum_category JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_category.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_category.category_id = {category_id} AND quantum_portfolio_user.user_id = {user_id}"
 
-    @pytest.mark.parametrize("db_first_return_val, db_refresh_patch_method", [("some data", db_refresh)])
+    @pytest.fixture
+    def db_first_return_values(self, basic_account, scheduled_transaction_to_create) -> list:
+        return [
+            basic_account,
+            TransactionType(transaction_type_id=scheduled_transaction_to_create.transaction_type_id, name="", portfolio_id=1),
+            Payee(payee_id=scheduled_transaction_to_create.payee_id, name="", portfolio_id=1),
+            Category(category_id=scheduled_transaction_to_create.category_id, name="", portfolio_id=1),
+        ]
+
+    @pytest.mark.parametrize("db_first_side_effect_val, db_refresh_patch_method", [(pytest.lazy_fixture("db_first_return_values"), db_refresh)])
     async def test_create(
         self,
         user: User,
@@ -481,6 +490,10 @@ class TestUpdate:
         return f"SELECT quantum_transaction_type.name, quantum_transaction_type.portfolio_id, quantum_transaction_type.transaction_type_id \nFROM quantum_transaction_type JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_transaction_type.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_transaction_type.transaction_type_id = {scheduled_transaction_updates.transaction_type_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
+    def expected_account_sql(self, user_id: int, account_id: int) -> str:
+        return f"SELECT quantum_account.portfolio_id, quantum_account.name, quantum_account.starting_balance, quantum_account.account_id \nFROM quantum_account JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_portfolio_user.user_id = {user_id}"
+
+    @pytest.fixture
     def expected_payee_sql(self, user_id: int, scheduled_transaction_updates: ScheduledTransactionUpdate) -> str:
         return f"SELECT quantum_payee.name, quantum_payee.portfolio_id, quantum_payee.payee_id \nFROM quantum_payee JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_payee.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_payee.payee_id = {scheduled_transaction_updates.payee_id} AND quantum_portfolio_user.user_id = {user_id}"
 
@@ -530,9 +543,9 @@ class TestUpdate:
     def db_first_return_values(self, basic_account, updated_scheduled_transaction) -> list:
         return [
             basic_account,
-            TransactionType(transaction_type_id=updated_scheduled_transaction.transaction_type_id),
-            Payee(payee_id=updated_scheduled_transaction.payee_id),
-            Category(category_id=updated_scheduled_transaction.category_id),
+            TransactionType(transaction_type_id=updated_scheduled_transaction.transaction_type_id, name="", portfolio_id=1),
+            Payee(payee_id=updated_scheduled_transaction.payee_id, name="", portfolio_id=1),
+            Category(category_id=updated_scheduled_transaction.category_id, name="", portfolio_id=1),
         ]
 
     @pytest.mark.parametrize(
@@ -551,8 +564,9 @@ class TestUpdate:
         scheduled_transaction_updates: ScheduledTransactionUpdate,
         mock_db: Mock,
         expected_scheduled_transaction_sql: str,
-        expected_transaction_type_sql: str,
+        expected_account_sql: str,
         expected_payee_sql: str,
+        expected_transaction_type_sql: str,
         expected_category_sql: str,
         updated_scheduled_transaction: ScheduledTransaction,
         expected_response: ScheduledTransactionRead,
@@ -574,13 +588,17 @@ class TestUpdate:
 
         sql = mock_db.exec.call_args_list[1].args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
-        assert sql_str == expected_transaction_type_sql
+        assert sql_str == expected_account_sql
 
         sql = mock_db.exec.call_args_list[2].args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
-        assert sql_str == expected_payee_sql
+        assert sql_str == expected_transaction_type_sql
 
         sql = mock_db.exec.call_args_list[3].args[0]
+        sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
+        assert sql_str == expected_payee_sql
+
+        sql = mock_db.exec.call_args_list[4].args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
         assert sql_str == expected_category_sql
 

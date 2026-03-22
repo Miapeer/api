@@ -39,6 +39,8 @@ async def update_payee_id_ref(
             object_to_update.payee_id = new_payee.payee_id
         else:
             raise HTTPException(status_code=500, detail="Could not create payee")
+    else:
+        object_to_update.payee_id = None
 
 
 @router.get("")
