@@ -308,7 +308,7 @@ class TestPermissions:
             for t in unauthorized_tests
         ],
     )
-    def test_permissions_not_authorized(self, client: TestClient, method: str, route: str, allow_anonymous: bool) -> None:
+    def test_not_authorized_permissions(self, client: TestClient, method: str, route: str, allow_anonymous: bool) -> None:
         if allow_anonymous:
             # We can just skip this test since no request is unauthorized
             return
