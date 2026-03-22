@@ -280,9 +280,9 @@ class TestCreate:
     def db_first_return_values(self, basic_account, scheduled_transaction_to_create) -> list:
         return [
             basic_account,
-            TransactionType(transaction_type_id=scheduled_transaction_to_create.transaction_type_id),
-            Payee(payee_id=scheduled_transaction_to_create.payee_id),
-            Category(category_id=scheduled_transaction_to_create.category_id),
+            TransactionType(transaction_type_id=scheduled_transaction_to_create.transaction_type_id, name="", portfolio_id=1),
+            Payee(payee_id=scheduled_transaction_to_create.payee_id, name="", portfolio_id=1),
+            Category(category_id=scheduled_transaction_to_create.category_id, name="", portfolio_id=1),
         ]
 
     @pytest.mark.parametrize("db_first_side_effect_val, db_refresh_patch_method", [(pytest.lazy_fixture("db_first_return_values"), db_refresh)])
@@ -543,9 +543,9 @@ class TestUpdate:
     def db_first_return_values(self, basic_account, updated_scheduled_transaction) -> list:
         return [
             basic_account,
-            TransactionType(transaction_type_id=updated_scheduled_transaction.transaction_type_id),
-            Payee(payee_id=updated_scheduled_transaction.payee_id),
-            Category(category_id=updated_scheduled_transaction.category_id),
+            TransactionType(transaction_type_id=updated_scheduled_transaction.transaction_type_id, name="", portfolio_id=1),
+            Payee(payee_id=updated_scheduled_transaction.payee_id, name="", portfolio_id=1),
+            Category(category_id=updated_scheduled_transaction.category_id, name="", portfolio_id=1),
         ]
 
     @pytest.mark.parametrize(
