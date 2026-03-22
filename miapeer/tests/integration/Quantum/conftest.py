@@ -303,7 +303,7 @@ def my_scheduled_transaction(
         transaction_type_id=my_transaction_type_1.transaction_type_id,
         payee_id=my_payee_2.payee_id,
         category_id=my_category_1.category_id,
-        fixed_amount=2349,
+        fixed_amount=-849,
         estimate_occurrences=3,
         prompt_days=7,
         start_date=date.today(),

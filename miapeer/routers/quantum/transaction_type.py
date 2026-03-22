@@ -29,7 +29,7 @@ async def update_transaction_type_id_ref(
     transaction_type_id: Optional[int],
     transaction_type_name: Optional[str],
 ):
-    if transaction_type_id is not None:
+    if transaction_type_id:
         transaction_type_sql = (
             select(TransactionType)
             .join(Portfolio)
@@ -52,6 +52,8 @@ async def update_transaction_type_id_ref(
             object_to_update.transaction_type_id = new_transaction_type.transaction_type_id
         else:
             raise HTTPException(status_code=500, detail="Could not create transaction type")
+    else:
+        object_to_update.transaction_type_id = None
 
 
 @router.get("")

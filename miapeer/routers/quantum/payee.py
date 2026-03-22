@@ -24,7 +24,7 @@ router = APIRouter(
 async def update_payee_id_ref(
     db: DbSession, current_user: CurrentActiveUser, object_to_update, portfolio_id: int, payee_id: Optional[int], payee_name: Optional[str]
 ):
-    if payee_id is not None:
+    if payee_id:
         payee_sql = (
             select(Payee).join(Portfolio).join(PortfolioUser).where(Payee.payee_id == payee_id).where(PortfolioUser.user_id == current_user.user_id)
         )
@@ -39,6 +39,8 @@ async def update_payee_id_ref(
             object_to_update.payee_id = new_payee.payee_id
         else:
             raise HTTPException(status_code=500, detail="Could not create payee")
+    else:
+        object_to_update.payee_id = None
 
 
 @router.get("")

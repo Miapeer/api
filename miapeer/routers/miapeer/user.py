@@ -42,12 +42,11 @@ async def get_all_users(
     return [UserRead.model_validate(user) for user in users]
 
 
-@router.post("")
+@router.post("", dependencies=[Depends(is_miapeer_admin)])
 async def create_user(
     db: DbSession,
     user: UserCreate,
 ) -> UserRead:
-
     # Create the user
     db_user = User.model_validate(user.model_dump(), update={"password": get_password_hash(user.password)})
 

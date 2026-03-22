@@ -24,7 +24,9 @@ class TestGetAll:
             f"/quantum/v1/accounts/{my_account_1.account_id}/scheduled-transactions",
         )
 
-        expected = [
+        actual_response = response.json()
+
+        expected_response = [
             {
                 "scheduled_transaction_id": my_minimal_scheduled_transaction.scheduled_transaction_id,
                 "account_id": my_minimal_scheduled_transaction.account_id,
@@ -53,6 +55,7 @@ class TestGetAll:
                     "transaction_id": 0,
                     "account_id": my_minimal_scheduled_transaction.account_id,
                     "balance": None,
+                    "forecast_from_scheduled_transaction_id": None,
                 },
             },
             {
@@ -83,14 +86,16 @@ class TestGetAll:
                     "transaction_id": 0,
                     "account_id": my_scheduled_transaction.account_id,
                     "balance": None,
+                    "forecast_from_scheduled_transaction_id": None,
                 },
             },
         ]
 
-        actual = response.json()
+        print(f"\n{actual_response = }\n")
+        print(f"\n{expected_response = }\n")
 
         assert response.status_code == 200
-        assert actual == expected
+        assert actual_response == expected_response
 
 
 @pytest.mark.usefixtures("create_complete_portfolio")
@@ -340,7 +345,9 @@ class TestGetOne:
             f"/quantum/v1/accounts/{my_scheduled_transaction.account_id}/scheduled-transactions/{my_scheduled_transaction.scheduled_transaction_id}"
         )
 
-        expected = {
+        actual_response = response.json()
+
+        expected_response = {
             "account_id": my_scheduled_transaction.account_id,
             "scheduled_transaction_id": my_scheduled_transaction.scheduled_transaction_id,
             "transaction_type_id": getattr(my_scheduled_transaction, "transaction_type_id", None),
@@ -368,13 +375,15 @@ class TestGetOne:
                 "transaction_id": 0,
                 "account_id": my_scheduled_transaction.account_id,
                 "balance": None,
+                "forecast_from_scheduled_transaction_id": None,
             },
         }
 
-        actual = response.json()
+        print(f"\n{actual_response = }\n")
+        print(f"\n{expected_response = }\n")
 
         assert response.status_code == 200
-        assert actual == expected
+        assert actual_response == expected_response
 
     def test_get_one_scheduled_transaction_in_wrong_portfolio_fails(
         self, client: TestClient, my_account_1: Account, not_my_scheduled_transaction: ScheduledTransaction
@@ -473,9 +482,9 @@ class TestUpdate:
             },
         )
 
-        assert response.status_code == 200
+        actual_response = response.json()
 
-        expected = {
+        expected_response = {
             # Trying to change the account_id isn't allowed
             "account_id": scheduled_transaction.account_id,
             "scheduled_transaction_id": scheduled_transaction.scheduled_transaction_id,
@@ -504,12 +513,15 @@ class TestUpdate:
                 "transaction_id": 0,
                 "account_id": scheduled_transaction.account_id,
                 "balance": None,
+                "forecast_from_scheduled_transaction_id": None,
             },
         }
 
-        actual = response.json()
+        print(f"\n{actual_response = }\n")
+        print(f"\n{expected_response = }\n")
 
-        assert actual == expected
+        assert response.status_code == 200
+        assert actual_response == expected_response
 
     def test_update_someone_elses_scheduled_transaction_fails(
         self, client: TestClient, my_account_1: Account, not_my_scheduled_transaction: ScheduledTransaction

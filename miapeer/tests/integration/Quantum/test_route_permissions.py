@@ -20,7 +20,8 @@ class ParamTestCase:
 
 # fmt: off
 authorized_tests = [
-    # Give ONLY the permissions that are allowed (one at a time if multiple).
+    # Specify ONLY the permissions that are allowed
+    #   Create separate test cases for each that should be applied
 
     # Root
     ParamTestCase(method="GET", route="/"),
@@ -115,10 +116,19 @@ authorized_tests = [
 
     # Quantum: RepeatOptions
     ParamTestCase(method="GET", route="/quantum/v1/repeat-options", quantum_user=True),
+
+    # Quantum: Budgets
+    ParamTestCase(method="GET", route="/quantum/v1/budgets", quantum_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/budgets", quantum_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/budgets/{budget_id}", quantum_user=True),
+    ParamTestCase(method="DELETE", route="/quantum/v1/budgets/{budget_id}", quantum_user=True),
+    ParamTestCase(method="PATCH", route="/quantum/v1/budgets/{budget_id}", quantum_user=True),
 ]
 
 unauthorized_tests = [
-    # Give ALL the permissions, EXCEPT the ones that are actually allowed
+    # The goal here is to make sure that the specific permissions ARE NOT applied to the route.
+    # Every permission should be accounted for (and set to True), except for the one that is actually allowed.
+    #   The one that should be applied to the route should remain False.
 
     # Root
     ParamTestCase(method="GET", route="/", allow_all=True),
@@ -213,6 +223,13 @@ unauthorized_tests = [
 
     # Quantum: RepeatOptions
     ParamTestCase(method="GET", route="/quantum/v1/repeat-options", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+
+    # Quantum: Budgets
+    ParamTestCase(method="GET", route="/quantum/v1/budgets", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="POST", route="/quantum/v1/budgets", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="GET", route="/quantum/v1/budgets/{budget_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="DELETE", route="/quantum/v1/budgets/{budget_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
+    ParamTestCase(method="PATCH", route="/quantum/v1/budgets/{budget_id}", miapeer_user=True, miapeer_admin=True, miapeer_super_user=True, quantum_admin=True, quantum_super_user=True),
 ]
 # fmt: on
 
@@ -257,10 +274,11 @@ class TestPermissions:
             for t in authorized_tests
         ],
     )
-    def test_permissions_authorized(self, client: TestClient, method: str, route: str) -> None:
+    def test_applied_authorized_permissions(self, client: TestClient, method: str, route: str) -> None:
         client_method = getattr(client, method.lower())
         response = client_method(route)
 
+        # Test to make sure the route has the expected authorization applied
         # Anything other than 400 should be good to go, but we'll capture specific ones for now.
         #   More than likely, other error-based exceptions will be thrown due to the lack of body, data, etc.
         assert response.is_server_error is False
@@ -298,6 +316,7 @@ class TestPermissions:
         client_method = getattr(client, method.lower())
         response = client_method(route)
 
-        # The request should fail specifically for lack of permission above all else
+        # The request should fail specifically for lack of permission above all else.
+        #   Any other error raised probably means that the permissions marked as False in the test case were not allowed by the route.
         assert response.status_code == 400
         assert response.text == '{"detail":"Unauthorized"}'
