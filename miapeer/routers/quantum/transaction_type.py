@@ -29,7 +29,7 @@ async def update_transaction_type_id_ref(
     transaction_type_id: Optional[int],
     transaction_type_name: Optional[str],
 ):
-    if transaction_type_id:
+    if transaction_type_id is not None:
         transaction_type_sql = (
             select(TransactionType)
             .join(Portfolio)

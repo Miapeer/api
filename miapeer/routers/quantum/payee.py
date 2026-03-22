@@ -24,7 +24,7 @@ router = APIRouter(
 async def update_payee_id_ref(
     db: DbSession, current_user: CurrentActiveUser, object_to_update, portfolio_id: int, payee_id: Optional[int], payee_name: Optional[str]
 ):
-    if payee_id:
+    if payee_id is not None:
         payee_sql = (
             select(Payee).join(Portfolio).join(PortfolioUser).where(Payee.payee_id == payee_id).where(PortfolioUser.user_id == current_user.user_id)
         )
