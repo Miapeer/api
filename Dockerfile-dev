@@ -15,6 +15,7 @@ RUN ACCEPT_EULA=Y apt-get install -y msodbcsql18
 # Dev setup
 RUN apt-get update && apt-get install -y sqlite3 git
 RUN pip install pipx && pipx ensurepath
+RUN pip install pre-commit
 RUN pipx install go-task-bin
 
 # Clean up
