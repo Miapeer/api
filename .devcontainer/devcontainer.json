@@ -4,7 +4,7 @@
 		"dockerfile": "../Dockerfile-dev"
 	},
 	"workspaceFolder": "/workspaces/api",
-	"postCreateCommand": "pre-commit install",
+	"postCreateCommand": "prek install",
 	"forwardPorts": [8000],
 	"mounts": [
 		"type=bind,source=${env:HOME}/.ssh,target=/root/.ssh",
