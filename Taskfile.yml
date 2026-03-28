@@ -24,8 +24,9 @@ tasks:
       - ptw --runner "bash pytest-runner.sh"
 
   coverage-report:
+    aliases: [cov, coverage]
     cmds:
-      - pytest --cov-report term-missing:skip-covered --cov=miapeer miapeer/tests/
+      - pytest --cov=miapeer --cov-report=term-missing:skip-covered --cov-fail-under=90 miapeer/tests/
 
   type-check:
     cmds:

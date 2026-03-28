@@ -27,4 +27,5 @@ hooks = [
 repo = "local"
 hooks = [
   {id = "ty-check", name = "ty-check", language = "system", entry = "uvx ty check", files = "\\.py$"},
+  {id = "no-debug-code", name = "no-debug-code", language = "system", entry = "bash -c '! grep -inH \"todo: remove this\" \"$@\"' --", types_or = ["python", "pyi", "jupyter"]},
 ]
