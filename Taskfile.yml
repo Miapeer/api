@@ -19,8 +19,9 @@ tasks:
       - ./start_server
 
   tdd:
+    dir: '{{.WORKDIR}}'
     cmds:
-      - ptw --ext py,sql
+      - ptw --runner "bash pytest-runner.sh"
 
   coverage-report:
     cmds:
