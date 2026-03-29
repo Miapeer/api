@@ -21,7 +21,7 @@ tasks:
   tdd:
     dir: '{{.WORKDIR}}'
     cmds:
-      - ptw --runner "bash pytest-runner.sh"
+      - ptw --runner "bash pytest-runner.sh" --ext .py,.sql
 
   coverage-report:
     aliases: [cov, coverage]
