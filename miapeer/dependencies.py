@@ -1,5 +1,4 @@
 from enum import Enum
-from os import environ as env
 from typing import Annotated, Iterator, Optional
 
 from fastapi import Depends, HTTPException, status
@@ -45,15 +44,12 @@ def get_db() -> Iterator[Session]:
 DbSession = Annotated[Session, Depends(get_db)]
 
 
-def get_jwk() -> Optional[str]:
-    return env.get("JWT_SECRET_KEY")
-
-
 # TODO: Cache results to prevent multiple DB lookups
 async def get_current_user(
-    token: str = Depends(oauth2_scheme), jwt_key: str = Depends(get_jwk), db: Session = Depends(get_db)
+    token: Annotated[str, Depends(oauth2_scheme)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> User:
-    payload = decode_jwt(token=token, jwt_key=jwt_key)
+    payload = decode_jwt(token=token)
 
     username: Optional[str] = payload.get("sub")
 
@@ -74,8 +70,6 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # print(f"\n{permission_cache = }\n")  # TODO: Remove this!!!
-
     return user
 
 
@@ -83,7 +77,7 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 async def get_current_active_user(
-    current_user: User = Depends(get_current_user),
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -94,7 +88,6 @@ CurrentActiveUser = Annotated[User, Depends(get_current_active_user)]
 
 
 # async def is_authorized(user: str = Cookie(None)) -> None:
-#     print(f"\n{user = }\n")  # TODO: Remove this!!!
 #     token = get_access_token(user)
 
 #     try:
@@ -105,7 +98,9 @@ CurrentActiveUser = Annotated[User, Depends(get_current_active_user)]
 #         raise HTTPException(status_code=401, detail="Error decoding access token")
 
 
-def has_permission(db: Session, email: str, application: Applications, role: Roles) -> bool:
+def has_permission(
+    db: Session, email: str, application: Applications, role: Roles
+) -> bool:
     print("has_permission")
     # TODO: https://sqlmodel.tiangolo.com/tutorial/fastapi/relationships/
 
@@ -125,34 +120,39 @@ def has_permission(db: Session, email: str, application: Applications, role: Rol
     )
     users = db.exec(sql).all()
 
-    # print(f'\n{users = }\n') # TODO: Remove this!!!
-
     # for u in users:
     #     permission_cache.add(f"{u[0]}-{u[1]}-{u[2]}")
-
-    # print(f'\n{permission_cache = }\n') # TODO: Remove this!!!
 
     # TODO: Improve memoization
     # TODO: Add expiration
 
-    # return f"{email}-{application}-{role}" in permission_cache
-
     return len(users) > 0
 
 
-def is_miapeer_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+def is_miapeer_user(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_active_user)],
+) -> None:
     if not has_permission(db, user.email, Applications.MIAPEER, Roles.USER):
         raise HTTPException(status_code=400, detail="Unauthorized: is_miapeer_user")
 
 
-def is_miapeer_admin(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+def is_miapeer_admin(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_active_user)],
+) -> None:
     if not has_permission(db, user.email, Applications.MIAPEER, Roles.ADMIN):
         raise HTTPException(status_code=400, detail="Unauthorized: is_miapeer_admin")
 
 
-def is_miapeer_super_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+def is_miapeer_super_user(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_active_user)],
+) -> None:
     if not has_permission(db, user.email, Applications.MIAPEER, Roles.SUPER_USER):
-        raise HTTPException(status_code=400, detail="Unauthorized: is_miapeer_super_user")
+        raise HTTPException(
+            status_code=400, detail="Unauthorized: is_miapeer_super_user"
+        )
 
 
 # Dependencies are "and"s not "or"s. Need a separate function for each combo
@@ -160,16 +160,27 @@ def is_miapeer_super_user(db: Session = Depends(get_db), user: User = Depends(ge
 # TODO: https://fastapi.tiangolo.com/advanced/advanced-dependencies/
 
 
-def is_quantum_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+def is_quantum_user(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_active_user)],
+) -> None:
     if not has_permission(db, user.email, Applications.QUANTUM, Roles.USER):
         raise HTTPException(status_code=400, detail="Unauthorized: is_quantum_user")
 
 
-def is_quantum_admin(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+def is_quantum_admin(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_active_user)],
+) -> None:
     if not has_permission(db, user.email, Applications.QUANTUM, Roles.ADMIN):
         raise HTTPException(status_code=400, detail="Unauthorized: is_quantum_admin")
 
 
-def is_quantum_super_user(db: Session = Depends(get_db), user: User = Depends(get_current_active_user)) -> None:
+def is_quantum_super_user(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_active_user)],
+) -> None:
     if not has_permission(db, user.email, Applications.QUANTUM, Roles.SUPER_USER):
-        raise HTTPException(status_code=400, detail="Unauthorized: is_quantum_super_user")
+        raise HTTPException(
+            status_code=400, detail="Unauthorized: is_quantum_super_user"
+        )

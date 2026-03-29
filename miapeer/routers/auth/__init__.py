@@ -1,19 +1,19 @@
 from datetime import timedelta
 from typing import Optional
+from typing_extensions import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from passlib.context import CryptContext
+from pwdlib import PasswordHash
 from sqlmodel import Session, select
 
 from miapeer.auth.jwt import encode_jwt
-from miapeer.dependencies import get_db, get_jwk
+from miapeer.dependencies import get_db
 from miapeer.models.miapeer import Token, User
 
 DEFAULT_JWT_ALGORITHM = "HS256"
 
-# TODO: Need salt?   https://auth0.com/blog/hashing-in-action-understanding-bcrypt/
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+password_hash = PasswordHash.recommended()
 
 router = APIRouter(
     prefix="/miapeer/v1/auth",
@@ -23,7 +23,7 @@ router = APIRouter(
 
 
 def _verify_password(plain_password: str, hashed_password: str) -> bool:
-    pw_verified = _pwd_context.verify(
+    pw_verified = password_hash.verify(
         plain_password,
         hashed_password,
     )
@@ -35,7 +35,7 @@ def _verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_password_hash(password: str) -> str:
-    return _pwd_context.hash(password)  # pragma: no cover
+    return password_hash.hash(password)  # pragma: no cover
 
 
 def _authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
@@ -50,11 +50,10 @@ def _authenticate_user(db: Session, username: str, password: str) -> Optional[Us
     return user
 
 
-# TODO: Does data need to be sent encrypted, or is HTTPS sufficient?
-# TODO: If something does need to be changed, difference between SSL and TLS?
 @router.post("/token")
 async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(), jwk: str = Depends(get_jwk), db: Session = Depends(get_db)
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Annotated[Session, Depends(get_db)],
 ) -> Token:
     user = _authenticate_user(db, form_data.username, form_data.password)
 
@@ -69,6 +68,8 @@ async def login_for_access_token(
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    access_token = encode_jwt(jwt_key=jwk, data={"sub": user.email, "exp": 0}, expires_delta=access_token_expires)
+    access_token = encode_jwt(
+        data={"sub": user.email, "exp": 0}, expires_delta=access_token_expires
+    )
 
     return Token(access_token=access_token, token_type="bearer")

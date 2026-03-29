@@ -1,4 +1,3 @@
-
 from os import environ as env
 from dotenv import load_dotenv
 
@@ -45,6 +44,9 @@ router = APIRouter(
 
 @router.get("/")
 async def get_last_publish_date() -> HTMLResponse:
+    """
+    Get the last publish date of the API.
+    """
     update_str = None
     try:
         with open("last_update", "r") as f:

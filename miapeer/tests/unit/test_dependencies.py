@@ -1,5 +1,5 @@
 from typing import Any
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -8,30 +8,48 @@ from miapeer import dependencies
 from miapeer.models.miapeer import User
 
 
-class TestGetJwk:
-    @patch(f"{dependencies.__name__}.env")
-    @pytest.mark.parametrize("get_env_var", ["something", None])
-    def test_get_jwk(self, patched_env: Mock, get_env_var: Any) -> None:
-        patched_env.get.return_value = get_env_var
-        return_val = dependencies.get_jwk()
-        assert return_val == get_env_var
+# class TestGetJwk:
+#     @patch(f"{dependencies.__name__}.env")
+#     @pytest.mark.parametrize("get_env_var", ["something", None])
+#     def test_get_jwk(self, patched_env: Mock, get_env_var: Any) -> None:
+#         patched_env.get.return_value = get_env_var
+#         return_val = dependencies.get_jwk()
+#         assert return_val == get_env_var
 
 
 @pytest.mark.asyncio
+@patch("miapeer.dependencies.decode_jwt")
 class TestGetCurrentUser:
     @pytest.mark.parametrize("db_first_return_val", ["some data", 123])
-    async def test_get_current_user(self, mock_db: Mock, valid_jwt: str, jwk: str, db_first_return_val: Any) -> None:
-        res = await dependencies.get_current_user(token=valid_jwt, jwt_key=jwk, db=mock_db)
+    async def test_get_current_user(
+        self,
+        decode_jwt_patch: AsyncMock,
+        mock_db: Mock,
+        valid_jwt: str,
+        jwk: str,
+        db_first_return_val: Any,
+    ) -> None:
+        decode_jwt_patch.return_value = {"sub": "testuser"}
+
+        res = await dependencies.get_current_user(token=valid_jwt, db=mock_db)
         assert res == db_first_return_val
 
-    async def test_get_current_user_raises_exception_when_username_not_provided(self, mock_db: Mock, jwt_missing_sub: str, jwk: str) -> None:
+    async def test_get_current_user_raises_exception_when_username_not_provided(
+        self, decode_jwt_patch: AsyncMock, mock_db: Mock, jwt_missing_sub: str, jwk: str
+    ) -> None:
+        decode_jwt_patch.return_value = {}
+
         with pytest.raises(HTTPException):
-            await dependencies.get_current_user(token=jwt_missing_sub, jwt_key=jwk, db=mock_db)
+            await dependencies.get_current_user(token=jwt_missing_sub, db=mock_db)
 
     @pytest.mark.parametrize("db_first_return_val", [None])
-    async def test_get_current_user_raises_exception_when_user_not_found(self, mock_db: Mock, valid_jwt: str, jwk: str) -> None:
+    async def test_get_current_user_raises_exception_when_user_not_found(
+        self, decode_jwt_patch: AsyncMock, mock_db: Mock, valid_jwt: str, jwk: str
+    ) -> None:
+        decode_jwt_patch.return_value = {"sub": "testuser"}
+
         with pytest.raises(HTTPException):
-            await dependencies.get_current_user(token=valid_jwt, jwt_key=jwk, db=mock_db)
+            await dependencies.get_current_user(token=valid_jwt, db=mock_db)
 
 
 @pytest.mark.asyncio
@@ -48,12 +66,22 @@ class TestGetCurrentActiveUser:
 class TestHasPermission:
     @pytest.mark.parametrize("db_all_return_val", [[{}]])
     def test_has_permission(self, mock_db: Mock) -> None:
-        permitted = dependencies.has_permission(db=mock_db, email="", application=dependencies.Applications.MIAPEER, role=dependencies.Roles.USER)
+        permitted = dependencies.has_permission(
+            db=mock_db,
+            email="",
+            application=dependencies.Applications.MIAPEER,
+            role=dependencies.Roles.USER,
+        )
         assert permitted is True
 
     @pytest.mark.parametrize("db_all_return_val", [[]])
     def test_no_permission(self, mock_db: Mock) -> None:
-        permitted = dependencies.has_permission(db=mock_db, email="", application=dependencies.Applications.MIAPEER, role=dependencies.Roles.USER)
+        permitted = dependencies.has_permission(
+            db=mock_db,
+            email="",
+            application=dependencies.Applications.MIAPEER,
+            role=dependencies.Roles.USER,
+        )
         assert permitted is False
 
 

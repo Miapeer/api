@@ -26,7 +26,7 @@ def valid_jwt_data() -> TokenData:
 
 @pytest.fixture
 def expired_jwt() -> str:
-    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZWZmLm5hdmFycmFAbWlhcGVlci5jb20iLCJleHAiOjE2Nzc5ODU1NjV9.gCV8uhqs1QiMQvBVfY4RUiyVwVo7R3Sn7opRY79LeQ8"
+    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZWZmLm5hdmFycmFAbWlhcGVlci5jb20iLCJleHAiOjE2Nzc5ODU1NjV9.MIKPImtnO63dNmez_QsFTkuzXeLs5kxtGXJp5oEQFUY"
 
 
 @pytest.fixture
@@ -76,16 +76,26 @@ def mock_db(
     mock_db = Mock()
     db_methods = Mock()
 
-    db_methods.all.return_value = None if db_all_return_val == UNSET else db_all_return_val
+    db_methods.all.return_value = (
+        None if db_all_return_val == UNSET else db_all_return_val
+    )
 
-    db_methods.first.return_value = None if db_first_return_val == UNSET else db_first_return_val
-    db_methods.first.side_effect = None if db_first_side_effect_val == UNSET else db_first_side_effect_val
+    db_methods.first.return_value = (
+        None if db_first_return_val == UNSET else db_first_return_val
+    )
+    db_methods.first.side_effect = (
+        None if db_first_side_effect_val == UNSET else db_first_side_effect_val
+    )
 
-    db_methods.one_or_none.return_value = None if db_one_or_none_return_val == UNSET else db_one_or_none_return_val
+    db_methods.one_or_none.return_value = (
+        None if db_one_or_none_return_val == UNSET else db_one_or_none_return_val
+    )
 
     mock_db.get.return_value = None if db_get_return_val == UNSET else db_get_return_val
 
-    mock_db.refresh.side_effect = None if db_refresh_patch_method == UNSET else db_refresh_patch_method
+    mock_db.refresh.side_effect = (
+        None if db_refresh_patch_method == UNSET else db_refresh_patch_method
+    )
 
     mock_db.exec.return_value = db_methods
     return mock_db
@@ -108,7 +118,9 @@ def user_hashed_password() -> str:
 
 @pytest.fixture
 def user(user_id: int, user_hashed_password: str) -> User:
-    return User(user_id=user_id, password=user_hashed_password, email="", disabled=False)
+    return User(
+        user_id=user_id, password=user_hashed_password, email="", disabled=False
+    )
 
 
 @pytest.fixture
