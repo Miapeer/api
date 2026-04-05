@@ -7,9 +7,13 @@ from sqlmodel import Field, SQLModel
 class TransactionBase(SQLModel):
     # parent_category_id: Optional[int] = Field(default=None, foreign_key="quantum_category.category_id")
 
-    transaction_type_id: Optional[int] = Field(default=None, foreign_key="quantum_transaction_type.transaction_type_id")
+    transaction_type_id: Optional[int] = Field(
+        default=None, foreign_key="quantum_transaction_type.transaction_type_id"
+    )
     payee_id: Optional[int] = Field(default=None, foreign_key="quantum_payee.payee_id")
-    category_id: Optional[int] = Field(default=None, foreign_key="quantum_category.category_id")
+    category_id: Optional[int] = Field(
+        default=None, foreign_key="quantum_category.category_id"
+    )
     amount: int = 0
     transaction_date: date = date.today()
     clear_date: Optional[date] = None
@@ -19,9 +23,11 @@ class TransactionBase(SQLModel):
 
 
 class Transaction(TransactionBase, table=True):
-    __tablename__: str = "quantum_transaction"  # type: ignore
+    __tablename__: str = "quantum_transaction"
 
-    account_id: Optional[int] = Field(default=None, foreign_key="quantum_account.account_id")
+    account_id: Optional[int] = Field(
+        default=None, foreign_key="quantum_account.account_id"
+    )
     transaction_id: Optional[int] = Field(default=None, primary_key=True)
 
     # account: Account = Relationship(back_populates="transactions")

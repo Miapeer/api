@@ -44,7 +44,6 @@ def get_db() -> Iterator[Session]:
 DbSession = Annotated[Session, Depends(get_db)]
 
 
-# TODO: Cache results to prevent multiple DB lookups
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[Session, Depends(get_db)],
@@ -53,7 +52,7 @@ async def get_current_user(
 
     username: Optional[str] = payload.get("sub")
 
-    if username is None or username == "":
+    if not username:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token payload",
@@ -63,7 +62,7 @@ async def get_current_user(
     token_data = TokenData(username=username)
 
     user = db.exec(select(User).where(User.email == token_data.username)).first()
-    if user is None:
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",

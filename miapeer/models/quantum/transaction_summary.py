@@ -11,14 +11,12 @@ class TransactionSummaryBase(SQLModel):
 
 
 class TransactionSummary(TransactionSummaryBase, table=True):
-    __tablename__: str = "quantum_transaction_summary"  # type: ignore
+    __tablename__: str = "quantum_transaction_summary"
 
     transaction_summary_id: Optional[int] = Field(default=None, primary_key=True)
 
 
-class TransactionSummaryCreate(TransactionSummaryBase):
-    ...
+class TransactionSummaryCreate(TransactionSummaryBase): ...
 
 
-class TransactionSummaryRead(TransactionSummaryBase):
-    ...
+class TransactionSummaryRead(TransactionSummaryBase): ...

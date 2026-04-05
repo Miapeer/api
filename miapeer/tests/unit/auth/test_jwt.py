@@ -1,16 +1,22 @@
 from datetime import datetime, timedelta
+from typing import Any
 from unittest.mock import patch
 
+from fastapi import HTTPException, status
 import pytest
 
 from miapeer.auth import jwt
+from pytest_lazy_fixtures import lf as lazy_fixture
 
 
 class TestEncodeJwt:
-    def test_raises_exception_if_no_jwk(self) -> None:
-        with patch(f"{jwt.__name__}.get_jwk", return_value=None):
+    @pytest.mark.parametrize("jwk_value", [None, ""])
+    def test_raises_exception_if_no_jwk(
+        self, jwk_value: str, valid_jwt_data: dict[str, str | int | None]
+    ) -> None:
+        with patch(f"{jwt.__name__}.get_jwk", return_value=jwk_value):
             with pytest.raises(jwt.JwtException) as exc_info:
-                jwt.encode_jwt(data={"sub": "aaa"})
+                jwt.encode_jwt(data=valid_jwt_data)
 
         assert str(exc_info.value) == jwt.JwtErrorMessage.INVALID_JWK.value
 
@@ -42,7 +48,7 @@ class TestEncodeJwt:
         )
 
     def test_use_expiration_in_token_data(
-        self, valid_jwt_data: jwt.TokenData, jwk: str
+        self, valid_jwt_data: dict[str, str | int | None], jwk: str
     ) -> None:
         # Date provided in valid_jwt_data is 7752937429 seconds after the epoch, which is 2024-02-13 11:22:09 UTC
         returned_jwt = jwt.encode_jwt(data=valid_jwt_data)
@@ -73,27 +79,32 @@ class TestDecodeJwt:
 
         assert token_data == valid_jwt_data
 
-    # @pytest.mark.parametrize(
-    #     "token,exception_value",
-    #     [
-    #         # No token
-    #         ("", "401: Could not validate credentials"),
-    #         # # Invalid token
-    #         # ("some.bad.token", "401: Could not validate credentials"),
-    #         # # Expired token
-    #         # (
-    #         #     pytest.lazy_fixture("expired_jwt"),
-    #         #     "401: Could not validate credentials",
-    #         # ),
-    #     ],
-    # )
-    # def test_invalid_token_raises_exception(
-    #     self, token: str, exception_value: str
-    # ) -> None:
-    #     with patch(f"{jwt.__name__}.jwt.decode", return_value=None):
-    #         with pytest.raises(HTTPException) as exc_info:
-    #             jwt.decode_jwt(token=token)
+    @pytest.mark.parametrize(
+        "token_data,exception_value",
+        [
+            # No token
+            ({}, "Token payload is incomplete"),
+            # Missing username
+            ({"exp": 1234567890}, "Token payload is incomplete"),
+            # Missing expiration
+            ({"sub": "aaa"}, "Token payload is incomplete"),
+            # Expired token
+            (
+                lazy_fixture("expired_jwt_data"),
+                "Could not validate credentials",
+            ),
+        ],
+    )
+    def test_invalid_token_raises_exception(
+        self, token_data: dict[str, Any], valid_jwt: str, exception_value: str
+    ) -> None:
+        with patch(f"{jwt.__name__}.jwt.decode", return_value=token_data):
+            with pytest.raises(HTTPException) as exc_info:
+                jwt.decode_jwt(token=valid_jwt)
 
-    #     assert str(exc_info.value) == exception_value
+        print(f"\n{exc_info.value.detail = }\n")
+        print(f"\n{exception_value = }\n")
 
-    #     assert False
+        assert exc_info.value.detail == exception_value
+
+        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED

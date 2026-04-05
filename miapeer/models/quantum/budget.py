@@ -11,15 +11,14 @@ class BudgetBase(SQLModel):
 
 
 class Budget(BudgetBase, table=True):
-    __tablename__: str = "quantum_budget"  # type: ignore
+    __tablename__: str = "quantum_budget"
 
     budget_id: Optional[int] = Field(default=None, primary_key=True)
 
     # portfolio: Portfolio = Relationship(back_populates="categories")
 
 
-class BudgetCreate(BudgetBase):
-    ...
+class BudgetCreate(BudgetBase): ...
 
 
 class BudgetRead(BudgetBase):

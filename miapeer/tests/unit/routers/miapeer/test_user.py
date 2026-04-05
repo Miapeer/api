@@ -12,6 +12,7 @@ from miapeer.models.miapeer import (
     UserUpdate,
 )
 from miapeer.routers.miapeer import user
+from pytest_lazy_fixtures import lf as lazy_fixture
 
 pytestmark = pytest.mark.asyncio
 
@@ -74,8 +75,8 @@ class TestGetAll:
         [
             ([], []),
             (
-                pytest.lazy_fixture("multiple_users"),  # type: ignore
-                pytest.lazy_fixture("expected_multiple_users"),  # type: ignore
+                lazy_fixture("multiple_users"),
+                lazy_fixture("expected_multiple_users"),
             ),
         ],
     )
@@ -141,7 +142,7 @@ class TestGet:
 
     @pytest.mark.parametrize(
         "db_get_return_val",
-        [pytest.lazy_fixture("complete_user")],  # type: ignore
+        [lazy_fixture("complete_user")],
     )
     async def test_get_with_data(
         self, user_id: int, mock_db: Mock, expected_response: UserRead
@@ -195,7 +196,7 @@ class TestUpdate:
 
     @pytest.mark.parametrize(
         "db_get_return_val",
-        [pytest.lazy_fixture("complete_user")],  # type: ignore
+        [lazy_fixture("complete_user")],
     )
     async def test_update_with_user_found(
         self,

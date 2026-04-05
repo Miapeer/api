@@ -39,11 +39,15 @@ async def _get_forecasted_transactions(
     account_id: int,
     limit_forecast_date: date,
 ) -> list[TransactionRead]:
-    scheduled_transactions = await scheduled_transaction.get_all_scheduled_transactions(db=db, current_user=current_user, account_id=account_id)
+    scheduled_transactions = await scheduled_transaction.get_all_scheduled_transactions(
+        db=db, current_user=current_user, account_id=account_id
+    )
 
     forecasted_transactions: list[TransactionRead] = []
     for st in scheduled_transactions:
-        fts = await scheduled_transaction.get_next_iterations(db=db, scheduled_transaction=st, override_end_date=limit_forecast_date)
+        fts = await scheduled_transaction.get_next_iterations(
+            db=db, scheduled_transaction=st, override_end_date=limit_forecast_date
+        )
 
         for ft in fts:
             forecasted_transactions.append(
@@ -59,7 +63,9 @@ async def _get_forecasted_transactions(
     return forecasted_transactions
 
 
-def _merge_transactions_with_forecast(transactions: list[TransactionRead], forecasted_transactions: list[TransactionRead]):
+def _merge_transactions_with_forecast(
+    transactions: list[TransactionRead], forecasted_transactions: list[TransactionRead]
+):
     if not forecasted_transactions:
         # Shortcut if there's nothing to merge
         return transactions
@@ -74,10 +80,13 @@ def _merge_transactions_with_forecast(transactions: list[TransactionRead], forec
 
     transaction_index = 0
     forecast_index = 0
-    while transaction_index < len(transactions) and forecast_index < len(forecasted_transactions):
+    while transaction_index < len(transactions) and forecast_index < len(
+        forecasted_transactions
+    ):
         if (
             transactions[transaction_index].clear_date
-            or transactions[transaction_index].transaction_date <= forecasted_transactions[forecast_index].transaction_date
+            or transactions[transaction_index].transaction_date
+            <= forecasted_transactions[forecast_index].transaction_date
         ):
             merged_transactions.append(transactions[transaction_index])
             transaction_index += 1
@@ -110,8 +119,8 @@ async def get_all_transactions(
     limit_forecast_date = date.today()
     limit_forecast_date += relativedelta(months=limit_forecast_months)
 
-    transactions = db.exec(
-        transaction_sql.GET_ALL,  # type: ignore
+    transactions = db.exec(  # ty: ignore [no-matching-overload]
+        transaction_sql.GET_ALL,
         params={
             "account_id": account_id,
             "user_id": current_user.user_id,
@@ -124,7 +133,9 @@ async def get_all_transactions(
 
     running_balance: int = sum([t.amount for t in transactions if t.order_index <= 0])
 
-    actual_transactions = [TransactionRead.model_validate(t) for t in transactions if t.order_index > 0]
+    actual_transactions = [
+        TransactionRead.model_validate(t) for t in transactions if t.order_index > 0
+    ]
     forecasted_transactions = await _get_forecasted_transactions(
         db=db,
         current_user=current_user,
@@ -190,7 +201,9 @@ async def create_transaction(
     )
 
     # Create the transaction
-    db_transaction = Transaction.model_validate(transaction.model_dump(), update={"account_id": account_id})
+    db_transaction = Transaction.model_validate(
+        transaction.model_dump(), update={"account_id": account_id}
+    )
     db.add(db_transaction)
     db.commit()
     db.refresh(db_transaction)
@@ -243,7 +256,9 @@ async def delete_transaction(
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    sql = select(ScheduledTransactionHistory).where(ScheduledTransactionHistory.transaction_id == transaction_id)
+    sql = select(ScheduledTransactionHistory).where(
+        ScheduledTransactionHistory.transaction_id == transaction_id
+    )
     scheduled_transaction_history = db.exec(sql).one_or_none()
 
     if scheduled_transaction_history:

@@ -8,20 +8,18 @@ class SettingBase(SQLModel):
 
 
 class Setting(SettingBase, table=True):
-    __tablename__: str = "quantum_setting"  # type: ignore
+    __tablename__: str = "quantum_setting"
 
     setting_id: Optional[int] = Field(default=None, primary_key=True)
 
     # portfolio_user_settings: List["PortfolioUserSetting"] = Relationship(back_populates="setting")
 
 
-class SettingCreate(SettingBase):
-    ...
+class SettingCreate(SettingBase): ...
 
 
 class SettingRead(SettingBase):
     setting_id: int
 
 
-class SettingUpdate(SQLModel):
-    ...
+class SettingUpdate(SQLModel): ...

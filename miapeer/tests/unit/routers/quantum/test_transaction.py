@@ -21,6 +21,7 @@ from miapeer.models.quantum.transaction import (
 )
 from miapeer.models.quantum.transaction_type import TransactionType
 from miapeer.routers.quantum import transaction
+from pytest_lazy_fixtures import lf as lazy_fixture
 
 pytestmark = pytest.mark.asyncio
 
@@ -111,8 +112,12 @@ def basic_transaction(
 
 
 @pytest.fixture
-def complete_transaction(transaction_id: int, basic_transaction: Transaction) -> Transaction:
-    return Transaction.model_validate(basic_transaction.model_dump(), update={"transaction_id": transaction_id})
+def complete_transaction(
+    transaction_id: int, basic_transaction: Transaction
+) -> Transaction:
+    return Transaction.model_validate(
+        basic_transaction.model_dump(), update={"transaction_id": transaction_id}
+    )
 
 
 @pytest.fixture
@@ -127,7 +132,12 @@ def portfolio_id() -> int:
 
 @pytest.fixture
 def basic_account(account_id: int, account_name: str, portfolio_id: int) -> Account:
-    return Account(account_id=account_id, name=account_name, portfolio_id=portfolio_id, starting_balance=0)
+    return Account(
+        account_id=account_id,
+        name=account_name,
+        portfolio_id=portfolio_id,
+        starting_balance=0,
+    )
 
 
 @dataclass
@@ -146,8 +156,14 @@ class DbTransaction:
     order_index: int
 
 
-def create_db_transaction(base_transaction: Transaction, override_amount: Optional[int] = None, order_index: int = 1) -> DbTransaction:
-    transaction = DbTransaction(**base_transaction.model_dump(), order_index=order_index)
+def create_db_transaction(
+    base_transaction: Transaction,
+    override_amount: Optional[int] = None,
+    order_index: int = 1,
+) -> DbTransaction:
+    transaction = DbTransaction(
+        **base_transaction.model_dump(), order_index=order_index
+    )
     if override_amount is not None:
         transaction.amount = override_amount
     return transaction
@@ -155,12 +171,21 @@ def create_db_transaction(base_transaction: Transaction, override_amount: Option
 
 class TestGetAll:
     @pytest.fixture
-    def multiple_transactions(self, complete_transaction: Transaction) -> list[Transaction]:
-        return [create_db_transaction(base_transaction=complete_transaction), create_db_transaction(base_transaction=complete_transaction)]
+    def multiple_transactions(
+        self, complete_transaction: Transaction
+    ) -> list[DbTransaction]:
+        return [
+            create_db_transaction(base_transaction=complete_transaction),
+            create_db_transaction(base_transaction=complete_transaction),
+        ]
 
     @pytest.fixture
-    def expected_multiple_transactions(self, complete_transaction: Transaction) -> list[TransactionRead]:
-        working_transaction = TransactionRead.model_validate(complete_transaction.model_dump(), update={"balance": 0})
+    def expected_multiple_transactions(
+        self, complete_transaction: Transaction
+    ) -> list[TransactionRead]:
+        working_transaction = TransactionRead.model_validate(
+            complete_transaction.model_dump(), update={"balance": 0}
+        )
         return [working_transaction, working_transaction]
 
     @pytest.fixture
@@ -173,7 +198,10 @@ class TestGetAll:
         "db_all_return_val, expected_response",
         [
             ([], []),
-            # (pytest.lazy_fixture("multiple_transactions"), pytest.lazy_fixture("expected_multiple_transactions"))
+            (
+                lazy_fixture("multiple_transactions"),
+                lazy_fixture("expected_multiple_transactions"),
+            ),
         ],
     )
     @patch("miapeer.routers.quantum.transaction._get_forecasted_transactions")
@@ -188,19 +216,28 @@ class TestGetAll:
         expected_sql_date: date,
         expected_response: list[TransactionRead],
     ) -> None:
-        get_account_patch.return_value = Account(portfolio_id=0, name="", starting_balance=0)
+        get_account_patch.return_value = Account(
+            portfolio_id=0, name="", starting_balance=0
+        )
         get_forcasted_transactions_patch.return_value = []
 
-        response = await transaction.get_all_transactions(account_id=account_id, db=mock_db, current_user=user)
+        response = await transaction.get_all_transactions(
+            account_id=account_id, db=mock_db, current_user=user
+        )
 
         mock_db.exec.assert_called_with(
-            transaction_sql.GET_ALL, params={"account_id": account_id, "user_id": user.user_id, "limit_date": expected_sql_date}
+            transaction_sql.GET_ALL,
+            params={
+                "account_id": account_id,
+                "user_id": user.user_id,
+                "limit_date": expected_sql_date,
+            },
         )
         assert response == expected_response
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:  # type: ignore
+    def db_refresh(obj) -> None:
         obj.transaction_id = raw_transaction_id
 
     @pytest.fixture
@@ -233,7 +270,9 @@ class TestCreate:
         return f"SELECT quantum_account.portfolio_id, quantum_account.name, quantum_account.starting_balance, quantum_account.account_id \nFROM quantum_account JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
-    def expected_transaction_type_sql(self, user_id: int, transaction_type_id: int) -> str:
+    def expected_transaction_type_sql(
+        self, user_id: int, transaction_type_id: int
+    ) -> str:
         return f"SELECT quantum_transaction_type.name, quantum_transaction_type.portfolio_id, quantum_transaction_type.transaction_type_id \nFROM quantum_transaction_type JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_transaction_type.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_transaction_type.transaction_type_id = {transaction_type_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
@@ -245,16 +284,25 @@ class TestCreate:
         return f"SELECT quantum_category.name, quantum_category.parent_category_id, quantum_category.portfolio_id, quantum_category.category_id \nFROM quantum_category JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_category.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_category.category_id = {category_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
-    def db_first_return_values(self, basic_account, transaction_type_id, payee_id, category_id) -> list:
+    def db_first_return_values(
+        self, basic_account, transaction_type_id, payee_id, category_id
+    ) -> list:
         return [
             basic_account,
             Transaction(transaction_type_id=transaction_type_id),
-            Payee(payee_id=payee_id),
-            Category(category_id=category_id),
+            Payee(payee_id=payee_id, portfolio_id=basic_account.portfolio_id, name=""),
+            Category(
+                category_id=category_id,
+                portfolio_id=basic_account.portfolio_id,
+                name="",
+            ),
             "some data",
         ]
 
-    @pytest.mark.parametrize("db_first_side_effect_val, db_refresh_patch_method", [(pytest.lazy_fixture("db_first_return_values"), db_refresh)])
+    @pytest.mark.parametrize(
+        "db_first_side_effect_val, db_refresh_patch_method",
+        [(lazy_fixture("db_first_return_values"), db_refresh)],
+    )
     async def test_create(
         self,
         user: User,
@@ -267,7 +315,12 @@ class TestCreate:
         expected_payee_sql: str,
         expected_category_sql: str,
     ) -> None:
-        await transaction.create_transaction(account_id=account_id, transaction=transaction_to_create, db=mock_db, current_user=user)
+        await transaction.create_transaction(
+            account_id=account_id,
+            transaction=transaction_to_create,
+            db=mock_db,
+            current_user=user,
+        )
 
         sql = mock_db.exec.call_args_list[0].args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -307,7 +360,12 @@ class TestCreate:
         expected_transaction_sql: str,
     ) -> None:
         with pytest.raises(HTTPException):
-            await transaction.create_transaction(account_id=account_id, transaction=transaction_to_create, db=mock_db, current_user=user)
+            await transaction.create_transaction(
+                account_id=account_id,
+                transaction=transaction_to_create,
+                db=mock_db,
+                current_user=user,
+            )
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -327,7 +385,9 @@ class TestGet:
     def expected_sql(self, user_id: int, account_id: int, transaction_id: int) -> str:
         return f"SELECT quantum_transaction.transaction_type_id, quantum_transaction.payee_id, quantum_transaction.category_id, quantum_transaction.amount, quantum_transaction.transaction_date, quantum_transaction.clear_date, quantum_transaction.check_number, quantum_transaction.exclude_from_forecast, quantum_transaction.notes, quantum_transaction.account_id, quantum_transaction.transaction_id \nFROM quantum_transaction JOIN quantum_account ON quantum_account.account_id = quantum_transaction.account_id JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_transaction.transaction_id = {transaction_id} AND quantum_portfolio_user.user_id = {user_id}"
 
-    @pytest.mark.parametrize("db_one_or_none_return_val", [pytest.lazy_fixture("complete_transaction")])
+    @pytest.mark.parametrize(
+        "db_one_or_none_return_val", [lazy_fixture("complete_transaction")]
+    )
     async def test_get_with_data(
         self,
         user: User,
@@ -337,7 +397,12 @@ class TestGet:
         expected_sql: str,
         expected_response: TransactionRead,
     ) -> None:
-        response = await transaction.get_transaction(account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user)
+        response = await transaction.get_transaction(
+            account_id=account_id,
+            transaction_id=transaction_id,
+            db=mock_db,
+            current_user=user,
+        )
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -346,9 +411,21 @@ class TestGet:
         assert response == expected_response
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
-    async def test_get_no_data(self, user: User, account_id: int, transaction_id: int, mock_db: Mock, expected_sql: str) -> None:
+    async def test_get_no_data(
+        self,
+        user: User,
+        account_id: int,
+        transaction_id: int,
+        mock_db: Mock,
+        expected_sql: str,
+    ) -> None:
         with pytest.raises(HTTPException):
-            await transaction.get_transaction(account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user)
+            await transaction.get_transaction(
+                account_id=account_id,
+                transaction_id=transaction_id,
+                db=mock_db,
+                current_user=user,
+            )
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -358,7 +435,9 @@ class TestGet:
 
 class TestDelete:
     @pytest.fixture
-    def expected_transaction_sql(self, user_id: int, account_id: int, transaction_id: int) -> str:
+    def expected_transaction_sql(
+        self, user_id: int, account_id: int, transaction_id: int
+    ) -> str:
         return f"SELECT quantum_transaction.transaction_type_id, quantum_transaction.payee_id, quantum_transaction.category_id, quantum_transaction.amount, quantum_transaction.transaction_date, quantum_transaction.clear_date, quantum_transaction.check_number, quantum_transaction.exclude_from_forecast, quantum_transaction.notes, quantum_transaction.account_id, quantum_transaction.transaction_id \nFROM quantum_transaction JOIN quantum_account ON quantum_account.account_id = quantum_transaction.account_id JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_transaction.transaction_id = {transaction_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
@@ -376,7 +455,12 @@ class TestDelete:
         expected_scheduled_transaction_history_sql: str,
         db_one_or_none_return_val: Any,
     ) -> None:
-        response = await transaction.delete_transaction(account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user)
+        response = await transaction.delete_transaction(
+            account_id=account_id,
+            transaction_id=transaction_id,
+            db=mock_db,
+            current_user=user,
+        )
 
         sql = mock_db.exec.call_args_list[0].args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -387,7 +471,9 @@ class TestDelete:
         assert sql_str == expected_scheduled_transaction_history_sql
 
         # Twice, because the "one_or_none" return value will be returned for both transaction and scheduled_transaction_history DB calls
-        expected_delete_calls = [call(db_one_or_none_return_val)] + [call(db_one_or_none_return_val)]
+        expected_delete_calls = [call(db_one_or_none_return_val)] + [
+            call(db_one_or_none_return_val)
+        ]
         assert mock_db.delete.mock_calls == expected_delete_calls
 
         mock_db.commit.assert_called_once()
@@ -395,10 +481,20 @@ class TestDelete:
 
     @pytest.mark.parametrize("db_one_or_none_return_val", [None, []])
     async def test_delete_with_transaction_not_found(
-        self, user: User, account_id: int, transaction_id: int, mock_db: Mock, expected_transaction_sql: str
+        self,
+        user: User,
+        account_id: int,
+        transaction_id: int,
+        mock_db: Mock,
+        expected_transaction_sql: str,
     ) -> None:
         with pytest.raises(HTTPException):
-            await transaction.delete_transaction(account_id=account_id, transaction_id=transaction_id, db=mock_db, current_user=user)
+            await transaction.delete_transaction(
+                account_id=account_id,
+                transaction_id=transaction_id,
+                db=mock_db,
+                current_user=user,
+            )
 
         sql = mock_db.exec.call_args.args[0]
         sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
@@ -424,23 +520,33 @@ class TestUpdate:
         )
 
     @pytest.fixture
-    def expected_transaction_sql(self, user_id: int, account_id: int, transaction_id: int) -> str:
+    def expected_transaction_sql(
+        self, user_id: int, account_id: int, transaction_id: int
+    ) -> str:
         return f"SELECT quantum_transaction.transaction_type_id, quantum_transaction.payee_id, quantum_transaction.category_id, quantum_transaction.amount, quantum_transaction.transaction_date, quantum_transaction.clear_date, quantum_transaction.check_number, quantum_transaction.exclude_from_forecast, quantum_transaction.notes, quantum_transaction.account_id, quantum_transaction.transaction_id \nFROM quantum_transaction JOIN quantum_account ON quantum_account.account_id = quantum_transaction.account_id JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_transaction.transaction_id = {transaction_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
-    def expected_account_sql(self, user_id: int, account_id: int, transaction_id: int) -> str:
+    def expected_account_sql(
+        self, user_id: int, account_id: int, transaction_id: int
+    ) -> str:
         return f"SELECT quantum_account.portfolio_id, quantum_account.name, quantum_account.starting_balance, quantum_account.account_id \nFROM quantum_account JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_account.account_id = {account_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
-    def expected_transaction_type_sql(self, user_id: int, transaction_updates: TransactionUpdate) -> str:
+    def expected_transaction_type_sql(
+        self, user_id: int, transaction_updates: TransactionUpdate
+    ) -> str:
         return f"SELECT quantum_transaction_type.name, quantum_transaction_type.portfolio_id, quantum_transaction_type.transaction_type_id \nFROM quantum_transaction_type JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_transaction_type.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_transaction_type.transaction_type_id = {transaction_updates.transaction_type_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
-    def expected_payee_sql(self, user_id: int, transaction_updates: TransactionUpdate) -> str:
+    def expected_payee_sql(
+        self, user_id: int, transaction_updates: TransactionUpdate
+    ) -> str:
         return f"SELECT quantum_payee.name, quantum_payee.portfolio_id, quantum_payee.payee_id \nFROM quantum_payee JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_payee.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_payee.payee_id = {transaction_updates.payee_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
-    def expected_category_sql(self, user_id: int, transaction_updates: TransactionUpdate) -> str:
+    def expected_category_sql(
+        self, user_id: int, transaction_updates: TransactionUpdate
+    ) -> str:
         return f"SELECT quantum_category.name, quantum_category.parent_category_id, quantum_category.portfolio_id, quantum_category.category_id \nFROM quantum_category JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_category.portfolio_id JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_category.category_id = {transaction_updates.category_id} AND quantum_portfolio_user.user_id = {user_id}"
 
     @pytest.fixture
@@ -468,14 +574,31 @@ class TestUpdate:
     def db_first_return_values(self, basic_account, updated_transaction) -> list:
         return [
             basic_account,
-            TransactionType(transaction_type_id=updated_transaction.transaction_type_id),
-            Payee(payee_id=updated_transaction.payee_id),
-            Category(category_id=updated_transaction.category_id),
+            TransactionType(
+                transaction_type_id=updated_transaction.transaction_type_id,
+                portfolio_id=basic_account.portfolio_id,
+                name="",
+            ),
+            Payee(
+                payee_id=updated_transaction.payee_id,
+                portfolio_id=basic_account.portfolio_id,
+                name="",
+            ),
+            Category(
+                category_id=updated_transaction.category_id,
+                portfolio_id=basic_account.portfolio_id,
+                name="",
+            ),
         ]
 
     @pytest.mark.parametrize(
         "db_one_or_none_return_val, db_first_side_effect_val",
-        [(pytest.lazy_fixture("complete_transaction"), pytest.lazy_fixture("db_first_return_values"))],
+        [
+            (
+                lazy_fixture("complete_transaction"),
+                lazy_fixture("db_first_return_values"),
+            )
+        ],
     )
     async def test_update_with_transaction_found(
         self,
@@ -570,15 +693,30 @@ class TestRunningBalance:
         return [random.randint(-9999, 9999) for _ in range(10)]
 
     @pytest.fixture
-    def db_all_return_val(self, transaction_amounts: list[int], complete_transaction: Transaction, starting_balance: int) -> list[DbTransaction]:
-        starting_balance_transaction = create_db_transaction(base_transaction=complete_transaction, override_amount=starting_balance, order_index=-2)
+    def db_all_return_val(
+        self,
+        transaction_amounts: list[int],
+        complete_transaction: Transaction,
+        starting_balance: int,
+    ) -> list[DbTransaction]:
+        starting_balance_transaction = create_db_transaction(
+            base_transaction=complete_transaction,
+            override_amount=starting_balance,
+            order_index=-2,
+        )
         return [starting_balance_transaction] + [
-            create_db_transaction(base_transaction=complete_transaction, override_amount=amount) for amount in transaction_amounts
+            create_db_transaction(
+                base_transaction=complete_transaction, override_amount=amount
+            )
+            for amount in transaction_amounts
         ]
 
     @pytest.fixture
     def expected_transactions(
-        self, starting_balance: int, transaction_amounts: list[int], complete_transaction: Transaction
+        self,
+        starting_balance: int,
+        transaction_amounts: list[int],
+        complete_transaction: Transaction,
     ) -> list[TransactionRead]:
         running_balance = starting_balance
         working_transactions: list[TransactionRead] = []
@@ -607,5 +745,7 @@ class TestRunningBalance:
     ) -> None:
         get_forcasted_transactions_patch.return_value = []
 
-        response = await transaction.get_all_transactions(account_id=account_id, db=mock_db, current_user=user)
+        response = await transaction.get_all_transactions(
+            account_id=account_id, db=mock_db, current_user=user
+        )
         assert response == expected_transactions

@@ -15,6 +15,8 @@ DEFAULT_JWT_ALGORITHM = "HS256"
 
 password_hash = PasswordHash.recommended()
 
+DUMMY_HASH = password_hash.hash("dummypassword")
+
 router = APIRouter(
     prefix="/miapeer/v1/auth",
     tags=["Auth"],
@@ -28,8 +30,8 @@ def _verify_password(plain_password: str, hashed_password: str) -> bool:
         hashed_password,
     )
 
-    # if not pw_verified:
-    #     print(f"\n{get_password_hash(plain_password) = }\n")
+    if not pw_verified:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
 
     return pw_verified
 
@@ -41,7 +43,9 @@ def get_password_hash(password: str) -> str:
 def _authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
     user = db.exec(select(User).where(User.email == username)).one_or_none()
 
-    if user is None:
+    if not user:
+        # Perform a dummy verification to mitigate timing attacks
+        _verify_password(password, DUMMY_HASH)
         return None
 
     if not _verify_password(password, user.password):
@@ -64,12 +68,12 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    ACCESS_TOKEN_EXPIRE_MINUTES = 300  # TODO
+    ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     access_token = encode_jwt(
-        data={"sub": user.email, "exp": 0}, expires_delta=access_token_expires
+        data={"sub": user.email}, expires_delta=access_token_expires
     )
 
     return Token(access_token=access_token, token_type="bearer")

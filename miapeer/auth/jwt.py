@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from os import environ as env
-from typing import Any, Optional
+from typing import Optional
 from fastapi import HTTPException, status
 import jwt
 from jwt.exceptions import InvalidTokenError
@@ -25,7 +25,9 @@ def get_jwk() -> Optional[str]:
     return env.get("JWT_SECRET_KEY")
 
 
-def encode_jwt(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def encode_jwt(
+    data: dict[str, str | int | None], expires_delta: Optional[timedelta] = None
+) -> str:
     jwt_key = get_jwk()
     algorithm = env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)
 
@@ -42,7 +44,7 @@ def encode_jwt(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
 
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire})  # ty: ignore [no-matching-overload]
 
     encoded_jwt = jwt.encode(to_encode, jwt_key, algorithm=algorithm)
 
@@ -50,32 +52,37 @@ def encode_jwt(data: dict, expires_delta: Optional[timedelta] = None) -> str:
 
 
 def decode_jwt(token: str) -> TokenData:
-
     jwt_key = get_jwk()
 
     if not jwt_key:
         raise JwtException(JwtErrorMessage.INVALID_JWK.value)
 
     try:
-        payload: dict[str, Any] = jwt.decode(
+        payload = jwt.decode(
             jwt=token,
             key=jwt_key,
             algorithms=env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM),
         )
         username = payload.get("sub")
-        if not username:
+        expiration = payload.get("exp")
+
+        if not username or not expiration:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token payload is incomplete",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # token_data = TokenData(username=username)
-
         typed_payload: TokenData = {
-            "sub": payload.get("sub", ""),
-            "exp": payload.get("exp", None),
+            "sub": username,
+            "exp": expiration,
         }
+
+        if datetime.fromtimestamp(expiration, tz=timezone.utc) < datetime.now(
+            timezone.utc
+        ):
+            raise InvalidTokenError("Token has expired")
+
     except InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -83,18 +90,4 @@ def decode_jwt(token: str) -> TokenData:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # user = get_user(fake_users_db, username=token_data.username)
-
-    # if user is None:
-    #     raise credentials_exception
-
     return typed_payload
-
-    # try:
-    #     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    #     username = payload.get("sub")
-    #     if username is None:
-    #         raise credentials_exception
-    #     token_data = TokenData(username=username)
-    # except InvalidTokenError:
-    #     raise credentials_exception

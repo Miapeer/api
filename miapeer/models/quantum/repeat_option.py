@@ -11,7 +11,7 @@ class RepeatOptionBase(SQLModel):
 
 
 class RepeatOption(RepeatOptionBase, table=True):
-    __tablename__: str = "quantum_repeat_option"  # type: ignore
+    __tablename__: str = "quantum_repeat_option"
 
     repeat_option_id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -19,13 +19,11 @@ class RepeatOption(RepeatOptionBase, table=True):
     # repeat_unit: RepeatUnit = Relationship(back_populates="repeat_options")
 
 
-class RepeatOptionCreate(RepeatOptionBase):
-    ...
+class RepeatOptionCreate(RepeatOptionBase): ...
 
 
 class RepeatOptionRead(RepeatOptionBase):
     repeat_option_id: int
 
 
-class RepeatOptionUpdate(SQLModel):
-    ...
+class RepeatOptionUpdate(SQLModel): ...

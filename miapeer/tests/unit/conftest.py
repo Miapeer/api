@@ -20,13 +20,18 @@ def valid_jwt() -> str:
 
 
 @pytest.fixture
-def valid_jwt_data() -> TokenData:
+def valid_jwt_data() -> dict[str, str | int | None]:
     return {"sub": "jep.navarra@miapeer.com", "exp": 7752937429}
 
 
 @pytest.fixture
 def expired_jwt() -> str:
     return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqZWZmLm5hdmFycmFAbWlhcGVlci5jb20iLCJleHAiOjE2Nzc5ODU1NjV9.MIKPImtnO63dNmez_QsFTkuzXeLs5kxtGXJp5oEQFUY"
+
+
+@pytest.fixture
+def expired_jwt_data() -> TokenData:
+    return {"sub": "jeff.navarra@miapeer.com", "exp": 1677985565}
 
 
 @pytest.fixture

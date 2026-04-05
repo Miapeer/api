@@ -1,7 +1,5 @@
 version: '3'
 
-silent: true
-
 dotenv: ['.env']
 
 tasks:
@@ -29,5 +27,7 @@ tasks:
       - pytest --cov=miapeer --cov-report=term-missing:skip-covered --cov-fail-under=90 miapeer/tests/
 
   type-check:
+    aliases: [ty]
+    dir: '{{.WORKDIR}}'
     cmds:
-      - pyright -w
+      - uvx ty check --watch

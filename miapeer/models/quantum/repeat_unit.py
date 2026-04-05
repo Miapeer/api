@@ -8,20 +8,18 @@ class RepeatUnitBase(SQLModel):
 
 
 class RepeatUnit(RepeatUnitBase, table=True):
-    __tablename__: str = "quantum_repeat_unit"  # type: ignore
+    __tablename__: str = "quantum_repeat_unit"
 
     repeat_unit_id: Optional[int] = Field(default=None, primary_key=True)
 
     # repeat_options: List["RepeatOption"] = Relationship(back_populates="repeat_unit")
 
 
-class RepeatUnitCreate(RepeatUnitBase):
-    ...
+class RepeatUnitCreate(RepeatUnitBase): ...
 
 
 class RepeatUnitRead(RepeatUnitBase):
     repeat_unit_id: int
 
 
-class RepeatUnitUpdate(SQLModel):
-    ...
+class RepeatUnitUpdate(SQLModel): ...

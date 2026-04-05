@@ -7,16 +7,22 @@ from miapeer.models.quantum.transaction import TransactionRead
 
 
 class ScheduledTransactionBase(SQLModel):
-    transaction_type_id: Optional[int] = Field(default=None, foreign_key="quantum_transaction_type.transaction_type_id")
+    transaction_type_id: Optional[int] = Field(
+        default=None, foreign_key="quantum_transaction_type.transaction_type_id"
+    )
     payee_id: Optional[int] = Field(default=None, foreign_key="quantum_payee.payee_id")
-    category_id: Optional[int] = Field(default=None, foreign_key="quantum_category.category_id")
+    category_id: Optional[int] = Field(
+        default=None, foreign_key="quantum_category.category_id"
+    )
     fixed_amount: Optional[int] = None
     estimate_occurrences: Optional[int] = None
     prompt_days: Optional[int] = None
     start_date: date = date.today()
     end_date: Optional[date] = None
     limit_occurrences: Optional[int] = None
-    repeat_option_id: Optional[int] = Field(default=None, foreign_key="quantum_repeat_option.repeat_option_id")
+    repeat_option_id: Optional[int] = Field(
+        default=None, foreign_key="quantum_repeat_option.repeat_option_id"
+    )
     # linked_account_id: int = Field(foreign_key="quantum_account.account_id")
     # linked_account_cycle_end_offset: int
     notes: Optional[str] = None
@@ -24,7 +30,7 @@ class ScheduledTransactionBase(SQLModel):
 
 
 class ScheduledTransaction(ScheduledTransactionBase, table=True):
-    __tablename__: str = "quantum_scheduled_transaction"  # type: ignore
+    __tablename__: str = "quantum_scheduled_transaction"
 
     scheduled_transaction_id: Optional[int] = Field(default=None, primary_key=True)
     account_id: int = Field(foreign_key="quantum_account.account_id")

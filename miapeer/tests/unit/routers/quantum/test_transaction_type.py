@@ -12,6 +12,7 @@ from miapeer.models.quantum.transaction_type import (
     TransactionTypeUpdate,
 )
 from miapeer.routers.quantum import transaction_type
+from pytest_lazy_fixtures import lf as lazy_fixture
 
 pytestmark = pytest.mark.asyncio
 
@@ -77,8 +78,8 @@ class TestGetAll:
         [
             ([], []),
             (
-                pytest.lazy_fixture("multiple_transaction_types"),  # type: ignore
-                pytest.lazy_fixture("expected_multiple_transaction_types"),  # type: ignore
+                lazy_fixture("multiple_transaction_types"),
+                lazy_fixture("expected_multiple_transaction_types"),
             ),
         ],
     )
@@ -183,7 +184,7 @@ class TestGet:
 
     @pytest.mark.parametrize(
         "db_one_or_none_return_val",
-        [pytest.lazy_fixture("complete_transaction_type")],  # type: ignore
+        [lazy_fixture("complete_transaction_type")],
     )
     async def test_get_with_data(
         self,
@@ -286,7 +287,7 @@ class TestUpdate:
 
     @pytest.mark.parametrize(
         "db_one_or_none_return_val",
-        [pytest.lazy_fixture("complete_transaction_type")],  # type: ignore
+        [lazy_fixture("complete_transaction_type")],
     )
     async def test_update_with_transaction_type_found(
         self,
