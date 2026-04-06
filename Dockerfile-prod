@@ -33,4 +33,4 @@ EXPOSE 80
 
 RUN date +%Y.%m.%d-%H:%M:%S > last_update
 
-# CMD ["./start_server"]
+CMD ["./start_server"]
