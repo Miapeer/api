@@ -35,6 +35,15 @@ class User(UserBase, table=True):
     permissions: List["Permission"] = Relationship(back_populates="user")
     # portfolio_users: List["PortfolioUser"] = Relationship(back_populates="user")
 
+    # __table_args__ = (
+    #     Index(
+    #         "compound_index_origin_name_version_destination_name",
+    #         "origin_name",
+    #         "origin_version",
+    #         "destination_name",
+    #     ),
+    # )
+
 
 class UserCreate(UserBase):
     password: str

@@ -35,4 +35,4 @@ EXPOSE 80
 
 RUN date +%Y.%m.%d-%H:%M:%S > last_update
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["fastapi", "run"]

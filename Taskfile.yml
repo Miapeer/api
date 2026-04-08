@@ -13,11 +13,12 @@ tasks:
       - pip-compile
 
   start:
+    dir: '{{.TASKFILE_DIR}}/miapeer'
     cmds:
-      - ./start_server
+      - fastapi dev
 
   tdd:
-    dir: '{{.WORKDIR}}'
+    dir: '{{.TASKFILE_DIR}}'
     cmds:
       - ptw --runner "bash pytest-runner.sh" --ext .py,.sql
 
@@ -28,6 +29,6 @@ tasks:
 
   type-check:
     aliases: [ty]
-    dir: '{{.WORKDIR}}'
+    dir: '{{.TASKFILE_DIR}}'
     cmds:
       - uvx ty check --watch
