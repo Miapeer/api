@@ -247,14 +247,18 @@ class TestPermissions:
                     # Exists in "authorized" test set
                     print("  authorized")
                     assert [
-                        t for t in authorized_tests if t.route == route.path and t.method == method
+                        t
+                        for t in authorized_tests
+                        if t.route == route.path and t.method == method
                     ], f'"Authorized" test missing for route "{route.path}"'
                     print("    success")
 
                     # Exists in "unauthorized" test set
                     print("  unauthorized")
                     assert [
-                        t for t in unauthorized_tests if t.route == route.path and t.method == method
+                        t
+                        for t in unauthorized_tests
+                        if t.route == route.path and t.method == method
                     ], f'"Unauthorized" test missing for route "{route.path}"'
                     print("    success")
 
@@ -274,7 +278,9 @@ class TestPermissions:
             for t in authorized_tests
         ],
     )
-    def test_applied_authorized_permissions(self, client: TestClient, method: str, route: str) -> None:
+    def test_applied_authorized_permissions(
+        self, client: TestClient, method: str, route: str
+    ) -> None:
         client_method = getattr(client, method.lower())
         response = client_method(route)
 
@@ -308,7 +314,9 @@ class TestPermissions:
             for t in unauthorized_tests
         ],
     )
-    def test_not_authorized_permissions(self, client: TestClient, method: str, route: str, allow_anonymous: bool) -> None:
+    def test_not_authorized_permissions(
+        self, client: TestClient, method: str, route: str, allow_anonymous: bool
+    ) -> None:
         if allow_anonymous:
             # We can just skip this test since no request is unauthorized
             return

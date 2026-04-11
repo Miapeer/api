@@ -6,46 +6,44 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from miapeer.models.miapeer import User
 from miapeer.routers import auth
-from pytest_lazy_fixtures import lf as lazy_fixture
 
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture
-def form_data(user_password: str) -> OAuth2PasswordRequestForm:
-    return OAuth2PasswordRequestForm(username="aaa", password=user_password, scope="")
+class TestLoginForAccessToken:
+    @pytest.fixture
+    def form_data(self, user_password: str) -> OAuth2PasswordRequestForm:
+        return OAuth2PasswordRequestForm(
+            username="aaa", password=user_password, scope=""
+        )
 
+    @pytest.fixture
+    def user_with_incorrect_password(self, user: User) -> User:
+        user.password = "$2b$12$wqFnN2q.I.Y3LU5K32u5iORvMH3Zx2C6Lm84m.KSJG3IqKjLsHQb6"
+        return user
 
-@pytest.fixture
-def user_with_incorrect_password(user: User) -> User:
-    user.password = "$2b$12$wqFnN2q.I.Y3LU5K32u5iORvMH3Zx2C6Lm84m.KSJG3IqKjLsHQb6"
-    return user
+    @patch(f"{auth.__name__}.authenticate_user")
+    @patch(f"{auth.__name__}.jwt.encode_jwt", return_value="a token")
+    async def test_succeeds(
+        self,
+        mock_encode_jwt: Mock,
+        mock_authenticate_user: Mock,
+        form_data: OAuth2PasswordRequestForm,
+        mock_db: Mock,
+        user: User,
+    ) -> None:
+        mock_authenticate_user.return_value = user
 
+        response = await auth.login_for_access_token(form_data=form_data, db=mock_db)
 
-@patch("miapeer.routers.auth._authenticate_user")
-@patch("miapeer.routers.auth.encode_jwt", return_value="a token")
-@pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("user")])
-async def test_access_token(
-    authenticate_user_patch: Mock,
-    encode_jwt_patch: Mock,
-    form_data: OAuth2PasswordRequestForm,
-    mock_db: Mock,
-) -> None:
-    response = await auth.login_for_access_token(form_data=form_data, db=mock_db)
+        assert response.token_type == "bearer"
+        assert response.access_token == "a token"
 
-    assert response.token_type == "bearer"
-    assert len(response.access_token) > 0
-
-
-@pytest.mark.parametrize("db_one_or_none_return_val", [None])
-async def test_access_token_when_user_not_found(
-    form_data: OAuth2PasswordRequestForm, mock_db: Mock
-) -> None:
-    with pytest.raises(HTTPException):
-        await auth.login_for_access_token(form_data=form_data, db=mock_db)
-
-
-# @pytest.mark.parametrize("db_one_or_none_return_val", [lazy_fixture("user_with_incorrect_password")])
-# async def test_access_token_when_password_incorrect(form_data: OAuth2PasswordRequestForm, mock_db: Mock) -> None:
-#     with pytest.raises(HTTPException):
-#         await auth.login_for_access_token(form_data=form_data, jwk="My secret key", db=mock_db)
+    @patch(f"{auth.__name__}.authenticate_user", return_value=None)
+    async def test_raises_exception_when_user_not_found(
+        self,
+        form_data: OAuth2PasswordRequestForm,
+        mock_db: Mock,
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await auth.login_for_access_token(form_data=form_data, db=mock_db)

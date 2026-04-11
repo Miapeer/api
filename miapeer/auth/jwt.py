@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from os import environ as env
+import os
 from typing import Optional
 from fastapi import HTTPException, status
 import jwt
@@ -22,14 +22,14 @@ class JwtErrorMessage(str, Enum):
 
 
 def get_jwk() -> Optional[str]:
-    return env.get("JWT_SECRET_KEY")
+    return os.environ.get("JWT_SECRET_KEY")
 
 
 def encode_jwt(
     data: dict[str, str | int | None], expires_delta: Optional[timedelta] = None
 ) -> str:
     jwt_key = get_jwk()
-    algorithm = env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)
+    algorithm = os.environ.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM)
 
     if not jwt_key:
         raise JwtException(JwtErrorMessage.INVALID_JWK.value)
@@ -61,7 +61,7 @@ def decode_jwt(token: str) -> TokenData:
         payload = jwt.decode(
             jwt=token,
             key=jwt_key,
-            algorithms=env.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM),
+            algorithms=os.environ.get("JWT_ALGORITHM", DEFAULT_JWT_ALGORITHM),
         )
         username = payload.get("sub")
         expiration = payload.get("exp")

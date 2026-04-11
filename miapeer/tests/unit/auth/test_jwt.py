@@ -21,9 +21,9 @@ class TestEncodeJwt:
         assert str(exc_info.value) == jwt.JwtErrorMessage.INVALID_JWK.value
 
     def test_uses_default_expiration(self) -> None:
-        with patch(f"{jwt.__name__}.datetime") as mocked_datetime:
+        with patch(f"{jwt.__name__}.datetime") as mock_datetime:
             # Now, plus 15 minutes
-            mocked_datetime.now.return_value = datetime(2024, 2, 13, 11, 22, 33, 0)
+            mock_datetime.now.return_value = datetime(2024, 2, 13, 11, 22, 33, 0)
 
             returned_jwt = jwt.encode_jwt(data={"sub": "aaa", "exp": None})
             print(f"\n{returned_jwt = }\n")
@@ -34,8 +34,8 @@ class TestEncodeJwt:
         )
 
     def test_explicit_expiration_overrides_token_data(self) -> None:
-        with patch(f"{jwt.__name__}.datetime") as mocked_datetime:
-            mocked_datetime.now.return_value = datetime(2024, 2, 13, 11, 22, 33, 0)
+        with patch(f"{jwt.__name__}.datetime") as mock_datetime:
+            mock_datetime.now.return_value = datetime(2024, 2, 13, 11, 22, 33, 0)
 
             returned_jwt = jwt.encode_jwt(
                 data={"sub": "aaa", "exp": None}, expires_delta=timedelta(days=1)
@@ -61,6 +61,14 @@ class TestEncodeJwt:
 
 
 class TestDecodeJwt:
+    @pytest.mark.parametrize("jwk_value", [None, ""])
+    def test_raises_exception_if_no_jwk(self, jwk_value: str, valid_jwt: str) -> None:
+        with patch(f"{jwt.__name__}.get_jwk", return_value=jwk_value):
+            with pytest.raises(jwt.JwtException) as exc_info:
+                jwt.decode_jwt(token=valid_jwt)
+
+        assert str(exc_info.value) == jwt.JwtErrorMessage.INVALID_JWK.value
+
     def test_decodes_token(
         self,
         jwk: str,

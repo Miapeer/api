@@ -40,10 +40,16 @@ class TestGetAll:
 
 @pytest.mark.usefixtures("create_complete_portfolio")
 class TestCreate:
-    def test_create_account(self, client: TestClient, my_portfolio: Portfolio, not_my_account_2: Account) -> None:
+    def test_create_account(
+        self, client: TestClient, my_portfolio: Portfolio, not_my_account_2: Account
+    ) -> None:
         response = client.post(
             "/quantum/v1/accounts",
-            json={"portfolio_id": my_portfolio.portfolio_id, "name": "apple pies", "starting_balance": 12345},
+            json={
+                "portfolio_id": my_portfolio.portfolio_id,
+                "name": "apple pies",
+                "starting_balance": 12345,
+            },
         )
 
         account_id = 0
@@ -55,14 +61,18 @@ class TestCreate:
             "portfolio_id": my_portfolio.portfolio_id,
             "name": "apple pies",
             "starting_balance": 12345,
-            "account_id": (account_id + 1),  # Increment by 1, the last account ID inserted
+            "account_id": (
+                account_id + 1
+            ),  # Increment by 1, the last account ID inserted
             "balance": 12345,
         }
 
 
 @pytest.mark.usefixtures("create_complete_portfolio")
 class TestGetOne:
-    def test_get_one_account_in_portfolio_succeeds(self, client: TestClient, my_account_1: Account) -> None:
+    def test_get_one_account_in_portfolio_succeeds(
+        self, client: TestClient, my_account_1: Account
+    ) -> None:
         response = client.get(f"/quantum/v1/accounts/{my_account_1.account_id}")
 
         assert response.status_code == 200
@@ -79,14 +89,20 @@ class TestGetOne:
         }
         assert response.json() == expected
 
-    def test_get_one_account_in_wrong_portfolio_fails(self, client: TestClient, not_my_account_1: Account) -> None:
+    def test_get_one_account_in_wrong_portfolio_fails(
+        self, client: TestClient, not_my_account_1: Account
+    ) -> None:
         response = client.get(f"/quantum/v1/accounts/{not_my_account_1.account_id}")
 
         assert response.status_code == 404
         assert response.json() == {"detail": "Account not found"}
 
-    @pytest.mark.parametrize("account_id", [0, -1, 999999999999999999, -999999999999999999])
-    def test_get_one_account_with_invalid_account_id_fails(self, client: TestClient, account_id: int) -> None:
+    @pytest.mark.parametrize(
+        "account_id", [0, -1, 999999999999999999, -999999999999999999]
+    )
+    def test_get_one_account_with_invalid_account_id_fails(
+        self, client: TestClient, account_id: int
+    ) -> None:
         response = client.get(f"/quantum/v1/accounts/{account_id}")
 
         assert response.status_code == 404
@@ -95,7 +111,9 @@ class TestGetOne:
 
 @pytest.mark.usefixtures("create_complete_portfolio")
 class TestUpdate:
-    def test_update_account_succeeds(self, client: TestClient, my_account_1: Account) -> None:
+    def test_update_account_succeeds(
+        self, client: TestClient, my_account_1: Account
+    ) -> None:
         response = client.patch(
             f"/quantum/v1/accounts/{my_account_1.account_id}",
             json={"name": "peach cobbler", "starting_balance": 543},
@@ -108,11 +126,16 @@ class TestUpdate:
             "account_id": my_account_1.account_id,
             "name": "peach cobbler",
             "starting_balance": 543,
-            "balance": 864 - 13 - 0 + 543,  # The existing 3 transactions' amounts, plus the starting balance
+            "balance": 864
+            - 13
+            - 0
+            + 543,  # The existing 3 transactions' amounts, plus the starting balance
         }
         assert response.json() == expected
 
-    def test_update_account_in_wrong_portfolio_fails(self, client: TestClient, not_my_account_1: Account) -> None:
+    def test_update_account_in_wrong_portfolio_fails(
+        self, client: TestClient, not_my_account_1: Account
+    ) -> None:
         response = client.patch(
             f"/quantum/v1/accounts/{not_my_account_1.account_id}",
             json={"name": "peach cobbler", "starting_balance": 543},
@@ -121,10 +144,15 @@ class TestUpdate:
         assert response.status_code == 404
         assert response.json() == {"detail": "Account not found"}
 
-    @pytest.mark.parametrize("account_id", [0, -1, 999999999999999999, -999999999999999999])
-    def test_update_account_with_invalid_account_id_fails(self, client: TestClient, account_id: int) -> None:
+    @pytest.mark.parametrize(
+        "account_id", [0, -1, 999999999999999999, -999999999999999999]
+    )
+    def test_update_account_with_invalid_account_id_fails(
+        self, client: TestClient, account_id: int
+    ) -> None:
         response = client.patch(
-            f"/quantum/v1/accounts/{account_id}", json={"name": "peach cobbler", "starting_balance": 543}
+            f"/quantum/v1/accounts/{account_id}",
+            json={"name": "peach cobbler", "starting_balance": 543},
         )
 
         assert response.status_code == 404
@@ -133,7 +161,9 @@ class TestUpdate:
 
 @pytest.mark.usefixtures("create_complete_portfolio")
 class TestDelete:
-    def test_delete_account_succeeds(self, client: TestClient, my_account_1: Account) -> None:
+    def test_delete_account_succeeds(
+        self, client: TestClient, my_account_1: Account
+    ) -> None:
         response = client.delete(
             f"/quantum/v1/accounts/{my_account_1.account_id}",
         )
@@ -141,7 +171,9 @@ class TestDelete:
         assert response.status_code == 200
         assert response.json() == {"ok": True}
 
-    def test_delete_account_in_wrong_portfolio_fails(self, client: TestClient, not_my_account_1: Account) -> None:
+    def test_delete_account_in_wrong_portfolio_fails(
+        self, client: TestClient, not_my_account_1: Account
+    ) -> None:
         response = client.delete(
             f"/quantum/v1/accounts/{not_my_account_1.account_id}",
         )
@@ -149,8 +181,12 @@ class TestDelete:
         assert response.status_code == 404
         assert response.json() == {"detail": "Account not found"}
 
-    @pytest.mark.parametrize("account_id", [0, -1, 999999999999999999, -999999999999999999])
-    def test_delete_account_with_invalid_account_id_fails(self, client: TestClient, account_id: int) -> None:
+    @pytest.mark.parametrize(
+        "account_id", [0, -1, 999999999999999999, -999999999999999999]
+    )
+    def test_delete_account_with_invalid_account_id_fails(
+        self, client: TestClient, account_id: int
+    ) -> None:
         response = client.delete(f"/quantum/v1/accounts/{account_id}")
 
         assert response.status_code == 404

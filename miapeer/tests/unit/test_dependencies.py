@@ -8,13 +8,13 @@ from miapeer import dependencies
 from miapeer.models.miapeer import User
 
 
-# class TestGetJwk:
-#     @patch(f"{dependencies.__name__}.env")
-#     @pytest.mark.parametrize("get_env_var", ["something", None])
-#     def test_get_jwk(self, patched_env: Mock, get_env_var: Any) -> None:
-#         patched_env.get.return_value = get_env_var
-#         return_val = dependencies.get_jwk()
-#         assert return_val == get_env_var
+@patch(f"{dependencies.__name__}.Session")
+def test_get_db_returns_session(mock_session: Mock) -> None:
+    mock_session.return_value.__enter__.return_value = "some session"
+
+    returned_session = dependencies.get_db()
+
+    assert next(returned_session) == "some session"
 
 
 @pytest.mark.asyncio
