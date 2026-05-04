@@ -43,7 +43,7 @@ engine: Engine = create_engine(
 def get_user_count() -> int:  # pragma: no cover
     with engine.connect():
         with Session(engine) as db:
-            user_count = db.exec(text("select count(*) from quantum_user")).scalar()  # type: ignore
+            user_count = db.exec(text("select count(*) from miapeer_user")).scalar()  # type: ignore
             return user_count
 
 
