@@ -27,11 +27,11 @@ RUN rm -rf /var/lib/apt/lists/*
 
 # COPY ./requirements.txt /miapeer/requirements.txt
 
-WORKDIR /miapeer
+WORKDIR /workspaces/api
 
 # RUN pip install --no-cache-dir -r requirements.txt
 # RUN uv pip install -r requirements.txt
 
 EXPOSE 8000
 
-CMD ["fastapi", "dev"]
+CMD ["fastapi", "dev", "miapeer/app.py"]

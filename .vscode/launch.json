@@ -10,10 +10,10 @@
         {
             "name": "Python: FastAPI",
             "type": "debugpy",
-            "cwd": "${workspaceFolder}/miapeer",
+            "cwd": "${workspaceFolder}",
             "request": "launch",
             "module": "fastapi",
-            "args": ["dev"]
+            "args": ["dev", "miapeer/app.py"]
         }
     ]
 }

@@ -13,9 +13,9 @@ tasks:
       - pip-compile
 
   start:
-    dir: '{{.TASKFILE_DIR}}/miapeer'
+    dir: '{{.TASKFILE_DIR}}'
     cmds:
-      - fastapi dev
+      - fastapi dev miapeer/app.py
 
   tdd:
     dir: '{{.TASKFILE_DIR}}'
