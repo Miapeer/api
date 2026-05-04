@@ -5,6 +5,7 @@ import pytest
 from fastapi import HTTPException
 
 from miapeer.models.miapeer import (
+    ApplicationRole,
     Permission,
     User,
     UserCreate,
@@ -103,36 +104,96 @@ class TestCreate:
     def user_to_create(self, user_email: str) -> UserCreate:
         return UserCreate(email=user_email, disabled=False, password="")
 
-    # @pytest.mark.parametrize(
-    #     "db_first_return_val, db_refresh_patch_method", [(ApplicationRole(application_role_id=1, application_id=2, role_id=3), db_refresh)]
-    # )
-    # async def test_create(
-    #     self,
-    #     user_to_create: UserCreate,
-    #     complete_user: User,
-    #     user_permission: Permission,
-    #     mock_db: Mock,
-    # ) -> None:
-    #     await user.create_user(user=user_to_create, db=mock_db)
+    @pytest.mark.parametrize(
+        "db_first_return_val, db_refresh_patch_method",
+        [
+            (
+                ApplicationRole(application_role_id=1, application_id=2, role_id=3),
+                db_refresh,
+            )
+        ],
+    )
+    async def test_create(
+        self,
+        user_to_create: UserCreate,
+        complete_user: User,
+        user_permission: Permission,
+        mock_db: Mock,
+    ) -> None:
+        await user.create_user(user=user_to_create, db=mock_db)
 
-    #     assert mock_db.add.call_count == 2
+        assert mock_db.add.call_count == 2
 
-    #     first_add_obj = mock_db.add.call_args_list[0].args[0]
-    #     second_add_obj = mock_db.add.call_args_list[1].args[0]
+        first_add_obj = mock_db.add.call_args_list[0].args[0]
+        second_add_obj = mock_db.add.call_args_list[1].args[0]
 
-    #     # Don't try to compare the hashed password
-    #     first_add_obj.password = complete_user.password
-    #     assert first_add_obj.model_dump() == complete_user.model_dump()
+        # Don't try to compare the hashed password
+        first_add_obj.password = complete_user.password
+        assert first_add_obj.model_dump() == complete_user.model_dump()
 
-    #     assert second_add_obj.model_dump() == user_permission.model_dump()
+        assert second_add_obj.model_dump() == user_permission.model_dump()
 
-    #     assert mock_db.commit.call_count == 2
+        assert mock_db.commit.call_count == 2
 
-    #     assert mock_db.refresh.call_count == 1
-    #     refresh_call_param = mock_db.refresh.call_args[0][0]
-    #     assert refresh_call_param.model_dump() == complete_user.model_dump()
+        assert mock_db.refresh.call_count == 1
+        refresh_call_param = mock_db.refresh.call_args[0][0]
+        assert refresh_call_param.model_dump() == complete_user.model_dump()
 
-    #     # Don't need to test the response here because it's just the updated user_to_add
+        # Don't need to test the response here because it's just the updated user_to_add
+
+    @pytest.mark.parametrize(
+        "db_first_return_val, db_refresh_patch_method",
+        [(None, db_refresh)],
+    )
+    async def test_create_application_role_not_found(
+        self,
+        user_to_create: UserCreate,
+        mock_db: Mock,
+    ) -> None:
+        with pytest.raises(HTTPException) as exc_info:
+            await user.create_user(user=user_to_create, db=mock_db)
+
+        assert exc_info.value.status_code == 404
+        mock_db.add.assert_called_once()
+        assert mock_db.commit.call_count == 1
+
+    @pytest.mark.parametrize(
+        "db_first_return_val",
+        [ApplicationRole(application_role_id=1, application_id=2, role_id=3)],
+    )
+    async def test_create_user_id_not_set(
+        self,
+        user_to_create: UserCreate,
+        mock_db: Mock,
+    ) -> None:
+        # db_refresh_patch_method not set, so user_id stays None after refresh
+        with pytest.raises(HTTPException) as exc_info:
+            await user.create_user(user=user_to_create, db=mock_db)
+
+        assert exc_info.value.status_code == 500
+        mock_db.add.assert_called_once()
+        assert mock_db.commit.call_count == 1
+
+    @pytest.mark.parametrize(
+        "db_first_return_val, db_refresh_patch_method",
+        [
+            (
+                ApplicationRole(application_role_id=None, application_id=2, role_id=3),
+                db_refresh,
+            )
+        ],
+    )
+    async def test_create_application_role_id_not_set(
+        self,
+        user_to_create: UserCreate,
+        mock_db: Mock,
+    ) -> None:
+        with pytest.raises(HTTPException) as exc_info:
+            await user.create_user(user=user_to_create, db=mock_db)
+
+        assert exc_info.value.status_code == 500
+        mock_db.add.assert_called_once()
+        assert mock_db.commit.call_count == 1
 
 
 class TestGet:

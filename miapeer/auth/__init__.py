@@ -4,10 +4,17 @@ from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from miapeer.models.miapeer import User
+from pwdlib.hashers.argon2 import Argon2Hasher
+from pwdlib.hashers.bcrypt import BcryptHasher
 
 DEFAULT_JWT_ALGORITHM = "HS256"
 
-password_hash = PasswordHash.recommended()
+password_hash = PasswordHash(
+    (
+        Argon2Hasher(),
+        BcryptHasher(),
+    )
+)
 
 DUMMY_HASH = password_hash.hash("dummypassword")
 
