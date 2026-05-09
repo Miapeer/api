@@ -9,7 +9,7 @@ class PortfolioUserBase(SQLModel):
 
 
 class PortfolioUser(PortfolioUserBase, table=True):
-    __tablename__: str = "quantum_portfolio_user"  # type: ignore
+    __tablename__: str = "quantum_portfolio_user"
 
     portfolio_user_id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -19,13 +19,11 @@ class PortfolioUser(PortfolioUserBase, table=True):
     # portfolio_user_settings: List["PortfolioUserSetting"] = Relationship(back_populates="portfolio_user")
 
 
-class PortfolioUserCreate(PortfolioUserBase):
-    ...
+class PortfolioUserCreate(PortfolioUserBase): ...
 
 
 class PortfolioUserRead(PortfolioUserBase):
     portfolio_user_id: int
 
 
-class PortfolioUserUpdate(SQLModel):
-    ...
+class PortfolioUserUpdate(SQLModel): ...

@@ -6,6 +6,7 @@ from fastapi import HTTPException
 
 from miapeer.models.miapeer import Permission, PermissionCreate, PermissionRead
 from miapeer.routers.miapeer import permission
+from pytest_lazy_fixtures import lf as lazy_fixture
 
 pytestmark = pytest.mark.asyncio
 
@@ -25,12 +26,16 @@ def application_role_id() -> int:
 
 @pytest.fixture
 def basic_permission(user_id: int, application_role_id: int) -> Permission:
-    return Permission(permission_id=None, user_id=user_id, application_role_id=application_role_id)
+    return Permission(
+        permission_id=None, user_id=user_id, application_role_id=application_role_id
+    )
 
 
 @pytest.fixture
 def complete_permission(permission_id: int, basic_permission: Permission) -> Permission:
-    return Permission.model_validate(basic_permission.model_dump(), update={"permission_id": permission_id})
+    return Permission.model_validate(
+        basic_permission.model_dump(), update={"permission_id": permission_id}
+    )
 
 
 class TestGetAll:
@@ -39,21 +44,29 @@ class TestGetAll:
         return [complete_permission, complete_permission]
 
     @pytest.fixture
-    def expected_multiple_permissions(self, complete_permission: Permission) -> list[PermissionRead]:
+    def expected_multiple_permissions(
+        self, complete_permission: Permission
+    ) -> list[PermissionRead]:
         working_permission = PermissionRead.model_validate(complete_permission)
         return [working_permission, working_permission]
 
     @pytest.fixture
     def expected_sql(self) -> str:
-        return (
-            f"SELECT miapeer_permission.user_id, miapeer_permission.application_role_id, miapeer_permission.permission_id \nFROM miapeer_permission"
-        )
+        return "SELECT miapeer_permission.user_id, miapeer_permission.application_role_id, miapeer_permission.permission_id \nFROM miapeer_permission"
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
-        [([], []), (pytest.lazy_fixture("multiple_permissions"), pytest.lazy_fixture("expected_multiple_permissions"))],
+        [
+            ([], []),
+            (
+                lazy_fixture("multiple_permissions"),
+                lazy_fixture("expected_multiple_permissions"),
+            ),
+        ],
     )
-    async def test_get_all(self, mock_db: Mock, expected_sql: str, expected_response: list[PermissionRead]) -> None:
+    async def test_get_all(
+        self, mock_db: Mock, expected_sql: str, expected_response: list[PermissionRead]
+    ) -> None:
         response = await permission.get_all_permissions(db=mock_db)
 
         sql = mock_db.exec.call_args.args[0]
@@ -64,14 +77,20 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:  # type: ignore
+    def db_refresh(obj) -> None:
         obj.permission_id = raw_permission_id
 
     @pytest.fixture
-    def permission_to_create(self, user_id: int, application_role_id: int) -> PermissionCreate:
-        return PermissionCreate(user_id=user_id, application_role_id=application_role_id)
+    def permission_to_create(
+        self, user_id: int, application_role_id: int
+    ) -> PermissionCreate:
+        return PermissionCreate(
+            user_id=user_id, application_role_id=application_role_id
+        )
 
-    @pytest.mark.parametrize("db_first_return_val, db_refresh_patch_method", [("some data", db_refresh)])
+    @pytest.mark.parametrize(
+        "db_first_return_val, db_refresh_patch_method", [("some data", db_refresh)]
+    )
     async def test_create(
         self,
         permission_to_create: PermissionCreate,
@@ -98,9 +117,13 @@ class TestGet:
     def expected_response(self, complete_permission: Permission) -> PermissionRead:
         return PermissionRead.model_validate(complete_permission)
 
-    @pytest.mark.parametrize("db_get_return_val", [pytest.lazy_fixture("complete_permission")])
-    async def test_get_with_data(self, permission_id: int, mock_db: Mock, expected_response: PermissionRead) -> None:
-        response = await permission.get_permission(permission_id=permission_id, db=mock_db)
+    @pytest.mark.parametrize("db_get_return_val", [lazy_fixture("complete_permission")])
+    async def test_get_with_data(
+        self, permission_id: int, mock_db: Mock, expected_response: PermissionRead
+    ) -> None:
+        response = await permission.get_permission(
+            permission_id=permission_id, db=mock_db
+        )
 
         assert response == expected_response
 
@@ -112,15 +135,21 @@ class TestGet:
 
 class TestDelete:
     @pytest.mark.parametrize("db_get_return_val", ["some data", 123])
-    async def test_delete_with_permission_found(self, permission_id: int, mock_db: Mock, db_get_return_val: Any) -> None:
-        response = await permission.delete_permission(permission_id=permission_id, db=mock_db)
+    async def test_delete_with_permission_found(
+        self, permission_id: int, mock_db: Mock, db_get_return_val: Any
+    ) -> None:
+        response = await permission.delete_permission(
+            permission_id=permission_id, db=mock_db
+        )
 
         mock_db.delete.assert_called_once_with(db_get_return_val)
         mock_db.commit.assert_called_once()
         assert response == {"ok": True}
 
     @pytest.mark.parametrize("db_get_return_val", [None, []])
-    async def test_delete_with_permission_not_found(self, permission_id: int, mock_db: Mock) -> None:
+    async def test_delete_with_permission_not_found(
+        self, permission_id: int, mock_db: Mock
+    ) -> None:
         with pytest.raises(HTTPException):
             await permission.delete_permission(permission_id=permission_id, db=mock_db)
 

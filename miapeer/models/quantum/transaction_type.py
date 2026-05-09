@@ -9,7 +9,7 @@ class TransactionTypeBase(SQLModel):
 
 
 class TransactionType(TransactionTypeBase, table=True):
-    __tablename__: str = "quantum_transaction_type"  # type: ignore
+    __tablename__: str = "quantum_transaction_type"
 
     transaction_type_id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -20,8 +20,7 @@ class TransactionType(TransactionTypeBase, table=True):
     # import_definitions: List["ImportDefinition"] = Relationship(back_populates="transaction_type")
 
 
-class TransactionTypeCreate(TransactionTypeBase):
-    ...
+class TransactionTypeCreate(TransactionTypeBase): ...
 
 
 class TransactionTypeRead(TransactionTypeBase):

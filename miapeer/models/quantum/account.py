@@ -10,7 +10,7 @@ class AccountBase(SQLModel):
 
 
 class Account(AccountBase, table=True):
-    __tablename__: str = "quantum_account"  # type: ignore
+    __tablename__: str = "quantum_account"
 
     account_id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -22,8 +22,7 @@ class Account(AccountBase, table=True):
     # import_definitions: List["ImportDefinition"] = Relationship(back_populates="account")
 
 
-class AccountCreate(AccountBase):
-    ...
+class AccountCreate(AccountBase): ...
 
 
 class AccountRead(AccountBase):

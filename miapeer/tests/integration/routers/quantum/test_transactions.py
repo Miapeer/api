@@ -10,6 +10,7 @@ from miapeer.models.quantum.payee import Payee
 from miapeer.models.quantum.scheduled_transaction import ScheduledTransaction
 from miapeer.models.quantum.transaction import Transaction
 from miapeer.models.quantum.transaction_type import TransactionType
+from pytest_lazy_fixtures import lf as lazy_fixture
 
 
 @pytest.mark.usefixtures("create_complete_portfolio")
@@ -38,8 +39,12 @@ class TestGetAll:
                 "payee_id": my_debit_transaction.payee_id,
                 "category_id": my_debit_transaction.category_id,
                 "amount": my_debit_transaction.amount,
-                "transaction_date": my_debit_transaction.transaction_date.strftime("%Y-%m-%d"),
-                "clear_date": my_debit_transaction.clear_date.strftime("%Y-%m-%d") if my_debit_transaction.clear_date is not None else None,
+                "transaction_date": my_debit_transaction.transaction_date.strftime(
+                    "%Y-%m-%d"
+                ),
+                "clear_date": my_debit_transaction.clear_date.strftime("%Y-%m-%d")
+                if my_debit_transaction.clear_date is not None
+                else None,
                 "check_number": my_debit_transaction.check_number,
                 "exclude_from_forecast": my_debit_transaction.exclude_from_forecast,
                 "notes": my_debit_transaction.notes,
@@ -53,12 +58,16 @@ class TestGetAll:
                 "payee_id": None,
                 "category_id": None,
                 "amount": my_minimal_transaction.amount,
-                "transaction_date": my_minimal_transaction.transaction_date.strftime("%Y-%m-%d"),
+                "transaction_date": my_minimal_transaction.transaction_date.strftime(
+                    "%Y-%m-%d"
+                ),
                 "clear_date": None,
                 "check_number": None,
                 "exclude_from_forecast": my_minimal_transaction.exclude_from_forecast,
                 "notes": None,
-                "balance": my_account_1.starting_balance + my_debit_transaction.amount + my_minimal_transaction.amount,
+                "balance": my_account_1.starting_balance
+                + my_debit_transaction.amount
+                + my_minimal_transaction.amount,
                 "forecast_from_scheduled_transaction_id": None,
             },
             {
@@ -68,12 +77,17 @@ class TestGetAll:
                 "payee_id": my_credit_transaction.payee_id,
                 "category_id": my_credit_transaction.category_id,
                 "amount": my_credit_transaction.amount,
-                "transaction_date": my_credit_transaction.transaction_date.strftime("%Y-%m-%d"),
+                "transaction_date": my_credit_transaction.transaction_date.strftime(
+                    "%Y-%m-%d"
+                ),
                 "clear_date": None,
                 "check_number": my_credit_transaction.check_number,
                 "exclude_from_forecast": my_credit_transaction.exclude_from_forecast,
                 "notes": my_credit_transaction.notes,
-                "balance": my_account_1.starting_balance + my_debit_transaction.amount + my_minimal_transaction.amount + my_credit_transaction.amount,
+                "balance": my_account_1.starting_balance
+                + my_debit_transaction.amount
+                + my_minimal_transaction.amount
+                + my_credit_transaction.amount,
                 "forecast_from_scheduled_transaction_id": None,
             },
             # Forecasted transactions
@@ -133,7 +147,7 @@ class TestCreate:
         "account, transaction_type, payee, category, amount, transaction_date, clear_date, check_number, exclude_from_forecast, notes",
         [
             (
-                pytest.lazy_fixture("my_account_1"),
+                lazy_fixture("my_account_1"),
                 None,
                 None,
                 None,
@@ -145,10 +159,10 @@ class TestCreate:
                 None,
             ),
             (
-                pytest.lazy_fixture("my_account_1"),
-                pytest.lazy_fixture("my_transaction_type_2"),
-                pytest.lazy_fixture("my_payee_1"),
-                pytest.lazy_fixture("my_category_2"),
+                lazy_fixture("my_account_1"),
+                lazy_fixture("my_transaction_type_2"),
+                lazy_fixture("my_payee_1"),
+                lazy_fixture("my_category_2"),
                 2233,
                 "2001-02-03",
                 None,
@@ -157,10 +171,10 @@ class TestCreate:
                 None,
             ),
             (
-                pytest.lazy_fixture("my_account_2"),
-                pytest.lazy_fixture("my_transaction_type_1"),
-                pytest.lazy_fixture("my_payee_2"),
-                pytest.lazy_fixture("my_category_1"),
+                lazy_fixture("my_account_2"),
+                lazy_fixture("my_transaction_type_1"),
+                lazy_fixture("my_payee_2"),
+                lazy_fixture("my_category_1"),
                 2468,
                 "2003-02-01",
                 "2004-12-31",
@@ -188,7 +202,9 @@ class TestCreate:
         response = client.post(
             f"/quantum/v1/accounts/{account.account_id}/transactions",
             json={
-                "transaction_type_id": getattr(transaction_type, "transaction_type_id", None),
+                "transaction_type_id": getattr(
+                    transaction_type, "transaction_type_id", None
+                ),
                 "payee_id": getattr(payee, "payee_id", None),
                 "category_id": getattr(category, "category_id", None),
                 "amount": amount,
@@ -206,8 +222,12 @@ class TestCreate:
 
         expected_response = {
             "account_id": account.account_id,
-            "transaction_id": (transaction_id + 1),  # Increment by 1, the last transaction ID inserted
-            "transaction_type_id": getattr(transaction_type, "transaction_type_id", None),
+            "transaction_id": (
+                transaction_id + 1
+            ),  # Increment by 1, the last transaction ID inserted
+            "transaction_type_id": getattr(
+                transaction_type, "transaction_type_id", None
+            ),
             "payee_id": getattr(payee, "payee_id", None),
             "category_id": getattr(category, "category_id", None),
             "amount": amount,
@@ -232,10 +252,10 @@ class TestCreate:
         "account, transaction_type, payee, category, amount, transaction_date, clear_date, check_number, exclude_from_forecast, notes, expected_response",
         [
             (
-                pytest.lazy_fixture("not_my_account_1"),
-                pytest.lazy_fixture("my_transaction_type_2"),
-                pytest.lazy_fixture("my_payee_1"),
-                pytest.lazy_fixture("my_category_2"),
+                lazy_fixture("not_my_account_1"),
+                lazy_fixture("my_transaction_type_2"),
+                lazy_fixture("my_payee_1"),
+                lazy_fixture("my_category_2"),
                 111,
                 "2001-02-03",
                 None,
@@ -246,9 +266,9 @@ class TestCreate:
             ),
             (
                 Account(portfolio_id=0, account_id=999999, name="", starting_balance=0),
-                pytest.lazy_fixture("my_transaction_type_2"),
-                pytest.lazy_fixture("my_payee_1"),
-                pytest.lazy_fixture("my_category_2"),
+                lazy_fixture("my_transaction_type_2"),
+                lazy_fixture("my_payee_1"),
+                lazy_fixture("my_category_2"),
                 111,
                 "2001-02-03",
                 None,
@@ -258,10 +278,10 @@ class TestCreate:
                 {"detail": "Account not found"},
             ),
             (
-                pytest.lazy_fixture("my_account_1"),
-                pytest.lazy_fixture("not_my_transaction_type_2"),
-                pytest.lazy_fixture("my_payee_1"),
-                pytest.lazy_fixture("my_category_2"),
+                lazy_fixture("my_account_1"),
+                lazy_fixture("not_my_transaction_type_2"),
+                lazy_fixture("my_payee_1"),
+                lazy_fixture("my_category_2"),
                 111,
                 "2001-02-03",
                 None,
@@ -271,10 +291,10 @@ class TestCreate:
                 {"detail": "Transaction type not found"},
             ),
             (
-                pytest.lazy_fixture("my_account_1"),
-                pytest.lazy_fixture("my_transaction_type_2"),
-                pytest.lazy_fixture("not_my_payee_1"),
-                pytest.lazy_fixture("my_category_2"),
+                lazy_fixture("my_account_1"),
+                lazy_fixture("my_transaction_type_2"),
+                lazy_fixture("not_my_payee_1"),
+                lazy_fixture("my_category_2"),
                 111,
                 "2001-02-03",
                 None,
@@ -284,10 +304,10 @@ class TestCreate:
                 {"detail": "Payee not found"},
             ),
             (
-                pytest.lazy_fixture("my_account_1"),
-                pytest.lazy_fixture("my_transaction_type_2"),
-                pytest.lazy_fixture("my_payee_1"),
-                pytest.lazy_fixture("not_my_category_2"),
+                lazy_fixture("my_account_1"),
+                lazy_fixture("my_transaction_type_2"),
+                lazy_fixture("my_payee_1"),
+                lazy_fixture("not_my_category_2"),
                 111,
                 "2001-02-03",
                 None,
@@ -336,18 +356,28 @@ class TestCreate:
 
 @pytest.mark.usefixtures("create_complete_portfolio")
 class TestGetOne:
-    def test_get_one_transaction_in_portfolio_succeeds(self, client: TestClient, my_debit_transaction: Transaction) -> None:
-        response = client.get(f"/quantum/v1/accounts/{my_debit_transaction.account_id}/transactions/{my_debit_transaction.transaction_id}")
+    def test_get_one_transaction_in_portfolio_succeeds(
+        self, client: TestClient, my_debit_transaction: Transaction
+    ) -> None:
+        response = client.get(
+            f"/quantum/v1/accounts/{my_debit_transaction.account_id}/transactions/{my_debit_transaction.transaction_id}"
+        )
 
         expected_response = {
             "account_id": my_debit_transaction.account_id,
             "transaction_id": my_debit_transaction.transaction_id,
-            "transaction_type_id": getattr(my_debit_transaction, "transaction_type_id", None),
+            "transaction_type_id": getattr(
+                my_debit_transaction, "transaction_type_id", None
+            ),
             "payee_id": getattr(my_debit_transaction, "payee_id", None),
             "category_id": getattr(my_debit_transaction, "category_id", None),
             "amount": my_debit_transaction.amount,
-            "transaction_date": my_debit_transaction.transaction_date.strftime("%Y-%m-%d"),
-            "clear_date": my_debit_transaction.clear_date.strftime("%Y-%m-%d") if my_debit_transaction.clear_date is not None else None,
+            "transaction_date": my_debit_transaction.transaction_date.strftime(
+                "%Y-%m-%d"
+            ),
+            "clear_date": my_debit_transaction.clear_date.strftime("%Y-%m-%d")
+            if my_debit_transaction.clear_date is not None
+            else None,
             "check_number": my_debit_transaction.check_number,
             "exclude_from_forecast": my_debit_transaction.exclude_from_forecast,
             "notes": my_debit_transaction.notes,
@@ -364,16 +394,27 @@ class TestGetOne:
         assert actual_response == expected_response
 
     def test_get_one_transaction_in_wrong_portfolio_fails(
-        self, client: TestClient, my_account_1: Account, not_my_debit_transaction: Transaction
+        self,
+        client: TestClient,
+        my_account_1: Account,
+        not_my_debit_transaction: Transaction,
     ) -> None:
-        response = client.get(f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{not_my_debit_transaction.transaction_id}")
+        response = client.get(
+            f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{not_my_debit_transaction.transaction_id}"
+        )
 
         assert response.status_code == 404
         assert response.json() == {"detail": "Transaction not found"}
 
-    @pytest.mark.parametrize("transaction_id", [0, -1, 999999999999999999, -999999999999999999])
-    def test_get_one_transaction_with_invalid_transaction_id_fails(self, client: TestClient, my_account_1: Account, transaction_id: int) -> None:
-        response = client.get(f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{transaction_id}")
+    @pytest.mark.parametrize(
+        "transaction_id", [0, -1, 999999999999999999, -999999999999999999]
+    )
+    def test_get_one_transaction_with_invalid_transaction_id_fails(
+        self, client: TestClient, my_account_1: Account, transaction_id: int
+    ) -> None:
+        response = client.get(
+            f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{transaction_id}"
+        )
 
         assert response.status_code == 404
         assert response.json() == {"detail": "Transaction not found"}
@@ -386,11 +427,11 @@ class TestUpdate:
         [
             # Test updating a bunch of stuff
             (
-                pytest.lazy_fixture("my_debit_transaction"),
-                pytest.lazy_fixture("my_account_2"),
-                pytest.lazy_fixture("my_transaction_type_2"),
-                pytest.lazy_fixture("my_payee_1"),
-                pytest.lazy_fixture("my_category_2"),
+                lazy_fixture("my_debit_transaction"),
+                lazy_fixture("my_account_2"),
+                lazy_fixture("my_transaction_type_2"),
+                lazy_fixture("my_payee_1"),
+                lazy_fixture("my_category_2"),
                 38438,
                 date(year=2021, month=2, day=3),
                 date(year=2020, month=1, day=2),
@@ -400,7 +441,7 @@ class TestUpdate:
             ),
             # Test un-setting a bunch of stuff except for amount and transaction date, which are required
             (
-                pytest.lazy_fixture("my_debit_transaction"),
+                lazy_fixture("my_debit_transaction"),
                 None,
                 None,
                 None,
@@ -433,13 +474,19 @@ class TestUpdate:
             f"/quantum/v1/accounts/{transaction.account_id}/transactions/{transaction.transaction_id}",
             json={
                 "account_id": account.account_id if account is not None else None,
-                "transaction_id": transaction.transaction_id if transaction.transaction_id is not None else None,
-                "transaction_type_id": transaction_type.transaction_type_id if transaction_type is not None else None,
+                "transaction_id": transaction.transaction_id
+                if transaction.transaction_id is not None
+                else None,
+                "transaction_type_id": transaction_type.transaction_type_id
+                if transaction_type is not None
+                else None,
                 "payee_id": payee.payee_id if payee is not None else None,
                 "category_id": category.category_id if category is not None else None,
                 "amount": amount,
                 "transaction_date": transaction_date.strftime("%Y-%m-%d"),
-                "clear_date": clear_date.strftime("%Y-%m-%d") if clear_date is not None else None,
+                "clear_date": clear_date.strftime("%Y-%m-%d")
+                if clear_date is not None
+                else None,
                 "check_number": check_number,
                 "exclude_from_forecast": exclude_from_forecast,
                 "notes": notes,
@@ -449,14 +496,22 @@ class TestUpdate:
 
         expected_response = {
             # Trying to change the account_id isn't allowed
-            "account_id": transaction.account_id if transaction.account_id is not None else None,
-            "transaction_id": transaction.transaction_id if transaction.transaction_id is not None else None,
-            "transaction_type_id": transaction_type.transaction_type_id if transaction_type is not None else None,
+            "account_id": transaction.account_id
+            if transaction.account_id is not None
+            else None,
+            "transaction_id": transaction.transaction_id
+            if transaction.transaction_id is not None
+            else None,
+            "transaction_type_id": transaction_type.transaction_type_id
+            if transaction_type is not None
+            else None,
             "payee_id": payee.payee_id if payee is not None else None,
             "category_id": category.category_id if category is not None else None,
             "amount": amount,
             "transaction_date": transaction_date.strftime("%Y-%m-%d"),
-            "clear_date": clear_date.strftime("%Y-%m-%d") if clear_date is not None else None,
+            "clear_date": clear_date.strftime("%Y-%m-%d")
+            if clear_date is not None
+            else None,
             "check_number": check_number,
             "exclude_from_forecast": exclude_from_forecast,
             "notes": notes,
@@ -470,20 +525,37 @@ class TestUpdate:
         assert response.status_code == 200
         assert response.json() == expected_response
 
-    def test_update_someone_elses_transaction_fails(self, client: TestClient, my_account_1: Account, not_my_debit_transaction: Transaction) -> None:
+    def test_update_someone_elses_transaction_fails(
+        self,
+        client: TestClient,
+        my_account_1: Account,
+        not_my_debit_transaction: Transaction,
+    ) -> None:
         response = client.patch(
-            f"/quantum/v1/accounts/{my_account_1. account_id}/transactions/{not_my_debit_transaction.transaction_id}",
-            json={"amount": 0, "transaction_date": "2000-01-01", "exclude_from_forecast": False},
+            f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{not_my_debit_transaction.transaction_id}",
+            json={
+                "amount": 0,
+                "transaction_date": "2000-01-01",
+                "exclude_from_forecast": False,
+            },
         )
 
         assert response.status_code == 404
         assert response.json() == {"detail": "Transaction not found"}
 
-    @pytest.mark.parametrize("transaction_id", [0, -1, 999999999999999999, -999999999999999999])
-    def test_update_transaction_with_invalid_transaction_id_fails(self, client: TestClient, my_account_1: Account, transaction_id: int) -> None:
+    @pytest.mark.parametrize(
+        "transaction_id", [0, -1, 999999999999999999, -999999999999999999]
+    )
+    def test_update_transaction_with_invalid_transaction_id_fails(
+        self, client: TestClient, my_account_1: Account, transaction_id: int
+    ) -> None:
         response = client.patch(
             f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{transaction_id}",
-            json={"amount": 0, "transaction_date": "2000-01-01", "exclude_from_forecast": False},
+            json={
+                "amount": 0,
+                "transaction_date": "2000-01-01",
+                "exclude_from_forecast": False,
+            },
         )
 
         assert response.status_code == 404
@@ -493,11 +565,11 @@ class TestUpdate:
         "account, transaction, transaction_type, payee, category, amount, transaction_date, clear_date, check_number, exclude_from_forecast, notes, expected_response",
         [
             (
-                pytest.lazy_fixture("not_my_account_1"),
-                pytest.lazy_fixture("my_debit_transaction"),
-                pytest.lazy_fixture("my_transaction_type_2"),
-                pytest.lazy_fixture("my_payee_1"),
-                pytest.lazy_fixture("my_category_2"),
+                lazy_fixture("not_my_account_1"),
+                lazy_fixture("my_debit_transaction"),
+                lazy_fixture("my_transaction_type_2"),
+                lazy_fixture("my_payee_1"),
+                lazy_fixture("my_category_2"),
                 111,
                 "2001-02-03",
                 None,
@@ -508,10 +580,10 @@ class TestUpdate:
             ),
             (
                 Account(portfolio_id=0, account_id=999999, name="", starting_balance=0),
-                pytest.lazy_fixture("my_debit_transaction"),
-                pytest.lazy_fixture("my_transaction_type_2"),
-                pytest.lazy_fixture("my_payee_1"),
-                pytest.lazy_fixture("my_category_2"),
+                lazy_fixture("my_debit_transaction"),
+                lazy_fixture("my_transaction_type_2"),
+                lazy_fixture("my_payee_1"),
+                lazy_fixture("my_category_2"),
                 111,
                 "2001-02-03",
                 None,
@@ -521,11 +593,11 @@ class TestUpdate:
                 {"detail": "Transaction not found"},
             ),
             (
-                pytest.lazy_fixture("my_account_1"),
-                pytest.lazy_fixture("my_debit_transaction"),
-                pytest.lazy_fixture("not_my_transaction_type_2"),
-                pytest.lazy_fixture("my_payee_1"),
-                pytest.lazy_fixture("my_category_2"),
+                lazy_fixture("my_account_1"),
+                lazy_fixture("my_debit_transaction"),
+                lazy_fixture("not_my_transaction_type_2"),
+                lazy_fixture("my_payee_1"),
+                lazy_fixture("my_category_2"),
                 111,
                 "2001-02-03",
                 None,
@@ -535,11 +607,11 @@ class TestUpdate:
                 {"detail": "Transaction type not found"},
             ),
             (
-                pytest.lazy_fixture("my_account_1"),
-                pytest.lazy_fixture("my_debit_transaction"),
-                pytest.lazy_fixture("my_transaction_type_2"),
-                pytest.lazy_fixture("not_my_payee_1"),
-                pytest.lazy_fixture("my_category_2"),
+                lazy_fixture("my_account_1"),
+                lazy_fixture("my_debit_transaction"),
+                lazy_fixture("my_transaction_type_2"),
+                lazy_fixture("not_my_payee_1"),
+                lazy_fixture("my_category_2"),
                 111,
                 "2001-02-03",
                 None,
@@ -549,11 +621,11 @@ class TestUpdate:
                 {"detail": "Payee not found"},
             ),
             (
-                pytest.lazy_fixture("my_account_1"),
-                pytest.lazy_fixture("my_debit_transaction"),
-                pytest.lazy_fixture("my_transaction_type_2"),
-                pytest.lazy_fixture("my_payee_1"),
-                pytest.lazy_fixture("not_my_category_2"),
+                lazy_fixture("my_account_1"),
+                lazy_fixture("my_debit_transaction"),
+                lazy_fixture("my_transaction_type_2"),
+                lazy_fixture("my_payee_1"),
+                lazy_fixture("not_my_category_2"),
                 111,
                 "2001-02-03",
                 None,
@@ -601,7 +673,9 @@ class TestUpdate:
 
 @pytest.mark.usefixtures("create_complete_portfolio")
 class TestDelete:
-    def test_delete_transaction_succeeds(self, client: TestClient, my_debit_transaction: Transaction) -> None:
+    def test_delete_transaction_succeeds(
+        self, client: TestClient, my_debit_transaction: Transaction
+    ) -> None:
         response = client.delete(
             f"/quantum/v1/accounts/{my_debit_transaction.account_id}/transactions/{my_debit_transaction.transaction_id}",
         )
@@ -610,7 +684,10 @@ class TestDelete:
         assert response.json() == {"ok": True}
 
     def test_delete_transaction_in_wrong_portfolio_fails(
-        self, client: TestClient, not_my_account_1: Account, my_debit_transaction: Transaction
+        self,
+        client: TestClient,
+        not_my_account_1: Account,
+        my_debit_transaction: Transaction,
     ) -> None:
         response = client.delete(
             f"/quantum/v1/accounts/{not_my_account_1.account_id}/transactions/{my_debit_transaction.transaction_id}",
@@ -619,7 +696,12 @@ class TestDelete:
         assert response.status_code == 404
         assert response.json() == {"detail": "Transaction not found"}
 
-    def test_delete_someone_elses_transaction_fails(self, client: TestClient, my_account_1: Account, not_my_debit_transaction: Transaction) -> None:
+    def test_delete_someone_elses_transaction_fails(
+        self,
+        client: TestClient,
+        my_account_1: Account,
+        not_my_debit_transaction: Transaction,
+    ) -> None:
         response = client.delete(
             f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{not_my_debit_transaction.transaction_id}",
         )
@@ -627,9 +709,15 @@ class TestDelete:
         assert response.status_code == 404
         assert response.json() == {"detail": "Transaction not found"}
 
-    @pytest.mark.parametrize("transaction_id", [0, -1, 999999999999999999, -999999999999999999])
-    def test_delete_transaction_with_invalid_transaction_id_fails(self, client: TestClient, my_account_1: Account, transaction_id: int) -> None:
-        response = client.delete(f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{transaction_id}")
+    @pytest.mark.parametrize(
+        "transaction_id", [0, -1, 999999999999999999, -999999999999999999]
+    )
+    def test_delete_transaction_with_invalid_transaction_id_fails(
+        self, client: TestClient, my_account_1: Account, transaction_id: int
+    ) -> None:
+        response = client.delete(
+            f"/quantum/v1/accounts/{my_account_1.account_id}/transactions/{transaction_id}"
+        )
 
         assert response.status_code == 404
         assert response.json() == {"detail": "Transaction not found"}

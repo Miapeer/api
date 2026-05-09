@@ -7,13 +7,15 @@ class ImportDefinitionBase(SQLModel):
     input_transaction_type: str
     input_payee: str
     account_id: int = Field(foreign_key="quantum_account.account_id")
-    transaction_type_id: int = Field(foreign_key="quantum_transaction_type.transaction_type_id")
+    transaction_type_id: int = Field(
+        foreign_key="quantum_transaction_type.transaction_type_id"
+    )
     payee_id: int = Field(foreign_key="quantum_payee.payee_id")
     category_id: int = Field(foreign_key="quantum_category.category_id")
 
 
 class ImportDefinition(ImportDefinitionBase, table=True):
-    __tablename__: str = "quantum_import_definition"  # type: ignore
+    __tablename__: str = "quantum_import_definition"
 
     import_definition_id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -23,13 +25,11 @@ class ImportDefinition(ImportDefinitionBase, table=True):
     # category: Category = Relationship(back_populates="import_definitions")
 
 
-class ImportDefinitionCreate(ImportDefinitionBase):
-    ...
+class ImportDefinitionCreate(ImportDefinitionBase): ...
 
 
 class ImportDefinitionRead(ImportDefinitionBase):
     import_definition_id: int
 
 
-class ImportDefinitionUpdate(SQLModel):
-    ...
+class ImportDefinitionUpdate(SQLModel): ...

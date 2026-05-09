@@ -27,13 +27,22 @@ class UserBase(SQLModel):
 
 
 class User(UserBase, table=True):
-    __tablename__: str = "miapeer_user"  # type: ignore
+    __tablename__: str = "miapeer_user"
 
     user_id: Optional[int] = Field(default=None, primary_key=True)
     password: str
 
     permissions: List["Permission"] = Relationship(back_populates="user")
     # portfolio_users: List["PortfolioUser"] = Relationship(back_populates="user")
+
+    # __table_args__ = (
+    #     Index(
+    #         "compound_index_origin_name_version_destination_name",
+    #         "origin_name",
+    #         "origin_version",
+    #         "destination_name",
+    #     ),
+    # )
 
 
 class UserCreate(UserBase):
@@ -64,14 +73,15 @@ class ApplicationBase(SQLModel):
 
 
 class Application(ApplicationBase, table=True):
-    __tablename__: str = "miapeer_application"  # type: ignore
+    __tablename__: str = "miapeer_application"
 
     application_id: Optional[int] = Field(default=None, primary_key=True)
-    application_roles: List["ApplicationRole"] = Relationship(back_populates="application")
+    application_roles: List["ApplicationRole"] = Relationship(
+        back_populates="application"
+    )
 
 
-class ApplicationCreate(ApplicationBase):
-    ...
+class ApplicationCreate(ApplicationBase): ...
 
 
 class ApplicationRead(ApplicationBase):
@@ -97,15 +107,14 @@ class RoleBase(SQLModel):
 
 
 class Role(RoleBase, table=True):
-    __tablename__: str = "miapeer_role"  # type: ignore
+    __tablename__: str = "miapeer_role"
 
     role_id: Optional[int] = Field(default=None, primary_key=True)
 
     application_roles: List["ApplicationRole"] = Relationship(back_populates="role")
 
 
-class RoleCreate(RoleBase):
-    ...
+class RoleCreate(RoleBase): ...
 
 
 class RoleRead(RoleBase):
@@ -123,14 +132,17 @@ class RoleUpdate(SQLModel):
 
 
 class ApplicationRoleBase(SQLModel):
-    application_id: int = Field(schema_extra={"schema": "miapeer"}, foreign_key="miapeer_application.application_id")
+    application_id: int = Field(
+        schema_extra={"schema": "miapeer"},
+        foreign_key="miapeer_application.application_id",
+    )
     role_id: int = Field(foreign_key="miapeer_role.role_id")
     description: str = Field(default=None)
     UniqueConstraint("application_id", "role_id", name="UIX_application_role")
 
 
 class ApplicationRole(ApplicationRoleBase, table=True):
-    __tablename__: str = "miapeer_application_role"  # type: ignore
+    __tablename__: str = "miapeer_application_role"
 
     application_role_id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -140,8 +152,7 @@ class ApplicationRole(ApplicationRoleBase, table=True):
     permissions: List["Permission"] = Relationship(back_populates="application_role")
 
 
-class ApplicationRoleCreate(ApplicationRoleBase):
-    ...
+class ApplicationRoleCreate(ApplicationRoleBase): ...
 
 
 class ApplicationRoleRead(ApplicationRoleBase):
@@ -165,11 +176,13 @@ class ApplicationRoleUpdate(SQLModel):
 
 class PermissionBase(SQLModel):
     user_id: int = Field(foreign_key="miapeer_user.user_id")
-    application_role_id: int = Field(foreign_key="miapeer_application_role.application_role_id")
+    application_role_id: int = Field(
+        foreign_key="miapeer_application_role.application_role_id"
+    )
 
 
 class Permission(PermissionBase, table=True):
-    __tablename__: str = "miapeer_permission"  # type: ignore
+    __tablename__: str = "miapeer_permission"
 
     permission_id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -177,8 +190,7 @@ class Permission(PermissionBase, table=True):
     application_role: ApplicationRole = Relationship(back_populates="permissions")
 
 
-class PermissionCreate(PermissionBase):
-    ...
+class PermissionCreate(PermissionBase): ...
 
 
 class PermissionRead(PermissionBase):
@@ -188,8 +200,7 @@ class PermissionRead(PermissionBase):
     # application_role: ApplicationRoleRead
 
 
-class PermissionUpdate(SQLModel):
-    ...
+class PermissionUpdate(SQLModel): ...
 
 
 # endregion

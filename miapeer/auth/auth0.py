@@ -25,7 +25,7 @@
 
 
 # @router.get("/login")
-# async def login(request: Request):  # type: ignore
+# async def login(request: Request):
 #     auth0 = oauth.create_client("auth0")
 
 #     redir_uri = request.url_for("callback")
@@ -38,7 +38,7 @@
 
 
 # @router.get("/signin-auth0")
-# async def callback(request: Request):  # type: ignore
+# async def callback(request: Request):
 #     auth0 = oauth.create_client("auth0")
 #     token = await auth0.authorize_access_token(request)
 
@@ -49,7 +49,7 @@
 
 
 # @router.get("/logout")
-# def logout(request: Request):  # type: ignore
+# def logout(request: Request):
 #     redir = f'https://miapeer.auth0.com/v2/logout?returnTo={request.url_for("home")}&client_id={env.get("AUTH0_CLIENT_ID")}'
 #     response = RedirectResponse(url=redir)
 

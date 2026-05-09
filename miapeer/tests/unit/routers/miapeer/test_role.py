@@ -6,6 +6,7 @@ from fastapi import HTTPException
 
 from miapeer.models.miapeer import Role, RoleCreate, RoleRead, RoleUpdate
 from miapeer.routers.miapeer import role
+from pytest_lazy_fixtures import lf as lazy_fixture
 
 pytestmark = pytest.mark.asyncio
 
@@ -50,13 +51,18 @@ class TestGetAll:
 
     @pytest.fixture
     def expected_sql(self) -> str:
-        return f"SELECT miapeer_role.name, miapeer_role.role_id \nFROM miapeer_role"
+        return "SELECT miapeer_role.name, miapeer_role.role_id \nFROM miapeer_role"
 
     @pytest.mark.parametrize(
         "db_all_return_val, expected_response",
-        [([], []), (pytest.lazy_fixture("multiple_roles"), pytest.lazy_fixture("expected_multiple_roles"))],
+        [
+            ([], []),
+            (lazy_fixture("multiple_roles"), lazy_fixture("expected_multiple_roles")),
+        ],
     )
-    async def test_get_all(self, mock_db: Mock, expected_sql: str, expected_response: list[RoleRead]) -> None:
+    async def test_get_all(
+        self, mock_db: Mock, expected_sql: str, expected_response: list[RoleRead]
+    ) -> None:
         response = await role.get_all_roles(db=mock_db)
 
         sql = mock_db.exec.call_args.args[0]
@@ -67,14 +73,16 @@ class TestGetAll:
 
 
 class TestCreate:
-    def db_refresh(obj) -> None:  # type: ignore
+    def db_refresh(obj) -> None:
         obj.role_id = raw_role_id
 
     @pytest.fixture
     def role_to_create(self, role_name: str) -> RoleCreate:
         return RoleCreate(name=role_name)
 
-    @pytest.mark.parametrize("db_first_return_val, db_refresh_patch_method", [("some data", db_refresh)])
+    @pytest.mark.parametrize(
+        "db_first_return_val, db_refresh_patch_method", [("some data", db_refresh)]
+    )
     async def test_create(
         self,
         role_to_create: RoleCreate,
@@ -101,8 +109,10 @@ class TestGet:
     def expected_response(self, complete_role: Role) -> RoleRead:
         return RoleRead.model_validate(complete_role)
 
-    @pytest.mark.parametrize("db_get_return_val", [pytest.lazy_fixture("complete_role")])
-    async def test_get_with_data(self, role_id: int, mock_db: Mock, expected_response: RoleRead) -> None:
+    @pytest.mark.parametrize("db_get_return_val", [lazy_fixture("complete_role")])
+    async def test_get_with_data(
+        self, role_id: int, mock_db: Mock, expected_response: RoleRead
+    ) -> None:
         response = await role.get_role(role_id=role_id, db=mock_db)
 
         assert response == expected_response
@@ -115,7 +125,9 @@ class TestGet:
 
 class TestDelete:
     @pytest.mark.parametrize("db_get_return_val", ["some data", 123])
-    async def test_delete_with_role_found(self, role_id: int, mock_db: Mock, db_get_return_val: Any) -> None:
+    async def test_delete_with_role_found(
+        self, role_id: int, mock_db: Mock, db_get_return_val: Any
+    ) -> None:
         response = await role.delete_role(role_id=role_id, db=mock_db)
 
         mock_db.delete.assert_called_once_with(db_get_return_val)
@@ -123,7 +135,9 @@ class TestDelete:
         assert response == {"ok": True}
 
     @pytest.mark.parametrize("db_get_return_val", [None, []])
-    async def test_delete_with_role_not_found(self, role_id: int, mock_db: Mock) -> None:
+    async def test_delete_with_role_not_found(
+        self, role_id: int, mock_db: Mock
+    ) -> None:
         with pytest.raises(HTTPException):
             await role.delete_role(role_id=role_id, db=mock_db)
 
@@ -138,13 +152,15 @@ class TestUpdate:
 
     @pytest.fixture
     def updated_role(self, complete_role: Role) -> Role:
-        return Role.model_validate(complete_role.model_dump(), update={"name": "some new name"})
+        return Role.model_validate(
+            complete_role.model_dump(), update={"name": "some new name"}
+        )
 
     @pytest.fixture
     def expected_response(self, updated_role: Role) -> RoleRead:
         return RoleRead.model_validate(updated_role.model_dump())
 
-    @pytest.mark.parametrize("db_get_return_val", [pytest.lazy_fixture("complete_role")])
+    @pytest.mark.parametrize("db_get_return_val", [lazy_fixture("complete_role")])
     async def test_update_with_role_found(
         self,
         role_id: int,

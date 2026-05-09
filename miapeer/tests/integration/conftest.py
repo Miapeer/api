@@ -3,7 +3,6 @@ from typing import Iterator
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
@@ -12,7 +11,6 @@ from miapeer.dependencies import (
     get_current_active_user,
     get_current_user,
     get_db,
-    get_jwk,
     is_miapeer_admin,
     is_miapeer_super_user,
     is_miapeer_user,
@@ -44,8 +42,11 @@ def mock_db_session() -> Iterator[Session]:
 
     SQLModel.metadata.create_all(engine)
 
-    with Session(engine) as session:
-        yield session
+    try:
+        with Session(engine) as session:
+            yield session
+    finally:
+        engine.dispose()
 
 
 @pytest.fixture
@@ -94,9 +95,6 @@ def client_fixture(
     quantum_admin: bool,
     quantum_super_user: bool,
 ) -> Iterator[TestClient]:
-    def get_jwk_override() -> str:
-        return "super secret key"
-
     def override_get_db() -> Session:
         return mock_db_session
 
@@ -140,7 +138,6 @@ def client_fixture(
             disabled=returned_current_user.disabled,
         )
 
-    app.dependency_overrides[get_jwk] = get_jwk_override
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
     app.dependency_overrides[get_current_active_user] = override_get_current_active_user

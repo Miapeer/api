@@ -3,12 +3,11 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 
 
-class PortfolioBase(SQLModel):
-    ...
+class PortfolioBase(SQLModel): ...
 
 
 class Portfolio(PortfolioBase, table=True):
-    __tablename__: str = "quantum_portfolio"  # type: ignore
+    __tablename__: str = "quantum_portfolio"
 
     portfolio_id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -20,8 +19,7 @@ class Portfolio(PortfolioBase, table=True):
     # categories: List["Category"] = Relationship(back_populates="portfolio")
 
 
-class PortfolioCreate(PortfolioBase):
-    ...
+class PortfolioCreate(PortfolioBase): ...
 
 
 class PortfolioRead(PortfolioBase):

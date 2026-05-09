@@ -9,7 +9,7 @@ class PayeeBase(SQLModel):
 
 
 class Payee(PayeeBase, table=True):
-    __tablename__: str = "quantum_payee"  # type: ignore
+    __tablename__: str = "quantum_payee"
 
     payee_id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -20,8 +20,7 @@ class Payee(PayeeBase, table=True):
     # import_definitions: List["ImportDefinition"] = Relationship(back_populates="payee")
 
 
-class PayeeCreate(PayeeBase):
-    ...
+class PayeeCreate(PayeeBase): ...
 
 
 class PayeeRead(PayeeBase):
