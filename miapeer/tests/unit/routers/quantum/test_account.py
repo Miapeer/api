@@ -12,6 +12,7 @@ from miapeer.models.quantum.account import (
     AccountUpdate,
 )
 from miapeer.models.quantum.portfolio import Portfolio
+from miapeer.models.quantum.transaction_summary import TransactionSummary
 from miapeer.routers.quantum import account
 from pytest_lazy_fixtures import lf as lazy_fixture
 
@@ -59,6 +60,150 @@ def complete_account(
         basic_account.model_dump(),
         update={"account_id": account_id, "starting_balance": starting_balance},
     )
+
+
+class TestGetAccountBalance:
+    @pytest.fixture
+    def summary_year(self) -> int:
+        return 2023
+
+    @pytest.fixture
+    def summary_month(self) -> int:
+        return 10
+
+    @pytest.fixture
+    def summary_balance(self) -> int:
+        return 500
+
+    @pytest.fixture
+    def transaction_summary(
+        self,
+        account_id: int,
+        summary_year: int,
+        summary_month: int,
+        summary_balance: int,
+    ) -> TransactionSummary:
+        return TransactionSummary(
+            account_id=account_id,
+            year=summary_year,
+            month=summary_month,
+            balance=summary_balance,
+        )
+
+    @pytest.fixture
+    def transaction_summaries(
+        self, transaction_summary: TransactionSummary
+    ) -> list[TransactionSummary]:
+        return [transaction_summary]
+
+    @pytest.fixture
+    def expected_summaries_sql(self, account_id: int) -> str:
+        return (
+            f"SELECT quantum_transaction_summary.account_id, quantum_transaction_summary.year, "
+            f"quantum_transaction_summary.month, quantum_transaction_summary.balance, "
+            f"quantum_transaction_summary.transaction_summary_id \nFROM quantum_transaction_summary "
+            f"JOIN quantum_account ON quantum_account.account_id = quantum_transaction_summary.account_id "
+            f"JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id "
+            f"JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id "
+            f"\nWHERE quantum_account.account_id = {account_id} "
+            f"ORDER BY quantum_transaction_summary.year DESC, quantum_transaction_summary.month DESC"
+        )
+
+    @pytest.fixture
+    def expected_transaction_sum_sql_no_summaries(self, account_id: int) -> str:
+        return (
+            f"SELECT sum(quantum_transaction.amount) AS sum_1 \nFROM quantum_transaction "
+            f"JOIN quantum_account ON quantum_account.account_id = quantum_transaction.account_id "
+            f"JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id "
+            f"JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id "
+            f"\nWHERE quantum_account.account_id = {account_id}"
+        )
+
+    @pytest.fixture
+    def expected_transaction_sum_sql_with_summaries(
+        self, account_id: int, summary_year: int, summary_month: int
+    ) -> str:
+        return (
+            f"SELECT sum(quantum_transaction.amount) AS sum_1 \nFROM quantum_transaction "
+            f"JOIN quantum_account ON quantum_account.account_id = quantum_transaction.account_id "
+            f"JOIN quantum_portfolio ON quantum_portfolio.portfolio_id = quantum_account.portfolio_id "
+            f"JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id "
+            f"\nWHERE quantum_account.account_id = {account_id} AND "
+            f"(quantum_transaction.clear_date IS NULL OR "
+            f"EXTRACT(year FROM quantum_transaction.clear_date) > {summary_year} OR "
+            f"EXTRACT(year FROM quantum_transaction.clear_date) = {summary_year} AND "
+            f"EXTRACT(month FROM quantum_transaction.clear_date) > {summary_month})"
+        )
+
+    @pytest.mark.parametrize(
+        "db_first_return_val, expected_balance",
+        [
+            (None, lazy_fixture("starting_balance")),
+            (250, 361),  # starting_balance (111) + transaction_sum (250)
+        ],
+    )
+    def test_get_account_balance_with_no_summaries(
+        self,
+        complete_account: Account,
+        mock_db: Mock,
+        expected_summaries_sql: str,
+        expected_transaction_sum_sql_no_summaries: str,
+        expected_balance: int,
+    ) -> None:
+        result = account.get_account_balance(db=mock_db, account=complete_account)
+
+        summaries_sql = mock_db.exec.call_args_list[0].args[0]
+        summaries_sql_str = str(
+            summaries_sql.compile(compile_kwargs={"literal_binds": True})
+        )
+        assert summaries_sql_str == expected_summaries_sql
+
+        transaction_sum_sql = mock_db.exec.call_args_list[1].args[0]
+        transaction_sum_sql_str = str(
+            transaction_sum_sql.compile(compile_kwargs={"literal_binds": True})
+        )
+        assert transaction_sum_sql_str == expected_transaction_sum_sql_no_summaries
+
+        assert result == expected_balance
+
+    @pytest.mark.parametrize(
+        "db_fetchall_return_val, db_first_return_val, expected_balance",
+        [
+            (
+                lazy_fixture("transaction_summaries"),
+                None,
+                611,
+            ),  # starting_balance (111) + summary_balance (500)
+            (
+                lazy_fixture("transaction_summaries"),
+                250,
+                861,
+            ),  # starting_balance (111) + summary_balance (500) + transaction_sum (250)
+        ],
+    )
+    def test_get_account_balance_with_summaries(
+        self,
+        complete_account: Account,
+        mock_db: Mock,
+        expected_summaries_sql: str,
+        expected_transaction_sum_sql_with_summaries: str,
+        expected_balance: int,
+    ) -> None:
+        result = account.get_account_balance(db=mock_db, account=complete_account)
+
+        summaries_sql = mock_db.exec.call_args_list[0].args[0]
+        summaries_sql_str = str(
+            summaries_sql.compile(compile_kwargs={"literal_binds": True})
+        )
+        assert summaries_sql_str == expected_summaries_sql
+
+        transaction_sum_sql = mock_db.exec.call_args_list[1].args[0]
+        transaction_sum_sql_str = str(
+            transaction_sum_sql.compile(compile_kwargs={"literal_binds": True})
+        )
+        assert transaction_sum_sql_str == expected_transaction_sum_sql_with_summaries
+
+        assert result == expected_balance
 
 
 class TestGetAll:

@@ -14,6 +14,11 @@ def db_all_return_val():
 
 
 @pytest.fixture
+def db_fetchall_return_val():
+    return UNSET
+
+
+@pytest.fixture
 def db_first_return_val():
     return UNSET
 
@@ -41,6 +46,7 @@ def db_refresh_patch_method():
 @pytest.fixture
 def mock_db(
     db_all_return_val: Any,
+    db_fetchall_return_val: Any,
     db_first_return_val: Any,
     db_first_side_effect_val: Any,
     db_one_or_none_return_val: Any,
@@ -52,6 +58,10 @@ def mock_db(
 
     db_methods.all.return_value = (
         None if db_all_return_val == UNSET else db_all_return_val
+    )
+
+    db_methods.fetchall.return_value = (
+        [] if db_fetchall_return_val == UNSET else db_fetchall_return_val
     )
 
     db_methods.first.return_value = (

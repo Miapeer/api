@@ -1,5 +1,5 @@
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -309,3 +309,62 @@ class TestUpdate:
         mock_db.add.assert_not_called()
         mock_db.commit.assert_not_called()
         mock_db.refresh.assert_not_called()
+
+
+class TestUpdatePayeeIdRef:
+    @pytest.fixture
+    def object_to_update(self) -> Mock:
+        return Mock()
+
+    @patch("miapeer.routers.quantum.payee.create_payee")
+    async def test_create_payee_when_payee_name_provided(
+        self,
+        patched_create_payee: AsyncMock,
+        user: User,
+        mock_db: Mock,
+        object_to_update: Mock,
+        payee_name: str,
+        portfolio_id: int,
+        complete_payee: Payee,
+    ) -> None:
+        patched_create_payee.return_value = complete_payee
+
+        await payee.update_payee_id_ref(
+            db=mock_db,
+            current_user=user,
+            object_to_update=object_to_update,
+            portfolio_id=portfolio_id,
+            payee_id=None,
+            payee_name=payee_name,
+        )
+
+        patched_create_payee.assert_called_once_with(
+            db=mock_db,
+            current_user=user,
+            payee=PayeeCreate(portfolio_id=portfolio_id, name=payee_name),
+        )
+        assert object_to_update.payee_id == complete_payee.payee_id
+
+    @pytest.mark.parametrize("create_payee_return_val", [None, ""])
+    @patch("miapeer.routers.quantum.payee.create_payee")
+    async def test_create_payee_failed_when_payee_name_provided(
+        self,
+        patched_create_payee: AsyncMock,
+        user: User,
+        mock_db: Mock,
+        object_to_update: Mock,
+        payee_name: str,
+        portfolio_id: int,
+        create_payee_return_val: Any,
+    ) -> None:
+        patched_create_payee.return_value = create_payee_return_val
+
+        with pytest.raises(HTTPException):
+            await payee.update_payee_id_ref(
+                db=mock_db,
+                current_user=user,
+                object_to_update=object_to_update,
+                portfolio_id=portfolio_id,
+                payee_id=None,
+                payee_name=payee_name,
+            )

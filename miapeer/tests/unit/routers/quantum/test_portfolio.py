@@ -133,6 +133,61 @@ class TestCreate:
 
         # Don't need to test the response here because it's just the updated portfolio_to_add
 
+    async def test_create_with_no_portfolio_id_raises_exception(
+        self,
+        user: User,
+        portfolio_to_create: PortfolioCreate,
+        mock_db: Mock,
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await portfolio.create_portfolio(
+                portfolio=portfolio_to_create, db=mock_db, current_user=user
+            )
+
+        assert mock_db.add.call_count == 1
+        assert mock_db.commit.call_count == 1
+        mock_db.refresh.assert_called_once()
+
+    @pytest.fixture
+    def user_without_id(self, user_hashed_password: str) -> User:
+        return User(
+            user_id=None, password=user_hashed_password, email="", disabled=False
+        )
+
+    @pytest.mark.parametrize(
+        "db_first_return_val, db_refresh_patch_method", [("some data", db_refresh)]
+    )
+    async def test_create_with_portfolio_id_not_none_returns_portfolio(
+        self,
+        user: User,
+        portfolio_to_create: PortfolioCreate,
+        complete_portfolio: Portfolio,
+        mock_db: Mock,
+    ) -> None:
+        response = await portfolio.create_portfolio(
+            portfolio=portfolio_to_create, db=mock_db, current_user=user
+        )
+
+        assert response == PortfolioRead.model_validate(complete_portfolio)
+
+    @pytest.mark.parametrize(
+        "db_first_return_val, db_refresh_patch_method", [("some data", db_refresh)]
+    )
+    async def test_create_with_portfolio_id_not_none_and_no_user_id(
+        self,
+        user_without_id: User,
+        portfolio_to_create: PortfolioCreate,
+        mock_db: Mock,
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await portfolio.create_portfolio(
+                portfolio=portfolio_to_create, db=mock_db, current_user=user_without_id
+            )
+
+        assert mock_db.add.call_count == 1
+        assert mock_db.commit.call_count == 1
+        mock_db.refresh.assert_called_once()
+
 
 class TestGet:
     @pytest.fixture

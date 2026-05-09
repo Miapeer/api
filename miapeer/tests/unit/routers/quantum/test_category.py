@@ -1,5 +1,5 @@
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -346,3 +346,67 @@ class TestUpdate:
         mock_db.add.assert_not_called()
         mock_db.commit.assert_not_called()
         mock_db.refresh.assert_not_called()
+
+
+class TestUpdateCategoryIdRef:
+    def db_refresh(obj) -> None:
+        obj.category_id = raw_category_id
+
+    @pytest.fixture
+    def object_to_update(self) -> Mock:
+        return Mock()
+
+    @pytest.fixture
+    def expected_sql(self, user_id: int) -> str:
+        return f"SELECT quantum_portfolio.portfolio_id \nFROM quantum_portfolio JOIN quantum_portfolio_user ON quantum_portfolio.portfolio_id = quantum_portfolio_user.portfolio_id \nWHERE quantum_portfolio_user.user_id = {user_id}"
+
+    @pytest.mark.parametrize(
+        "db_first_return_val, db_refresh_patch_method", [("some data", db_refresh)]
+    )
+    async def test_create_category_when_category_name_provided(
+        self,
+        user: User,
+        mock_db: Mock,
+        portfolio_id: int,
+        category_name: str,
+        object_to_update: Mock,
+        expected_sql: str,
+    ) -> None:
+        await category.update_category_id_ref(
+            db=mock_db,
+            current_user=user,
+            object_to_update=object_to_update,
+            portfolio_id=portfolio_id,
+            category_id=None,
+            category_name=category_name,
+        )
+
+        sql = mock_db.exec.call_args.args[0]
+        sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
+
+        assert sql_str == expected_sql
+        assert object_to_update.category_id == raw_category_id
+
+    @patch("miapeer.routers.quantum.category.create_category", new_callable=AsyncMock)
+    async def test_create_category_failed_when_category_name_provided(
+        self,
+        patched_create_category: AsyncMock,
+        user: User,
+        mock_db: Mock,
+        portfolio_id: int,
+        category_name: str,
+        object_to_update: Mock,
+    ) -> None:
+        patched_create_category.return_value = None
+
+        with pytest.raises(HTTPException) as exc_info:
+            await category.update_category_id_ref(
+                db=mock_db,
+                current_user=user,
+                object_to_update=object_to_update,
+                portfolio_id=portfolio_id,
+                category_id=None,
+                category_name=category_name,
+            )
+
+        assert exc_info.value.status_code == 500

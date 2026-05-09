@@ -682,6 +682,41 @@ class TestUpdate:
         mock_db.commit.assert_not_called()
         mock_db.refresh.assert_not_called()
 
+    @pytest.mark.parametrize(
+        "db_one_or_none_return_val, db_first_return_val",
+        [(lazy_fixture("complete_transaction"), None)],
+    )
+    async def test_update_fails_when_account_not_found(
+        self,
+        user: User,
+        account_id: int,
+        transaction_id: int,
+        transaction_updates: TransactionUpdate,
+        mock_db: Mock,
+        expected_transaction_sql: str,
+        expected_account_sql: str,
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await transaction.update_transaction(
+                account_id=account_id,
+                transaction_id=transaction_id,
+                transaction=transaction_updates,
+                db=mock_db,
+                current_user=user,
+            )
+
+        sql = mock_db.exec.call_args_list[0].args[0]
+        sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
+        assert sql_str == expected_transaction_sql
+
+        sql = mock_db.exec.call_args_list[1].args[0]
+        sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
+        assert sql_str == expected_account_sql
+
+        mock_db.add.assert_not_called()
+        mock_db.commit.assert_not_called()
+        mock_db.refresh.assert_not_called()
+
 
 class TestRunningBalance:
     @pytest.fixture
@@ -749,3 +784,67 @@ class TestRunningBalance:
             account_id=account_id, db=mock_db, current_user=user
         )
         assert response == expected_transactions
+
+
+class TestMergeTransactionsWithForecast:
+    @pytest.fixture
+    def forecasted_transactions(
+        self, complete_transaction: Transaction, transaction_date: date
+    ) -> list[TransactionRead]:
+        return [
+            TransactionRead.model_validate(
+                complete_transaction.model_dump(),
+                update={"transaction_id": 0, "transaction_date": transaction_date},
+            )
+        ]
+
+    def test_empty_transactions_returns_forecasted(
+        self,
+        forecasted_transactions: list[TransactionRead],
+    ) -> None:
+        result = transaction._merge_transactions_with_forecast(
+            transactions=[],
+            forecasted_transactions=forecasted_transactions,
+        )
+        assert result == forecasted_transactions
+
+    def test_remaining_transactions_appended_after_forecast_exhausted(
+        self,
+        complete_transaction: Transaction,
+        account_id: int,
+    ) -> None:
+        early_date = date(year=2000, month=1, day=1)
+        mid_date = date(year=2000, month=6, day=1)
+        late_date = date(year=2000, month=12, day=1)
+
+        # One forecasted transaction at early_date — will be consumed first by the loop
+        forecasted = [
+            TransactionRead.model_validate(
+                complete_transaction.model_dump(),
+                update={
+                    "transaction_id": 0,
+                    "transaction_date": early_date,
+                    "clear_date": None,
+                },
+            )
+        ]
+
+        # Two actual transactions: one at mid_date and one at late_date — both come after
+        # the single forecast, so the while loop exhausts forecasted after the first iteration
+        # and lines 94-95 must append the remaining actual transactions
+        actual_mid = TransactionRead.model_validate(
+            complete_transaction.model_dump(),
+            update={"transaction_date": mid_date, "clear_date": None},
+        )
+        actual_late = TransactionRead.model_validate(
+            complete_transaction.model_dump(),
+            update={"transaction_date": late_date, "clear_date": None},
+        )
+        actuals = [actual_mid, actual_late]
+
+        result = transaction._merge_transactions_with_forecast(
+            transactions=actuals,
+            forecasted_transactions=forecasted,
+        )
+
+        assert result == [forecasted[0], actual_mid, actual_late]

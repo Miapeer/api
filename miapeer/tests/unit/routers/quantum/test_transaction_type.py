@@ -1,5 +1,5 @@
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -347,3 +347,83 @@ class TestUpdate:
         mock_db.add.assert_not_called()
         mock_db.commit.assert_not_called()
         mock_db.refresh.assert_not_called()
+
+
+class TestUpdateTransactionTypeIdRef:
+    @pytest.fixture
+    def object_to_update(self) -> Mock:
+        obj = Mock()
+        obj.transaction_type_id = None
+        return obj
+
+    @patch(
+        "miapeer.routers.quantum.transaction_type.create_transaction_type",
+        new_callable=AsyncMock,
+    )
+    async def test_create_transaction_type_when_transaction_type_name_provided(
+        self,
+        mock_create_transaction_type: AsyncMock,
+        user: User,
+        mock_db: Mock,
+        transaction_type_id: int,
+        transaction_type_name: str,
+        portfolio_id: int,
+        complete_transaction_type: TransactionType,
+        object_to_update: Mock,
+    ) -> None:
+        mock_create_transaction_type.return_value = complete_transaction_type
+
+        await transaction_type.update_transaction_type_id_ref(
+            db=mock_db,
+            current_user=user,
+            object_to_update=object_to_update,
+            portfolio_id=portfolio_id,
+            transaction_type_id=None,
+            transaction_type_name=transaction_type_name,
+        )
+
+        mock_create_transaction_type.assert_called_once_with(
+            db=mock_db,
+            current_user=user,
+            transaction_type=TransactionTypeCreate(
+                portfolio_id=portfolio_id, name=transaction_type_name
+            ),
+        )
+        assert (
+            object_to_update.transaction_type_id
+            == complete_transaction_type.transaction_type_id
+        )
+
+    @patch(
+        "miapeer.routers.quantum.transaction_type.create_transaction_type",
+        new_callable=AsyncMock,
+    )
+    async def test_create_transaction_type_failed_when_transaction_type_name_provided(
+        self,
+        mock_create_transaction_type: AsyncMock,
+        user: User,
+        mock_db: Mock,
+        transaction_type_name: str,
+        portfolio_id: int,
+        object_to_update: Mock,
+    ) -> None:
+        mock_create_transaction_type.return_value = None
+
+        with pytest.raises(HTTPException) as exc_info:
+            await transaction_type.update_transaction_type_id_ref(
+                db=mock_db,
+                current_user=user,
+                object_to_update=object_to_update,
+                portfolio_id=portfolio_id,
+                transaction_type_id=None,
+                transaction_type_name=transaction_type_name,
+            )
+
+        assert exc_info.value.status_code == 500
+        mock_create_transaction_type.assert_called_once_with(
+            db=mock_db,
+            current_user=user,
+            transaction_type=TransactionTypeCreate(
+                portfolio_id=portfolio_id, name=transaction_type_name
+            ),
+        )

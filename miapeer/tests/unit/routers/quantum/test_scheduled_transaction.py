@@ -763,6 +763,41 @@ class TestUpdate:
         mock_db.commit.assert_not_called()
         mock_db.refresh.assert_not_called()
 
+    @pytest.mark.parametrize(
+        "db_one_or_none_return_val, db_first_return_val",
+        [(lazy_fixture("complete_scheduled_transaction"), None)],
+    )
+    async def test_update_fails_when_account_not_found(
+        self,
+        user: User,
+        account_id: int,
+        scheduled_transaction_id: int,
+        scheduled_transaction_updates: ScheduledTransactionUpdate,
+        mock_db: Mock,
+        expected_scheduled_transaction_sql: str,
+        expected_account_sql: str,
+    ) -> None:
+        with pytest.raises(HTTPException):
+            await scheduled_transaction.update_scheduled_transaction(
+                account_id=account_id,
+                scheduled_transaction_id=scheduled_transaction_id,
+                scheduled_transaction=scheduled_transaction_updates,
+                db=mock_db,
+                current_user=user,
+            )
+
+        sql = mock_db.exec.call_args_list[0].args[0]
+        sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
+        assert sql_str == expected_scheduled_transaction_sql
+
+        sql = mock_db.exec.call_args_list[1].args[0]
+        sql_str = str(sql.compile(compile_kwargs={"literal_binds": True}))
+        assert sql_str == expected_account_sql
+
+        mock_db.add.assert_not_called()
+        mock_db.commit.assert_not_called()
+        mock_db.refresh.assert_not_called()
+
 
 class TestNextIteration:
     @pytest.mark.parametrize(
